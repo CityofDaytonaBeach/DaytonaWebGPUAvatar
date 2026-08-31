@@ -17,6 +17,8 @@ export class SkinningKernel {
   private weightsBuffer: GPUBuffer;
   private matricesBuffer: GPUBuffer;
   private outBuffer: GPUBuffer;
+  private inNormalBuffer: GPUBuffer;
+  private outNormalBuffer: GPUBuffer;
 
   private pipeline: GPUComputePipeline;
   private bindGroup: GPUBindGroup;
@@ -28,16 +30,19 @@ export class SkinningKernel {
     inputPositions: GPUBuffer,
     influences: SkinInfluences,
     boneMatrices: Float32Array,
-    numBones: number
+    numBones: number,
+    inputNormals: GPUBuffer
   ) {
     this.device = device;
     this.vertexCount = vertexCount;
 
     this.inBuffer = inputPositions;
+    this.inNormalBuffer = inputNormals;
     this.paramsBuffer = makeStorage(device, 16, makeParams(vertexCount, numBones));
     this.indicesBuffer = makeStorage(device, influences.indices.byteLength, influences.indices);
     this.weightsBuffer = makeStorage(device, influences.weights.byteLength, influences.weights);
     this.outBuffer = makeStorage(device, vertexCount * 12);
+    this.outNormalBuffer = makeStorage(device, vertexCount * 12);
 
     this.pipeline = device.createComputePipeline({
       layout: "auto",
@@ -58,6 +63,8 @@ export class SkinningKernel {
         { binding: 3, resource: { buffer: this.weightsBuffer } },
         { binding: 4, resource: { buffer: this.matricesBuffer } },
         { binding: 5, resource: { buffer: this.outBuffer } },
+        { binding: 6, resource: { buffer: this.inNormalBuffer } },
+        { binding: 7, resource: { buffer: this.outNormalBuffer } },
       ],
     });
   }
@@ -80,6 +87,10 @@ export class SkinningKernel {
 
   get outputBuffer(): GPUBuffer {
     return this.outBuffer;
+  }
+
+  get outputNormalsBuffer(): GPUBuffer {
+    return this.outNormalBuffer;
   }
 }
 

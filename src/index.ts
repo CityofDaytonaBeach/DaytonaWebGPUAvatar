@@ -43,7 +43,7 @@ export type { BoneDef, BoneName, JointLimits } from "./anatomy/skeleton/skeleton
 export { resolveAnatomy, validateAnatomy, anatomySatisfaction } from "./anatomy/parametric/parametric-anatomy";
 export type { AnatomyDimensions, AnatomyConstraint } from "./anatomy/parametric/parametric-anatomy";
 export { buildBoneMatrices, combinedSkinMatrices, composeMatrix, invertMatrix } from "./anatomy/skeleton/bone-matrix";
-export { buildInfluences, skinMeshCPU, normalizeWeights, MAX_INFLUENCES } from "./gpu/kernels/skin-mesh";
+export { buildInfluences, skinMeshCPU, skinNormalsCPU, normalizeWeights, MAX_INFLUENCES } from "./gpu/kernels/skin-mesh";
 export type { SkinInfluences } from "./gpu/kernels/skin-mesh";
 
 // Identity

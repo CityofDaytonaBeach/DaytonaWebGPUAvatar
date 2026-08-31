@@ -33,6 +33,8 @@ Capability matrix (see `CAPABILITY_MATRIX` in `src/index.ts`):
 | Canonical human parts (eyes/teeth/tongue/cavity) | IMPLEMENTED |
 | Parametric skeleton + joint placement | IMPLEMENTED |
 | Parametric anatomy solver (dimensions + constraints) | IMPLEMENTED |
+| Bone matrices (FK) + inverse-bind skinning | IMPLEMENTED |
+| Skeletal animation (clips/blending) + GPU skinning | IMPLEMENTED |
 | Facial expressions + speech visemes | IMPLEMENTED |
 | GPU scheduler + dev profiler | IMPLEMENTED |
 | Semantic + perceptual LOD | IMPLEMENTED |
@@ -189,6 +191,34 @@ and a **matching parametric skeleton**:
 `Human` exposes `solveAnatomy()`, `anatomyConstraints()`, `anatomyScore()`, and
 `parametricSkeleton()`. The demo adds Height / Waist / Shoulder sliders and
 renders the resolved skeleton markers + anatomy readout.
+
+### Rigging + skinning + skeletal animation (Phase 4)
+
+The parametric skeleton is now wired to the mesh as a live **skinning rig**:
+
+- `bone-matrix.ts` builds per-bone **world matrices** via forward kinematics
+  (translation + quaternion, chained by parent). The standard
+  `skinMatrix = invBindWorld * currentWorld` formulation means the rest pose is
+  exactly identity — no animation, no movement — while rotating a bone deforms
+  only the vertices bound to that bone (and its children).
+- `skin-mesh.ts` extracts per-vertex bone influences from the canonical mesh's
+  region weights (normalized, up to `MAX_INFLUENCES` = 4) and provides CPU
+  skinning references: `skinMeshCPU` (positions) and `skinNormalsCPU` (normals).
+- `skinning-kernel.ts` + `skin-wgsl.ts` is the GPU compute counterpart,
+  chained *after* morph deformation: morph → skin → render. It skins **both
+  positions and normals** (normals via the weighted rotation 3×3 + normalize, so
+  posed limbs light correctly instead of keeping baked rest normals). Each WGSL
+  loop is byte-identical to its CPU reference (verified by parity tests).
+- `Human` gained `addClip` / `playClip` / `samplePose` / `setPose` / `animate`
+  (reusing the `SkeletalAnimation` blend system), `skinScene()` and
+  `skinNormals()` for the CPU references; the GPU pipeline exposes `setPose()`
+  to upload skin matrices and returns both skinned position and normal buffers.
+
+Tests (`src/gpu/kernels/skinning.test.ts`) prove FK correctness (identity at
+rest), rest-pose preservation, GPU/CPU parity, normalization, and **locality**:
+rotating `thigh_l` moves exactly its FK chain (`thigh_l` + `shin_l`) and never
+the off-side limbs. The demo adds an **"Animate: wave"** toggle that replays a
+clip through the rig.
 
 ## References to the spec
 

@@ -22,7 +22,7 @@ import { resolveAnatomy, AnatomyDimensions, validateAnatomy, anatomySatisfaction
 import { placeSkeletonFromDefinition, BoneDef } from "./anatomy/skeleton/skeleton";
 import { combinedSkinMatrices } from "./anatomy/skeleton/bone-matrix";
 import { SkeletalAnimation, AnimationChannel, BonePose } from "./animation/skeleton/skeletal-animation";
-import { buildInfluences, skinMeshCPU } from "./gpu/kernels/skin-mesh";
+import { buildInfluences, skinMeshCPU, skinNormalsCPU } from "./gpu/kernels/skin-mesh";
 
 export interface HumanCreateOptions {
   registry?: PropertyRegistry;
@@ -270,6 +270,18 @@ export class Human {
     if (!this.skinInfluences) this.skinInfluences = buildInfluences(this.canonical, skeleton);
     const matrices = combinedSkinMatrices(skeleton, this.currentPose);
     return skinMeshCPU(this.canonical.baseGeometry().positions, this.skinInfluences, matrices);
+  }
+
+  /**
+   * CPU skinning reference for normals: transforms the canonical base normals
+   * by the current pose's rotation matrices (see `skinNormalsCPU`). Returns a
+   * Float32Array of length vertexCount*3.
+   */
+  skinNormals(): Float32Array {
+    const skeleton = this.parametricSkeleton();
+    if (!this.skinInfluences) this.skinInfluences = buildInfluences(this.canonical, skeleton);
+    const matrices = combinedSkinMatrices(skeleton, this.currentPose);
+    return skinNormalsCPU(this.canonical.baseGeometry().normals, this.skinInfluences, matrices);
   }
 
   /** Upload current params + morph weights to the GPU. No-op without a device. */

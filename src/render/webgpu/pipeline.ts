@@ -75,7 +75,8 @@ export class WebGpuHumanPipeline {
       this.deform.outputBuffer,
       influences,
       combinedSkinMatrices(skeleton),
-      skeleton.length
+      skeleton.length,
+      this.state.normalBuffer
     );
     this.renderer = new WebGPURenderer(opts.device, opts.format ?? "bgra8unorm");
     const renderParts = buildRenderParts(opts.device, canonical);
@@ -119,7 +120,7 @@ export class WebGpuHumanPipeline {
   ): void {
     this.deform.dispatch(encoder);
     this.skin.dispatch(encoder);
-    this.renderer.draw(encoder, view, width, height, this.skin.outputBuffer);
+    this.renderer.draw(encoder, view, width, height, this.skin.outputBuffer, this.skin.outputNormalsBuffer);
   }
 
   /** Convenience: upload params/weights, deform, and draw. */

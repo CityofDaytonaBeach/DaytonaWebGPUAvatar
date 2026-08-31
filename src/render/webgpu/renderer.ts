@@ -220,13 +220,17 @@ export class WebGPURenderer {
     this.device.queue.writeBuffer(this.cameraBuffer, 0, data as unknown as ArrayBuffer);
   }
 
-  /** Draw all parts using `deformedBuffer` as the position attribute. */
+  /**
+   * Draw all parts using `deformedBuffer` (positions) and `normalsBuffer`
+   * (skinned normals) as vertex attributes 0 and 1.
+   */
   draw(
     encoder: GPUCommandEncoder,
     view: GPUTextureView,
     width: number,
     height: number,
-    deformedBuffer: GPUBuffer
+    deformedBuffer: GPUBuffer,
+    normalsBuffer?: GPUBuffer
   ): void {
     this.uploadCamera(width, height);
     const pass = encoder.beginRenderPass({
@@ -236,7 +240,7 @@ export class WebGPURenderer {
     });
     pass.setPipeline(this.pipeline);
     pass.setVertexBuffer(0, deformedBuffer);
-    pass.setVertexBuffer(1, this.normalBuffer);
+    pass.setVertexBuffer(1, normalsBuffer ?? this.normalBuffer);
     pass.setVertexBuffer(2, this.uvBuffer);
     for (let i = 0; i < this.parts.length; i++) {
       const p = this.parts[i];

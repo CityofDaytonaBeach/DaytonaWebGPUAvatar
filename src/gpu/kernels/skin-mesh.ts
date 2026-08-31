@@ -95,6 +95,42 @@ export function skinMeshCPU(
 }
 
 /**
+ * CPU skinning reference for normals: transforms each base normal by the
+ * weighted rotation (upper 3x3) of its bone skin matrices and renormalizes.
+ * Matrices are rigid (rotation+translation), so the 3x3 is the correct normal
+ * transform. Output is a Float32Array of normals.
+ */
+export function skinNormalsCPU(
+  baseNormals: Float32Array,
+  influences: SkinInfluences,
+  boneMatrices: Float32Array
+): Float32Array {
+  const n = baseNormals.length / 3;
+  const out = new Float32Array(n * 3);
+  for (let v = 0; v < n; v++) {
+    const nx = baseNormals[v * 3 + 0];
+    const ny = baseNormals[v * 3 + 1];
+    const nz = baseNormals[v * 3 + 2];
+    let x = 0, y = 0, z = 0;
+    for (let k = 0; k < MAX_INFLUENCES; k++) {
+      const w = influences.weights[v * MAX_INFLUENCES + k];
+      if (w === 0) continue;
+      const bi = influences.indices[v * MAX_INFLUENCES + k] * 16;
+      const m = boneMatrices;
+      const sx = m[bi + 0] * nx + m[bi + 4] * ny + m[bi + 8] * nz;
+      const sy = m[bi + 1] * nx + m[bi + 5] * ny + m[bi + 9] * nz;
+      const sz = m[bi + 2] * nx + m[bi + 6] * ny + m[bi + 10] * nz;
+      x += w * sx; y += w * sy; z += w * sz;
+    }
+    const len = Math.hypot(x, y, z) || 1;
+    out[v * 3 + 0] = x / len;
+    out[v * 3 + 1] = y / len;
+    out[v * 3 + 2] = z / len;
+  }
+  return out;
+}
+
+/**
  * Convenience: re-normalize a loosely-authored weights map (e.g. region weights)
  * so the vertex influences sum to 1 (defensive; buildInfluences already does).
  */

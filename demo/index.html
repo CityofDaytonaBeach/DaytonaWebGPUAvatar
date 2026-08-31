@@ -41,7 +41,7 @@
   <body>
     <canvas id="viewport" width="720" height="900"></canvas>
     <div id="panel">
-      <h1>Daytona WebGPU Avatar — v0.3 Parametric Anatomy Proof-of-Concept</h1>
+      <h1>Daytona WebGPU Avatar — v0.4 Rigging &amp; Skinning Proof-of-Concept</h1>
       <div class="muted">The Character is NOT the Mesh. All UI/AI/automation flow through one event API; only affected GPU work recomputes.</div>
 
       <h2>Direct modification</h2>
@@ -76,6 +76,12 @@
         <button class="ghost" id="surprise">Surprise</button>
         <button class="ghost" id="neutral">Neutral</button>
       </div>
+
+      <h2>Animation (skinning)</h2>
+      <div class="row">
+        <button class="ghost" id="animate">Animate: wave</button>
+      </div>
+      <div class="muted">Bone rotations replay through the skinning rig; vertices bound to the posed chain move on the GPU/CPU.</div>
 
       <h2>Profiler / dirty regions</h2>
       <div id="log">initializing…</div>

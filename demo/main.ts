@@ -1,4 +1,4 @@
-import { Human, KernelWork, createDeviceAndProfile } from "../src";
+import { Human, KernelWork, createDeviceAndProfile, quatFromEuler } from "../src";
 import type { DeviceCapabilities } from "../src";
 
 // Part colors mirror the GPU renderer's per-part materials.
@@ -20,7 +20,11 @@ function partColor(name: string, kind: string): string {
 class CanvasHumanRenderer {
   constructor(private canvas: HTMLCanvasElement) {}
 
-  render(human: Human) {
+  /**
+   * @param skinned When animating, an optional array of final skinned positions
+   *   (Float32Array) overrides the morph-deformed base so bones visibly move.
+   */
+  render(human: Human, skinned?: Float32Array) {
     const ctx = this.canvas.getContext("2d");
     if (!ctx) return;
     const w = this.canvas.width;
@@ -38,6 +42,9 @@ class CanvasHumanRenderer {
       return [sx, sy];
     };
 
+    const px = (id: number) => (skinned ? skinned[id * 3] : vertices[id].position.x + delta[id * 3]);
+    const py = (id: number) => (skinned ? skinned[id * 3 + 1] : vertices[id].position.y + delta[id * 3 + 1]);
+
     const drawRange = (start: number, count: number, color: string) => {
       const idx = canonical.indices;
       ctx.fillStyle = color;
@@ -49,9 +56,9 @@ class CanvasHumanRenderer {
         const a = vertices[idx[i]];
         const b = vertices[idx[i + 1]];
         const c = vertices[idx[i + 2]];
-        const [ax, ay] = proj(a.position.x + delta[a.id * 3], a.position.y + delta[a.id * 3 + 1]);
-        const [bx, by] = proj(b.position.x + delta[b.id * 3], b.position.y + delta[b.id * 3 + 1]);
-        const [cx, cy] = proj(c.position.x + delta[c.id * 3], c.position.y + delta[c.id * 3 + 1]);
+        const [ax, ay] = proj(px(a.id), py(a.id));
+        const [bx, by] = proj(px(b.id), py(b.id));
+        const [cx, cy] = proj(px(c.id), py(c.id));
         ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(cx, cy); ctx.closePath();
       }
       ctx.fill();
@@ -185,9 +192,37 @@ async function main() {
     timelineInfo.textContent = `events: ${human.historyLength} · index: ${human.historyIndex} · undo/redo ready`;
     if (!caps || !ctx || !running) {
       // CPU reference renderer (also used when GPU present but a frame in flight).
-      canvasRenderer.render(human);
+      canvasRenderer.render(human, animating ? human.skinScene() : undefined);
     }
   };
+
+  // ---- Skeletal animation (Phase 4): a waving-arm clip sampled each frame.
+  let animating = false;
+  let animTime = 0;
+  human.addClip("wave", [
+    { bone: "clavicle_l", times: [0, 1], rotations: [quatFromEuler(0, 0, 0), quatFromEuler(-20, 0, 10)] },
+    { bone: "upperarm_l", times: [0, 0.5, 1], rotations: [quatFromEuler(0, 0, -10), quatFromEuler(0, 0, -90), quatFromEuler(0, 0, -10)] },
+    { bone: "forearm_l", times: [0, 0.5, 1], rotations: [quatFromEuler(0, 0, -20), quatFromEuler(0, 0, 30), quatFromEuler(0, 0, -20)] },
+  ]);
+  human.playClip("wave", 1);
+  document.getElementById("animate")?.addEventListener("click", () => {
+    animating = !animating;
+    animTime = 0;
+    if (!animating) { human.setPose([]); canvasRenderer.render(human); }
+    refresh(animating ? "ANIMATING: wave clip (skinned)" : "ANIMATION stopped");
+    if (animating && !running) requestAnimationFrame(animLoop);
+  });
+  function animLoop(now: number) {
+    if (!animating) return;
+    animTime = (now / 1000) % 1;
+    human.animate(animTime);
+    canvasRenderer.render(human, human.skinScene());
+    if (!running) requestAnimationFrame(animLoop);
+  }
+
+  refresh("ready");
+  canvasRenderer.render(human, animating ? human.skinScene() : undefined);
+  if (caps && ctx) requestAnimationFrame(loop);
 
   bindRange("nose", "noseV", (v) => refresh(formatResult("nose", human.modify({ "face.nose.width": v }))));
   bindRange("jaw", "jawV", (v) => refresh(formatResult("jaw", human.modify({ "face.jaw.width": v }))));
