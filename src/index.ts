@@ -105,6 +105,8 @@ export { generateSkinResiduals, applySkinResidualColor } from "./surface/skin/ne
 export type { SkinResidualField, SkinResidualSample, SkinResidualOptions } from "./surface/skin/neural-skin";
 export { projectTattooDecal, projectTattooDecals } from "./surface/tattoo/tattoo-decal";
 export type { TattooDecal, TattooDecalSample, TattooDecalOptions } from "./surface/tattoo/tattoo-decal";
+export { generateGarment, generateGarments } from "./surface/clothing/garment";
+export type { GarmentKind, GarmentMesh, GarmentOptions, GarmentVertex } from "./surface/clothing/garment";
 export { validatePerceptualHuman } from "./validation/perceptual-validator";
 export type { PerceptualIssue, PerceptualIssueKind, PerceptualValidationReport } from "./validation/perceptual-validator";
 
@@ -139,6 +141,7 @@ export const CAPABILITY_MATRIX = {
   gpuSkinning: "IMPLEMENTED",
   attachmentCoordinates: "IMPLEMENTED",
   tattooDecals: "PROTOTYPE",
+  clothingGeometry: "PROTOTYPE",
   facialExpression: "IMPLEMENTED",
   speechVisemes: "IMPLEMENTED",
   timelineEventSourcing: "IMPLEMENTED",

@@ -31,6 +31,7 @@ import { generateSkinResiduals, SkinResidualField, SkinResidualOptions } from ".
 import { MotionCompiler, MotionPlan } from "./animation/motion/motion-compiler";
 import { PerceptualValidationReport, validatePerceptualHuman } from "./validation/perceptual-validator";
 import { projectTattooDecals, TattooDecal } from "./surface/tattoo/tattoo-decal";
+import { generateGarments, GarmentMesh } from "./surface/clothing/garment";
 
 export interface HumanCreateOptions {
   registry?: PropertyRegistry;
@@ -375,6 +376,11 @@ export class Human {
   /** Project tattoo attachments to stable semantic-region decal samples. */
   tattooDecals(): TattooDecal[] {
     return projectTattooDecals(this.listAttachments(), this.canonical);
+  }
+
+  /** Generate separate wearable garment meshes from current wear attachments. */
+  garments(): GarmentMesh[] {
+    return generateGarments(this.listAttachments(), this.solveAnatomy());
   }
 
   /** Non-mutating perceptual validation; corrective requests are suggestions only. */

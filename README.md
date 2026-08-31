@@ -39,6 +39,7 @@ Capability matrix (see `CAPABILITY_MATRIX` in `src/index.ts`):
 | Facial expressions + speech visemes | IMPLEMENTED |
 | Human attachment coordinates | IMPLEMENTED |
 | Tattoo decal projection | PROTOTYPE |
+| Wearable clothing geometry | PROTOTYPE |
 | Procedural strand hair runtime | PROTOTYPE |
 | Human-specific SDF collision fields | PROTOTYPE |
 | Cloth physics runtime | PROTOTYPE |
@@ -112,6 +113,7 @@ Key files:
 - `src/surface/hair/` — deterministic procedural strand-hair prototype
 - `src/surface/skin/` — deterministic neural-skin residual prototype
 - `src/surface/tattoo/` — tattoo attachment to semantic-region decal projection
+- `src/surface/clothing/` — wearable attachment to garment mesh generation
 - `src/physics/sdf/` — human-specific capsule/sphere SDF collision prototype
 - `src/physics/cloth/` — deterministic CPU cloth solver prototype with SDF collision
 - `src/validation/` — non-mutating perceptual validation and corrective requests
@@ -269,6 +271,15 @@ vertices. The prototype stores color, opacity, UV, region, and vertex IDs withou
 mutating mesh topology. Tests verify deterministic projection, non-tattoo
 filtering, region-anchor validation, color clamping, and stable Human API
 integration. Actual decal rendering remains a future renderer milestone.
+
+### Wearable clothing geometry (Phase 5c)
+
+`generateGarment`, `generateGarments`, and `human.garments()` convert wearable
+attachments into deterministic separate garment meshes. The prototype supports
+torso shirts and arm sleeves, derives dimensions from the resolved anatomy,
+clamps material colors, and keeps clothing topology separate from the character
+mesh. Tests verify deterministic mesh output, sleeve routing, non-wearable
+filtering, anatomy responsiveness, and stable body topology.
 
 ### WebGL2 fallback renderer (Phase 6)
 
