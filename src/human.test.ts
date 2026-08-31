@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Human } from "./human";
 import { createEvent } from "./core/events/character-event";
+import { quatFromEulerDeg } from "./animation/skeleton/skeletal-animation";
 
 describe("Human — Phase 1 proof-of-concept", () => {
   it("changes nose width via the single event API and keeps the rest stable", async () => {
@@ -107,5 +108,44 @@ describe("Human — Phase 1 proof-of-concept", () => {
     expect(r.cancelled).toBe(false);
     // Clamped to max (2.6), never out of range.
     expect(human.get("global.height")).toBeLessThanOrEqual(2.6);
+  });
+
+  it("adds and removes attachments through the single event API", async () => {
+    const human = await Human.create();
+
+    const added = human.addTattoo("tattoo-forearm", { region: "forearm_l" }, { ink: "black" });
+    expect(added.cancelled).toBe(false);
+    expect(added.dirtyRegions).toEqual(["Attachment"]);
+    expect(human.listAttachments()).toHaveLength(1);
+    expect(human.attachmentPosition("tattoo-forearm")).not.toBeNull();
+
+    const removed = human.removeAttachment("tattoo-forearm");
+    expect(removed.cancelled).toBe(false);
+    expect(human.listAttachments()).toHaveLength(0);
+  });
+
+  it("rebuilds attachment state from undo and redo timeline positions", async () => {
+    const human = await Human.create();
+
+    human.wear("watch", { bone: "forearm_l", localPosition: { x: 0, y: -0.2, z: 0 } });
+    expect(human.listAttachments().map((a) => a.id)).toEqual(["watch"]);
+
+    human.undo();
+    expect(human.listAttachments()).toEqual([]);
+
+    human.redo();
+    expect(human.listAttachments().map((a) => a.id)).toEqual(["watch"]);
+  });
+
+  it("keeps bone-anchored attachments moving with animation", async () => {
+    const human = await Human.create();
+    human.wear("bracelet", { bone: "forearm_l", localPosition: { x: 0, y: -0.25, z: 0 } });
+    const rest = human.attachmentPosition("bracelet")!;
+
+    human.setPose([{ name: "upperarm_l", localPos: { x: -0.33, y: 0.04, z: 0 }, localRot: quatFromEulerDeg(0, 0, -70) }]);
+    const posed = human.attachmentPosition("bracelet")!;
+
+    expect(Math.hypot(posed.x - rest.x, posed.y - rest.y, posed.z - rest.z)).toBeGreaterThan(0.05);
+    expect(human.computeMorphDelta()).toEqual(new Float32Array(human.canonicalRef.vertexCount * 3));
   });
 });

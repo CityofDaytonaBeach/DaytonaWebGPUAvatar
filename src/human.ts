@@ -23,6 +23,11 @@ import { placeSkeletonFromDefinition, BoneDef } from "./anatomy/skeleton/skeleto
 import { combinedSkinMatrices } from "./anatomy/skeleton/bone-matrix";
 import { SkeletalAnimation, AnimationChannel, BonePose } from "./animation/skeleton/skeletal-animation";
 import { buildInfluences, skinMeshCPU, skinNormalsCPU } from "./gpu/kernels/skin-mesh";
+import { AttachmentSystem, HumanAttachment, AttachmentKind, AttachmentAnchor } from "./attachments/attachment-system";
+import { generateStrandHair, StrandHairGeometry, StrandHairOptions } from "./surface/hair/strand-hair";
+import { buildHumanSdfField, HumanSdfField } from "./physics/sdf/human-sdf";
+import { ClothMesh, ClothStepOptions, createTorsoCloth, simulateCloth } from "./physics/cloth/cloth-sim";
+import { generateSkinResiduals, SkinResidualField, SkinResidualOptions } from "./surface/skin/neural-skin";
 
 export interface HumanCreateOptions {
   registry?: PropertyRegistry;
@@ -80,6 +85,7 @@ export class Human {
   private skinInfluences = null as ReturnType<typeof buildInfluences> | null;
   private clock = 0;
   private gpu: WebGpuHumanPipeline | null = null;
+  private attachments = new AttachmentSystem();
 
   private constructor(opts: HumanCreateOptions) {
     this.registry = opts.registry ?? createDefaultRegistry();
@@ -284,6 +290,72 @@ export class Human {
     return skinNormalsCPU(this.canonical.baseGeometry().normals, this.skinInfluences, matrices);
   }
 
+  // ------------------------------------------------------------ attachments
+
+  /** Current non-geometry attachments anchored to semantic regions/bones. */
+  listAttachments(): HumanAttachment[] {
+    return this.attachments.list();
+  }
+
+  addAttachment(attachment: HumanAttachment, source: EventSource = "api"): HumanModifyResult {
+    const eventType = attachment.kind === "tattoo" ? "addTattoo" : "wear";
+    return this.applyEvent(createEvent(eventType, source, { payload: { attachment } }));
+  }
+
+  addTattoo(id: string, anchor: AttachmentAnchor, data: Record<string, unknown> = {}): HumanModifyResult {
+    return this.addAttachment({ id, kind: "tattoo", anchor, data }, "api");
+  }
+
+  wear(id: string, anchor: AttachmentAnchor, data: Record<string, unknown> = {}): HumanModifyResult {
+    return this.addAttachment({ id, kind: "wearable", anchor, data }, "api");
+  }
+
+  removeAttachment(id: string, source: EventSource = "api"): HumanModifyResult {
+    return this.applyEvent(createEvent("removeAttachment", source, { payload: { id } }));
+  }
+
+  attachmentPosition(id: string) {
+    const attachment = this.attachments.get(id);
+    if (!attachment) return null;
+    return this.attachments.resolve(
+      attachment,
+      this.canonical,
+      this.parametricSkeleton(),
+      this.currentPose,
+      this.computeMorphDelta()
+    );
+  }
+
+  // ---------------------------------------------------------------- surface
+
+  /** Deterministic CPU strand-hair prototype generated from HDL hair params. */
+  hairGeometry(options: StrandHairOptions = {}): StrandHairGeometry {
+    return generateStrandHair(this.definition, this.canonical, options);
+  }
+
+  /** Human-specific collision SDF prototype from anatomy + skeleton capsules. */
+  sdfField(): HumanSdfField {
+    return buildHumanSdfField(this.solveAnatomy(), this.parametricSkeleton());
+  }
+
+  sdfDistance(point: { x: number; y: number; z: number }): number {
+    return this.sdfField().distance(point);
+  }
+
+  /** Build a deterministic torso cloth panel for CPU cloth simulation. */
+  createCloth(width?: number, height?: number): ClothMesh {
+    return createTorsoCloth(width, height);
+  }
+
+  simulateCloth(mesh: ClothMesh, steps: number, options: ClothStepOptions = {}): ClothMesh {
+    return simulateCloth(mesh, this.sdfField(), steps, options);
+  }
+
+  /** Deterministic procedural residual layer for skin color/roughness/detail. */
+  skinResiduals(options: SkinResidualOptions = {}): SkinResidualField {
+    return generateSkinResiduals(this.definition, this.canonical, options);
+  }
+
   /** Upload current params + morph weights to the GPU. No-op without a device. */
   uploadGpu(definition: HumanDefinition = this.definition): void {
     if (this.gpu) this.gpu.upload(definition);
@@ -337,6 +409,7 @@ export class Human {
 
     // 3. Timeline records it (event sourcing + undo/redo).
     this.timeline.push(event);
+    this.attachments.applyEvent(event);
 
     // 4. Constraint validation of resulting definition.
     const constraint = this.constraints.validate(this.definition);
@@ -351,7 +424,7 @@ export class Human {
     const delta = new Float32Array(this.canonical.vertexCount * 3);
     this.morphKernel.accumulate(this.definition, delta);
 
-    const dirtyRegionNames = this.dirty.describe();
+    const dirtyRegionNames = isAttachmentEvent(event) ? ["Attachment"] : this.dirty.describe();
     const verticesModified = countDirtyVertices(this.canonical, dirtyRegionNames as never[]);
     this.profiler.record({
       computePasses: kernelWork.length,
@@ -431,12 +504,14 @@ export class Human {
   undo(): HumanModifyResult {
     const def = this.timeline.undo();
     if (def) this.definition = def;
+    this.rebuildAttachmentsFromTimeline();
     return this.resultFromDefinition();
   }
 
   redo(): HumanModifyResult {
     const def = this.timeline.redo();
     if (def) this.definition = def;
+    this.rebuildAttachmentsFromTimeline();
     return this.resultFromDefinition();
   }
 
@@ -446,6 +521,7 @@ export class Human {
 
   branch(): void {
     this.timeline.branch();
+    this.rebuildAttachmentsFromTimeline();
   }
 
   setConstraintProfile(profile: ConstraintProfile): void {
@@ -465,4 +541,12 @@ export class Human {
   private resultFromDefinition(): HumanModifyResult {
     return { cancelled: false, affectedKernelWork: [], dirtyRegions: this.dirty.describe() };
   }
+
+  private rebuildAttachmentsFromTimeline(): void {
+    this.attachments.rebuild(this.timeline.log().slice(0, this.timeline.index + 1));
+  }
+}
+
+function isAttachmentEvent(event: CharacterEvent): boolean {
+  return event.type === "wear" || event.type === "addTattoo" || event.type === "removeAttachment";
 }

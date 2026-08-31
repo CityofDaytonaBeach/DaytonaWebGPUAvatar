@@ -1,4 +1,4 @@
-import { Human, KernelWork, createDeviceAndProfile, quatFromEuler } from "../src";
+import { Human, KernelWork, WebGL2HumanRenderer, createDeviceAndProfile, quatFromEuler } from "../src";
 import type { DeviceCapabilities } from "../src";
 
 // Part colors mirror the GPU renderer's per-part materials.
@@ -162,6 +162,14 @@ function formatResult(tag: string, r: ModifyResultLike): string {
   return `[${tag}] ok\nkernels: ${kinds || "(expression/timing)"}\ndirty: ${r.dirtyRegions.join(", ") || "none"}\n→ GPU-resident, minimal compute only`;
 }
 
+function morphedPositions(human: Human): Float32Array {
+  const { positions } = human.canonicalRef.baseGeometry();
+  const delta = human.computeMorphDelta();
+  const out = new Float32Array(positions.length);
+  for (let i = 0; i < positions.length; i++) out[i] = positions[i] + delta[i];
+  return out;
+}
+
 async function main() {
   const canvas = document.getElementById("viewport") as HTMLCanvasElement;
   const log = document.getElementById("log") as HTMLElement;
@@ -176,7 +184,7 @@ async function main() {
   // canvas renderer (reference path).
   let caps: DeviceCapabilities | null = null;
   let ctx: GPUCanvasContext | null = null;
-  let gpuLabel = "WebGPU unavailable — using CPU canvas renderer";
+  let gpuLabel = "WebGPU unavailable";
   try {
     caps = await createDeviceAndProfile();
     ctx = canvas.getContext("webgpu") as GPUCanvasContext | null;
@@ -200,12 +208,34 @@ async function main() {
     seed: { "global.height": 1.78, "body.waist": 1.0, "skeleton.shoulderWidth": 1.0, "body.muscularity": 0.48 },
   });
   const canvasRenderer = new CanvasHumanRenderer(canvas);
-  badge.className = caps ? "badge ok" : "badge no";
+
+  let webglRenderer: WebGL2HumanRenderer | null = null;
+  if (!caps) {
+    try {
+      webglRenderer = new WebGL2HumanRenderer(canvas, human.canonicalRef);
+      gpuLabel = "WebGL2 fallback · CPU morph/skinning buffers";
+    } catch (e) {
+      gpuLabel = `WebGPU/WebGL2 unavailable — using CPU canvas renderer (${(e as Error).message})`;
+    }
+  }
+
+  badge.className = caps || webglRenderer ? "badge ok" : "badge no";
   badge.textContent = gpuLabel;
 
   // Render loop: GPU renderer every frame; CPU renderer on demand.
   const gpuDevice = caps?.device ?? null;
   let running = false;
+  const renderFallback = () => {
+    if (webglRenderer) {
+      webglRenderer.render(
+        animating ? human.skinScene() : morphedPositions(human),
+        animating ? human.skinNormals() : human.canonicalRef.baseGeometry().normals
+      );
+      return;
+    }
+    canvasRenderer.render(human, animating ? human.skinScene() : undefined);
+  };
+
   function loop() {
     if (caps && ctx && gpuDevice) {
       const texture = (ctx as GPUCanvasContext).getCurrentTexture();
@@ -224,8 +254,8 @@ async function main() {
     log.textContent = `${msg}\n\n${human.profiler.summarize()}\n\nengine: ${gpuLabel}`;
     timelineInfo.textContent = `events: ${human.historyLength} · index: ${human.historyIndex} · undo/redo ready`;
     if (!caps || !ctx || !running) {
-      // CPU reference renderer (also used when GPU present but a frame in flight).
-      canvasRenderer.render(human, animating ? human.skinScene() : undefined);
+      // WebGL2 fallback uses CPU morph/skinning buffers; 2D canvas is last resort.
+      renderFallback();
     }
   };
 
@@ -241,7 +271,7 @@ async function main() {
   document.getElementById("animate")?.addEventListener("click", () => {
     animating = !animating;
     animTime = 0;
-    if (!animating) { human.setPose([]); canvasRenderer.render(human); }
+    if (!animating) { human.setPose([]); renderFallback(); }
     refresh(animating ? "ANIMATING: wave clip (skinned)" : "ANIMATION stopped");
     if (animating && !running) requestAnimationFrame(animLoop);
   });
@@ -249,12 +279,12 @@ async function main() {
     if (!animating) return;
     animTime = (now / 1000) % 1;
     human.animate(animTime);
-    canvasRenderer.render(human, human.skinScene());
+    renderFallback();
     if (!running) requestAnimationFrame(animLoop);
   }
 
   refresh("ready");
-  canvasRenderer.render(human, animating ? human.skinScene() : undefined);
+  renderFallback();
   if (caps && ctx) requestAnimationFrame(loop);
 
   bindRange("nose", "noseV", (v) => refresh(formatResult("nose", human.modify({ "face.nose.width": v }))));
@@ -286,7 +316,7 @@ async function main() {
   document.getElementById("neutral")?.addEventListener("click", () => refresh(formatResult("neutral", human.setExpression("neutral", 1))));
 
   refresh("ready");
-  canvasRenderer.render(human);
+  renderFallback();
   if (caps && ctx) requestAnimationFrame(loop);
 }
 

@@ -36,11 +36,16 @@ Capability matrix (see `CAPABILITY_MATRIX` in `src/index.ts`):
 | Bone matrices (FK) + inverse-bind skinning | IMPLEMENTED |
 | Skeletal animation (clips/blending) + GPU skinning | IMPLEMENTED |
 | Facial expressions + speech visemes | IMPLEMENTED |
+| Human attachment coordinates | IMPLEMENTED |
+| Procedural strand hair runtime | PROTOTYPE |
+| Human-specific SDF collision fields | PROTOTYPE |
+| Cloth physics runtime | PROTOTYPE |
+| Neural skin residual runtime | PROTOTYPE |
 | GPU scheduler + dev profiler | IMPLEMENTED |
 | Semantic + perceptual LOD | IMPLEMENTED |
 | WebGPU renderer + WGSL shaders | IMPLEMENTED |
+| WebGL2 fallback renderer | IMPLEMENTED |
 | Prompt interpreter (patch-based) | IMPLEMENTED |
-| WebGL2 fallback, strand hair, cloth, SDF, neural skin | PLANNED |
 
 ## Quick start
 
@@ -100,7 +105,13 @@ Key files:
 - `src/geometry/` — canonical human, sparse morphs
 - `src/gpu/` — buffers, kernels (CPU + WGSL deform), scheduler, profiler, morph packer
 - `src/render/` — WebGPU renderer + WGSL shaders (deform + camera), GPU pipeline
+- `src/render/webgl2/` — browser fallback renderer using CPU morph/skinning buffers
+- `src/surface/hair/` — deterministic procedural strand-hair prototype
+- `src/surface/skin/` — deterministic neural-skin residual prototype
+- `src/physics/sdf/` — human-specific capsule/sphere SDF collision prototype
+- `src/physics/cloth/` — deterministic CPU cloth solver prototype with SDF collision
 - `src/animation/` — skeleton, facial expressions, speech/visemes
+- `src/attachments/` — semantic region/bone anchored wearables, tattoos, piercings
 - `src/ai/prompt/` — patch-based prompt interpreter
 - `src/human.ts` — the orchestrated `Human` class
 
@@ -220,13 +231,74 @@ rotating `thigh_l` moves exactly its FK chain (`thigh_l` + `shin_l`) and never
 the off-side limbs. The demo adds an **"Animate: wave"** toggle that replays a
 clip through the rig.
 
+### Human attachment coordinates (Phase 5)
+
+Attachments are metadata anchored to stable human coordinates instead of raw
+vertices. `Human.addTattoo`, `Human.wear`, `Human.removeAttachment`,
+`Human.listAttachments`, and `Human.attachmentPosition` route through the same
+event/timeline path as other character edits. Anchors can target semantic
+regions (e.g. `forearm_l`) or bones (e.g. `head`, `forearm_l`), so tattoos,
+wearables, and piercings survive identity edits and follow animation without
+regenerating the character mesh.
+
+Tests in `src/human.test.ts` cover add/remove events, undo/redo timeline replay,
+and bone-anchored attachments moving with animation while leaving morph geometry
+untouched.
+
+### WebGL2 fallback renderer (Phase 6)
+
+When WebGPU is unavailable, the demo now attempts a real WebGL2 renderer before
+falling back to the 2D diagnostic canvas. The WebGL2 path draws the same
+canonical body/detail-part ranges and materials, using CPU-computed morph and
+skinning buffers as vertex data. This keeps the user-facing demo interactive on
+browsers without WebGPU while still reporting the active engine in diagnostics.
+
+### Procedural strand hair runtime (Phase 7)
+
+`generateStrandHair` and `human.hairGeometry()` convert HDL hair parameters
+(`hair.length`, `hair.density`, `hair.curl`, color, gray) into deterministic
+strand polylines anchored to stable canonical scalp vertices. This is a tested
+CPU-side prototype for the hair data/runtime layer; full strand rendering and
+simulation remain future milestones rather than claimed placeholder success.
+
+### Human-specific SDF collision fields (Phase 8)
+
+`buildHumanSdfField`, `HumanSdfField`, `human.sdfField()`, and
+`human.sdfDistance(point)` build a deterministic signed-distance collision field
+from resolved anatomy and the parametric skeleton. The prototype represents the
+body with semantic capsules/spheres for torso, head, neck, limbs, and hands,
+returning both signed distance and closest human region. Tests verify inside vs
+outside distances, closest-region reporting, and body-parameter responsiveness
+without mesh topology mutation. Hair/cloth collision integration remains future
+work.
+
+### Cloth physics runtime (Phase 9)
+
+`createTorsoCloth`, `stepCloth`, `simulateCloth`, `human.createCloth()`, and
+`human.simulateCloth()` provide a deterministic CPU cloth prototype: a pinned
+grid with distance constraints, Verlet-style integration, gravity, and collision
+projection against `HumanSdfField`. Tests verify deterministic mesh generation,
+pinned anchors, gravity, collision separation, and response to larger anatomy.
+Rendering and GPU simulation remain future milestones.
+
+### Neural skin residual runtime (Phase 10)
+
+`generateSkinResiduals`, `applySkinResidualColor`, and `human.skinResiduals()`
+provide a deterministic residual layer over base skin state. The prototype emits
+bounded per-vertex color, roughness, and normal-detail residual samples from
+stable vertex IDs, UVs, semantic regions, age, pigmentation, roughness, and
+wetness. Tests verify determinism, value bounds, exclusion of non-skin parts,
+color clamping, and no topology mutation. Trained-model inference and GPU
+material integration remain future milestones.
+
 ## References to the spec
 
 Each phase in `start.md` is scoped in the module layout (`src/core`, `src/compiler`,
 `src/anatomy`, `src/identity`, `src/geometry`, `src/gpu`, `src/render`, `src/lod`,
-`src/animation`, `src/ai`, `src/formats`). Planned systems (strand hair, cloth
-physics, SDF collision, neural skin, WebGL2 fallback) are stubbed in the
-capability matrix and open for the next milestones.
+`src/animation`, `src/attachments`, `src/physics`, `src/surface`, `src/ai`,
+`src/formats`). Remaining long-term systems include fuller clothing/tattoo asset
+rendering, motion compiler / IK / behavior, perceptual validation, and GPU
+integration for the current CPU prototypes.
 
 ---
 

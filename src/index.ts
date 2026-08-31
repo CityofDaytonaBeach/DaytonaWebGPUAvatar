@@ -76,6 +76,8 @@ export { WebGPURenderer, HUMAN_RENDER_WGSL, buildCameraMatrices } from "./render
 export type { CameraMatrices, RenderPart } from "./render/webgpu/renderer";
 export { WebGpuHumanPipeline } from "./render/webgpu/pipeline";
 export type { WebGpuHumanPipelineOptions } from "./render/webgpu/pipeline";
+export { WebGL2HumanRenderer, buildWebGL2RenderParts, webglPartColor } from "./render/webgl2/renderer";
+export type { WebGL2RenderPart } from "./render/webgl2/renderer";
 export { MORPH_COMPUTE_WGSL } from "./render/wgsl/morph-wgsl";
 
 // Animation
@@ -85,6 +87,20 @@ export { FacialExpressionSystem } from "./animation/facial/facial-expression";
 export type { SemanticExpression } from "./animation/facial/facial-expression";
 export { SpeechSolver, simpleTTS } from "./animation/speech/speech-solver";
 export type { SpeechTrack, Phoneme, Viseme } from "./animation/speech/speech-solver";
+
+// Attachments
+export { AttachmentSystem } from "./attachments/attachment-system";
+export type { HumanAttachment, AttachmentAnchor, AttachmentKind } from "./attachments/attachment-system";
+
+// Surface
+export { generateStrandHair, countHairVertices } from "./surface/hair/strand-hair";
+export type { StrandHairGeometry, HairStrand, HairStrandPoint, StrandHairOptions } from "./surface/hair/strand-hair";
+export { HumanSdfField, buildHumanSdfField } from "./physics/sdf/human-sdf";
+export type { HumanSdfPrimitive, HumanSdfPrimitiveKind, HumanSdfSample } from "./physics/sdf/human-sdf";
+export { createTorsoCloth, stepCloth, simulateCloth, cloneCloth } from "./physics/cloth/cloth-sim";
+export type { ClothMesh, ClothParticle, ClothConstraint, ClothStepOptions } from "./physics/cloth/cloth-sim";
+export { generateSkinResiduals, applySkinResidualColor } from "./surface/skin/neural-skin";
+export type { SkinResidualField, SkinResidualSample, SkinResidualOptions } from "./surface/skin/neural-skin";
 
 // LOD
 export { SemanticLOD, PerceptualLOD, QUALITY_LEVELS } from "./lod";
@@ -114,6 +130,7 @@ export const CAPABILITY_MATRIX = {
   parametricAnatomy: "IMPLEMENTED",
   skeletalAnimation: "IMPLEMENTED",
   gpuSkinning: "IMPLEMENTED",
+  attachmentCoordinates: "IMPLEMENTED",
   facialExpression: "IMPLEMENTED",
   speechVisemes: "IMPLEMENTED",
   timelineEventSourcing: "IMPLEMENTED",
@@ -123,11 +140,11 @@ export const CAPABILITY_MATRIX = {
   semanticLod: "IMPLEMENTED",
   perceptualLod: "PROTOTYPE",
   gpuRenderer: "IMPLEMENTED",
-  webglFallback: "PLANNED",
-  strandHair: "PLANNED",
-  clothPhysics: "PLANNED",
-  sdfCollision: "PLANNED",
-  neuralSkin: "PLANNED",
+  webglFallback: "IMPLEMENTED",
+  strandHair: "PROTOTYPE",
+  clothPhysics: "PROTOTYPE",
+  sdfCollision: "PROTOTYPE",
+  neuralSkin: "PROTOTYPE",
 } as const;
 
 export type Capability = keyof typeof CAPABILITY_MATRIX;
