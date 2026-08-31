@@ -148,4 +148,35 @@ describe("Human — Phase 1 proof-of-concept", () => {
     expect(Math.hypot(posed.x - rest.x, posed.y - rest.y, posed.z - rest.z)).toBeGreaterThan(0.05);
     expect(human.computeMorphDelta()).toEqual(new Float32Array(human.canonicalRef.vertexCount * 3));
   });
+
+  it("performs motion commands through pose events and undo restores rest pose", async () => {
+    const human = await Human.create();
+    const rest = human.skinScene();
+
+    const result = human.perform("raise your right hand");
+    const raised = human.skinScene();
+
+    expect(result.cancelled).toBe(false);
+    expect(result.dirtyRegions).toEqual(["Animation"]);
+    expect(sumAbsDiff(raised, rest)).toBeGreaterThan(0.1);
+
+    human.undo();
+    expect(sumAbsDiff(human.skinScene(), rest)).toBeLessThan(1e-6);
+  });
+
+  it("routes prompt pose commands through the motion compiler", async () => {
+    const human = await Human.create();
+    const rest = human.skinScene();
+    const result = human.prompt("look toward the camera");
+
+    expect(result.cancelled).toBe(false);
+    expect(result.dirtyRegions).toEqual(["Animation"]);
+    expect(sumAbsDiff(human.skinScene(), rest)).toBeGreaterThan(0.01);
+  });
 });
+
+function sumAbsDiff(a: Float32Array, b: Float32Array): number {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += Math.abs(a[i] - b[i]);
+  return sum;
+}

@@ -83,6 +83,8 @@ export { MORPH_COMPUTE_WGSL } from "./render/wgsl/morph-wgsl";
 // Animation
 export { SkeletalAnimation, sampleChannel, quatFromEulerDeg as quatFromEuler } from "./animation/skeleton/skeletal-animation";
 export type { BonePose, AnimationChannel } from "./animation/skeleton/skeletal-animation";
+export { MotionCompiler, compileMotionCommand } from "./animation/motion/motion-compiler";
+export type { MotionKind, MotionPlan } from "./animation/motion/motion-compiler";
 export { FacialExpressionSystem } from "./animation/facial/facial-expression";
 export type { SemanticExpression } from "./animation/facial/facial-expression";
 export { SpeechSolver, simpleTTS } from "./animation/speech/speech-solver";
@@ -129,6 +131,7 @@ export const CAPABILITY_MATRIX = {
   skeleton: "IMPLEMENTED",
   parametricAnatomy: "IMPLEMENTED",
   skeletalAnimation: "IMPLEMENTED",
+  motionCompiler: "PROTOTYPE",
   gpuSkinning: "IMPLEMENTED",
   attachmentCoordinates: "IMPLEMENTED",
   facialExpression: "IMPLEMENTED",

@@ -50,6 +50,12 @@ export class DeterministicPromptInterpreter implements PromptInterpreter {
       const text = prompt.replace(/say|speak|talk|:|"/gi, "").trim();
       return { type: "speak", confidence: 0.9, text, payload: { text } };
     }
+    if (p.includes("raise") && (p.includes("hand") || p.includes("arm"))) {
+      return { type: "pose", confidence: p.includes("left") || p.includes("right") ? 0.9 : 0.72, text: prompt, payload: { command: prompt } };
+    }
+    if (p.includes("look") && (p.includes("camera") || p.includes("forward"))) {
+      return { type: "pose", confidence: 0.85, text: prompt, payload: { command: prompt } };
+    }
     if (p.includes("blond") || p.includes("blonde")) {
       return { type: "appearance.set", confidence: 0.9, changes: { "hair.colorR": 0.85, "hair.colorG": 0.76, "hair.colorB": 0.4 } };
     }
@@ -84,6 +90,8 @@ export function intentToEvent(intent: Intent, source: EventSource = "ai"): Chara
       return createEvent("expression", source, { payload: { expression: intent.expression, intensity: 1 } });
     case "speak":
       return createEvent("speak", source, { payload: { text: intent.text } });
+    case "pose":
+      return createEvent("pose", source, { payload: intent.payload });
     case "time.advance":
       return createEvent("advanceTime", source, { payload: intent.payload });
     default:

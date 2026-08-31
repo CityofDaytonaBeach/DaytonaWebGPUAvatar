@@ -28,6 +28,7 @@ import { generateStrandHair, StrandHairGeometry, StrandHairOptions } from "./sur
 import { buildHumanSdfField, HumanSdfField } from "./physics/sdf/human-sdf";
 import { ClothMesh, ClothStepOptions, createTorsoCloth, simulateCloth } from "./physics/cloth/cloth-sim";
 import { generateSkinResiduals, SkinResidualField, SkinResidualOptions } from "./surface/skin/neural-skin";
+import { MotionCompiler, MotionPlan } from "./animation/motion/motion-compiler";
 
 export interface HumanCreateOptions {
   registry?: PropertyRegistry;
@@ -81,6 +82,7 @@ export class Human {
   private perceptualLod = new PerceptualLOD();
   private prompter = new DeterministicPromptInterpreter();
   private animation = new SkeletalAnimation();
+  private motion = new MotionCompiler();
   private currentPose: BonePose[] = [];
   private skinInfluences = null as ReturnType<typeof buildInfluences> | null;
   private clock = 0;
@@ -266,6 +268,18 @@ export class Human {
     this.setPose(this.samplePose(t));
   }
 
+  compileMotion(command: string): MotionPlan {
+    return this.motion.compile(command, this.parametricSkeleton());
+  }
+
+  perform(command: string, source: EventSource = "ui"): HumanModifyResult {
+    const plan = this.compileMotion(command);
+    if (plan.kind === "unknown") {
+      return { cancelled: true, reason: plan.reason, affectedKernelWork: [], dirtyRegions: [] };
+    }
+    return this.applyEvent(createEvent("pose", source, { payload: { command, plan, poses: plan.poses } }));
+  }
+
   /**
    * CPU skinning reference: transform the canonical base positions by the
    * current pose's bone matrices. At rest this equals the base geometry, so
@@ -410,6 +424,7 @@ export class Human {
     // 3. Timeline records it (event sourcing + undo/redo).
     this.timeline.push(event);
     this.attachments.applyEvent(event);
+    if (event.type === "pose") this.applyPoseEvent(event);
 
     // 4. Constraint validation of resulting definition.
     const constraint = this.constraints.validate(this.definition);
@@ -424,7 +439,7 @@ export class Human {
     const delta = new Float32Array(this.canonical.vertexCount * 3);
     this.morphKernel.accumulate(this.definition, delta);
 
-    const dirtyRegionNames = isAttachmentEvent(event) ? ["Attachment"] : this.dirty.describe();
+    const dirtyRegionNames = isAttachmentEvent(event) ? ["Attachment"] : event.type === "pose" ? ["Animation"] : this.dirty.describe();
     const verticesModified = countDirtyVertices(this.canonical, dirtyRegionNames as never[]);
     this.profiler.record({
       computePasses: kernelWork.length,
@@ -505,6 +520,7 @@ export class Human {
     const def = this.timeline.undo();
     if (def) this.definition = def;
     this.rebuildAttachmentsFromTimeline();
+    this.rebuildPoseFromTimeline();
     return this.resultFromDefinition();
   }
 
@@ -512,6 +528,7 @@ export class Human {
     const def = this.timeline.redo();
     if (def) this.definition = def;
     this.rebuildAttachmentsFromTimeline();
+    this.rebuildPoseFromTimeline();
     return this.resultFromDefinition();
   }
 
@@ -522,6 +539,7 @@ export class Human {
   branch(): void {
     this.timeline.branch();
     this.rebuildAttachmentsFromTimeline();
+    this.rebuildPoseFromTimeline();
   }
 
   setConstraintProfile(profile: ConstraintProfile): void {
@@ -544,6 +562,25 @@ export class Human {
 
   private rebuildAttachmentsFromTimeline(): void {
     this.attachments.rebuild(this.timeline.log().slice(0, this.timeline.index + 1));
+  }
+
+  private applyPoseEvent(event: CharacterEvent): void {
+    if (typeof event.payload?.command === "string" && !event.payload.poses) {
+      this.setPose(this.compileMotion(event.payload.command).poses);
+      return;
+    }
+    const poses = event.payload?.poses;
+    if (Array.isArray(poses)) this.setPose(poses as BonePose[]);
+  }
+
+  private rebuildPoseFromTimeline(): void {
+    const active = this.timeline.log().slice(0, this.timeline.index + 1);
+    const pose = [...active].reverse().find((e) => e.type === "pose");
+    if (pose) {
+      this.applyPoseEvent(pose);
+    } else {
+      this.setPose([]);
+    }
   }
 }
 
