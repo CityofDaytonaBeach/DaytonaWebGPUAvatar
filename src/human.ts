@@ -29,6 +29,8 @@ import { buildHumanSdfField, HumanSdfField } from "./physics/sdf/human-sdf";
 import { ClothMesh, ClothStepOptions, createTorsoCloth, simulateCloth } from "./physics/cloth/cloth-sim";
 import { generateSkinResiduals, SkinResidualField, SkinResidualOptions } from "./surface/skin/neural-skin";
 import { MotionCompiler, MotionPlan } from "./animation/motion/motion-compiler";
+import { PerceptualValidationReport, validatePerceptualHuman } from "./validation/perceptual-validator";
+import { projectTattooDecals, TattooDecal } from "./surface/tattoo/tattoo-decal";
 
 export interface HumanCreateOptions {
   registry?: PropertyRegistry;
@@ -368,6 +370,16 @@ export class Human {
   /** Deterministic procedural residual layer for skin color/roughness/detail. */
   skinResiduals(options: SkinResidualOptions = {}): SkinResidualField {
     return generateSkinResiduals(this.definition, this.canonical, options);
+  }
+
+  /** Project tattoo attachments to stable semantic-region decal samples. */
+  tattooDecals(): TattooDecal[] {
+    return projectTattooDecals(this.listAttachments(), this.canonical);
+  }
+
+  /** Non-mutating perceptual validation; corrective requests are suggestions only. */
+  validatePerceptual(): PerceptualValidationReport {
+    return validatePerceptualHuman(this.definition, this.canonical, this.solveAnatomy());
   }
 
   /** Upload current params + morph weights to the GPU. No-op without a device. */

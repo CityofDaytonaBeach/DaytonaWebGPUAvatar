@@ -103,6 +103,10 @@ export { createTorsoCloth, stepCloth, simulateCloth, cloneCloth } from "./physic
 export type { ClothMesh, ClothParticle, ClothConstraint, ClothStepOptions } from "./physics/cloth/cloth-sim";
 export { generateSkinResiduals, applySkinResidualColor } from "./surface/skin/neural-skin";
 export type { SkinResidualField, SkinResidualSample, SkinResidualOptions } from "./surface/skin/neural-skin";
+export { projectTattooDecal, projectTattooDecals } from "./surface/tattoo/tattoo-decal";
+export type { TattooDecal, TattooDecalSample, TattooDecalOptions } from "./surface/tattoo/tattoo-decal";
+export { validatePerceptualHuman } from "./validation/perceptual-validator";
+export type { PerceptualIssue, PerceptualIssueKind, PerceptualValidationReport } from "./validation/perceptual-validator";
 
 // LOD
 export { SemanticLOD, PerceptualLOD, QUALITY_LEVELS } from "./lod";
@@ -134,6 +138,7 @@ export const CAPABILITY_MATRIX = {
   motionCompiler: "PROTOTYPE",
   gpuSkinning: "IMPLEMENTED",
   attachmentCoordinates: "IMPLEMENTED",
+  tattooDecals: "PROTOTYPE",
   facialExpression: "IMPLEMENTED",
   speechVisemes: "IMPLEMENTED",
   timelineEventSourcing: "IMPLEMENTED",
@@ -142,6 +147,7 @@ export const CAPABILITY_MATRIX = {
   gpuMorphCompute: "IMPLEMENTED",
   semanticLod: "IMPLEMENTED",
   perceptualLod: "PROTOTYPE",
+  perceptualValidation: "PROTOTYPE",
   gpuRenderer: "IMPLEMENTED",
   webglFallback: "IMPLEMENTED",
   strandHair: "PROTOTYPE",

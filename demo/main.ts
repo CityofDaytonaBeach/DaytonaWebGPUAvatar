@@ -275,6 +275,14 @@ async function main() {
     refresh(animating ? "ANIMATING: wave clip (skinned)" : "ANIMATION stopped");
     if (animating && !running) requestAnimationFrame(animLoop);
   });
+  document.getElementById("raiseHand")?.addEventListener("click", () => {
+    animating = false;
+    refresh(formatResult("perform", human.perform("raise your right hand")));
+  });
+  document.getElementById("lookCamera")?.addEventListener("click", () => {
+    animating = false;
+    refresh(formatResult("perform", human.perform("look toward the camera")));
+  });
   function animLoop(now: number) {
     if (!animating) return;
     animTime = (now / 1000) % 1;

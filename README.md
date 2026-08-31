@@ -35,14 +35,17 @@ Capability matrix (see `CAPABILITY_MATRIX` in `src/index.ts`):
 | Parametric anatomy solver (dimensions + constraints) | IMPLEMENTED |
 | Bone matrices (FK) + inverse-bind skinning | IMPLEMENTED |
 | Skeletal animation (clips/blending) + GPU skinning | IMPLEMENTED |
+| Motion compiler / behavior commands | PROTOTYPE |
 | Facial expressions + speech visemes | IMPLEMENTED |
 | Human attachment coordinates | IMPLEMENTED |
+| Tattoo decal projection | PROTOTYPE |
 | Procedural strand hair runtime | PROTOTYPE |
 | Human-specific SDF collision fields | PROTOTYPE |
 | Cloth physics runtime | PROTOTYPE |
 | Neural skin residual runtime | PROTOTYPE |
 | GPU scheduler + dev profiler | IMPLEMENTED |
 | Semantic + perceptual LOD | IMPLEMENTED |
+| Perceptual validation reports | PROTOTYPE |
 | WebGPU renderer + WGSL shaders | IMPLEMENTED |
 | WebGL2 fallback renderer | IMPLEMENTED |
 | Prompt interpreter (patch-based) | IMPLEMENTED |
@@ -108,9 +111,12 @@ Key files:
 - `src/render/webgl2/` — browser fallback renderer using CPU morph/skinning buffers
 - `src/surface/hair/` — deterministic procedural strand-hair prototype
 - `src/surface/skin/` — deterministic neural-skin residual prototype
+- `src/surface/tattoo/` — tattoo attachment to semantic-region decal projection
 - `src/physics/sdf/` — human-specific capsule/sphere SDF collision prototype
 - `src/physics/cloth/` — deterministic CPU cloth solver prototype with SDF collision
+- `src/validation/` — non-mutating perceptual validation and corrective requests
 - `src/animation/` — skeleton, facial expressions, speech/visemes
+- `src/animation/motion/` — deterministic command-to-pose motion compiler prototype
 - `src/attachments/` — semantic region/bone anchored wearables, tattoos, piercings
 - `src/ai/prompt/` — patch-based prompt interpreter
 - `src/human.ts` — the orchestrated `Human` class
@@ -231,6 +237,16 @@ rotating `thigh_l` moves exactly its FK chain (`thigh_l` + `shin_l`) and never
 the off-side limbs. The demo adds an **"Animate: wave"** toggle that replays a
 clip through the rig.
 
+### Motion compiler / behavior commands (Phase 4b)
+
+`MotionCompiler`, `compileMotionCommand`, `human.compileMotion()`, and
+`human.perform()` convert basic semantic behavior commands into rest-preserving
+bone poses. Supported prototype commands include raising a left/right hand,
+looking toward the camera, and returning to neutral. `perform()` routes through
+`CharacterEvent("pose")`, so prompt/API motion uses the same event/timeline path
+as other character changes. Tests verify command compilation, prompt routing,
+animation dirty-region reporting, and undo restoring the rest pose.
+
 ### Human attachment coordinates (Phase 5)
 
 Attachments are metadata anchored to stable human coordinates instead of raw
@@ -244,6 +260,15 @@ regenerating the character mesh.
 Tests in `src/human.test.ts` cover add/remove events, undo/redo timeline replay,
 and bone-anchored attachments moving with animation while leaving morph geometry
 untouched.
+
+### Tattoo decal projection (Phase 5b)
+
+`projectTattooDecal`, `projectTattooDecals`, and `human.tattooDecals()` convert
+tattoo attachments into deterministic decal samples over stable semantic-region
+vertices. The prototype stores color, opacity, UV, region, and vertex IDs without
+mutating mesh topology. Tests verify deterministic projection, non-tattoo
+filtering, region-anchor validation, color clamping, and stable Human API
+integration. Actual decal rendering remains a future renderer milestone.
 
 ### WebGL2 fallback renderer (Phase 6)
 
@@ -291,14 +316,25 @@ wetness. Tests verify determinism, value bounds, exclusion of non-skin parts,
 color clamping, and no topology mutation. Trained-model inference and GPU
 material integration remain future milestones.
 
+### Perceptual validation reports (Phase 11)
+
+`validatePerceptualHuman` and `human.validatePerceptual()` inspect the current
+character for structured perceptual issues without mutating geometry or state.
+The prototype checks anatomy proportions, eye alignment/spacing, mouth/tongue
+intersection signals, and contradictory expression ranges. It returns a score,
+issue list, and optional `CharacterEvent` corrective requests that callers may
+feed back through `human.applyEvent()` after review. Tests verify clean defaults,
+issue detection, non-mutation, and correction routing through the normal event
+pipeline.
+
 ## References to the spec
 
 Each phase in `start.md` is scoped in the module layout (`src/core`, `src/compiler`,
 `src/anatomy`, `src/identity`, `src/geometry`, `src/gpu`, `src/render`, `src/lod`,
 `src/animation`, `src/attachments`, `src/physics`, `src/surface`, `src/ai`,
 `src/formats`). Remaining long-term systems include fuller clothing/tattoo asset
-rendering, motion compiler / IK / behavior, perceptual validation, and GPU
-integration for the current CPU prototypes.
+rendering, full IK/path planning/behavior, and GPU integration for the current
+CPU prototypes.
 
 ---
 
