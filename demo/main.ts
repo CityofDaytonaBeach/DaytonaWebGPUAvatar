@@ -42,12 +42,37 @@ class CanvasHumanRenderer {
       return [sx, sy];
     };
 
-    const px = (id: number) => (skinned ? skinned[id * 3] : vertices[id].position.x + delta[id * 3]);
-    const py = (id: number) => (skinned ? skinned[id * 3 + 1] : vertices[id].position.y + delta[id * 3 + 1]);
+    // Full 3D position of a vertex (skinned when animating, else morph-deformed).
+    const pvec = (id: number): [number, number, number] =>
+      skinned
+        ? [skinned[id * 3], skinned[id * 3 + 1], skinned[id * 3 + 2]]
+        : [vertices[id].position.x + delta[id * 3], vertices[id].position.y + delta[id * 3 + 1], vertices[id].position.z + delta[id * 3 + 2]];
+    const px = (id: number) => pvec(id)[0];
+    const py = (id: number) => pvec(id)[1];
+
+    // Key light direction; flat-shade each face from its computed normal so the
+    // skinned-normals rotation is visible when the limb animates.
+    const light = normalize3([0.5, 0.6, 0.85]);
+    const shade = (baseHex: string, n: [number, number, number]): string => {
+      const d = n[0] * light[0] + n[1] * light[1] + n[2] * light[2];
+      const a = 0.55 + 0.45 * Math.max(0, d);
+      const r = parseInt(baseHex.slice(1, 3), 16);
+      const g = parseInt(baseHex.slice(3, 5), 16);
+      const b = parseInt(baseHex.slice(5, 7), 16);
+      return `rgb(${Math.round(r * a)},${Math.round(g * a)},${Math.round(b * a)})`;
+    };
+    const cross3 = (u: number[], v: number[]): [number, number, number] => [
+      u[1] * v[2] - u[2] * v[1],
+      u[2] * v[0] - u[0] * v[2],
+      u[0] * v[1] - u[1] * v[0],
+    ];
+    function normalize3(v: number[]): [number, number, number] {
+      const l = Math.hypot(v[0], v[1], v[2]) || 1;
+      return [v[0] / l, v[1] / l, v[2] / l];
+    }
 
     const drawRange = (start: number, count: number, color: string) => {
       const idx = canonical.indices;
-      ctx.fillStyle = color;
       ctx.strokeStyle = "rgba(0,0,0,0.25)";
       ctx.lineWidth = 0.75;
       ctx.beginPath();
@@ -56,12 +81,20 @@ class CanvasHumanRenderer {
         const a = vertices[idx[i]];
         const b = vertices[idx[i + 1]];
         const c = vertices[idx[i + 2]];
-        const [ax, ay] = proj(px(a.id), py(a.id));
-        const [bx, by] = proj(px(b.id), py(b.id));
-        const [cx, cy] = proj(px(c.id), py(c.id));
+        const pa = pvec(a.id);
+        const pb = pvec(b.id);
+        const pc = pvec(c.id);
+        const n = normalize3(cross3(
+          [pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]],
+          [pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2]]
+        ));
+        ctx.fillStyle = shade(color, n);
+        const [ax, ay] = proj(pa[0], pa[1]);
+        const [bx, by] = proj(pb[0], pb[1]);
+        const [cx, cy] = proj(pc[0], pc[1]);
         ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(cx, cy); ctx.closePath();
+        ctx.fill();
       }
-      ctx.fill();
       ctx.stroke();
     };
 
