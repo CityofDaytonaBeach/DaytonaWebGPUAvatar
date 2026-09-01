@@ -1,6 +1,6 @@
 import { CanonicalHuman, PartGeometry, IndexRange } from "./canonical-human";
-import { CanonicalTopology, CanonicalTopologyPart } from "./canonical-topology";
-import { validateCanonicalTopology, CanonicalValidationIssue, REQUIRED_CANONICAL_PARTS } from "./canonical-validator";
+import { CanonicalTopology } from "./canonical-topology";
+import { validateCanonicalTopology, CanonicalValidationIssue } from "./canonical-validator";
 
 export interface CanonicalAdapterResult {
   ok: boolean;
@@ -100,8 +100,4 @@ export function adaptCanonicalTopologyAsset(
     canonical,
     report: { vertexCount: canonical.vertexCount, partCount: canonical.parts.length, issues: [] },
   };
-}
-
-export function requiredPartNames(): readonly string[] {
-  return REQUIRED_CANONICAL_PARTS as readonly string[];
 }

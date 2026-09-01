@@ -63,8 +63,11 @@ export type { IdentityBudget, IdentityChangeGate } from "./identity/solver/ident
 // Geometry
 export { CanonicalHuman, generateBlockHuman } from "./geometry/canonical/canonical-human";
 export type { RegionName, Vertex, MorphDelta, SparseMorph, PartGeometry, PartKind } from "./geometry/canonical/canonical-human";
-export { REQUIRED_CANONICAL_PARTS, REQUIRED_CANONICAL_REGIONS, validateCanonicalHuman } from "./geometry/canonical/canonical-validator";
+export { REQUIRED_CANONICAL_PARTS, REQUIRED_CANONICAL_REGIONS, validateCanonicalHuman, validateCanonicalTopology } from "./geometry/canonical/canonical-validator";
 export type { CanonicalValidationIssue, CanonicalValidationReport } from "./geometry/canonical/canonical-validator";
+export type { CanonicalTopology, CanonicalTopologyPart, CanonicalTopologyVertex } from "./geometry/canonical/canonical-topology";
+export { adaptCanonicalTopologyAsset, CanonicalTopologyAdapter } from "./geometry/canonical/canonical-adapter";
+export type { CanonicalAdapterResult, CanonicalAssetAdapter } from "./geometry/canonical/canonical-adapter";
 export { SparseMorphSet } from "./geometry/morph/sparse-morph";
 export { MorphDriver } from "./geometry/morph/morph-driver";
 
@@ -159,6 +162,7 @@ export const CAPABILITY_MATRIX = {
   constraintSolver: "IMPLEMENTED",
   canonicalHuman: "PROTOTYPE",
   canonicalValidation: "IMPLEMENTED",
+  canonicalAssetAdapter: "IMPLEMENTED",
   canonicalParts: "IMPLEMENTED",
   skeleton: "IMPLEMENTED",
   parametricAnatomy: "IMPLEMENTED",

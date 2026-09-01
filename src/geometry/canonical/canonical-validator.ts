@@ -31,7 +31,7 @@ export function validateCanonicalTopology(topology: CanonicalTopology): Canonica
   const triangleCount = topology.indices.length / 3;
   validateVertices(topology.vertices, issues);
   validateIndices(topology, issues);
-  validateRegions(topology, vertexCount, issues);
+  validateRegions(topology, issues);
   validateParts(topology, vertexCount, issues);
 
   return {
@@ -83,14 +83,11 @@ function validateIndices(topology: CanonicalTopology, issues: CanonicalValidatio
   }
 }
 
-function validateRegions(topology: CanonicalTopology, vertexCount: number, issues: CanonicalValidationIssue[]): void {
+function validateRegions(topology: CanonicalTopology, issues: CanonicalValidationIssue[]): void {
   const counts = new Map<RegionName, number>();
   for (const v of topology.vertices) counts.set(v.region, (counts.get(v.region) ?? 0) + 1);
   for (const region of REQUIRED_CANONICAL_REGIONS) {
     if (!(counts.get(region) ?? 0)) issues.push({ code: "missing-region", message: `missing required region ${region}` });
-  }
-  for (const v of topology.vertices) {
-    if (v.id < 0 || v.id >= vertexCount) issues.push({ code: "region-vertex-out-of-range", message: `vertex ${v.id} is out of range` });
   }
 }
 
@@ -100,6 +97,17 @@ function validateParts(topology: CanonicalTopology, vertexCount: number, issues:
     if (!names.has(name)) issues.push({ code: "missing-part", message: `missing required part ${name}` });
   }
   for (const part of topology.parts) validatePart(part, vertexCount, topology.indices.length, issues);
+  for (let i = 0; i < topology.parts.length; i++) {
+    for (let j = i + 1; j < topology.parts.length; j++) {
+      if (overlap(topology.parts[i].vertexStart, topology.parts[i].vertexCount, topology.parts[j].vertexStart, topology.parts[j].vertexCount)) {
+        issues.push({ code: "part-vertex-range-overlap", message: `part ${topology.parts[i].name} overlaps part ${topology.parts[j].name}` });
+      }
+      if (overlap(topology.parts[i].indexStart, topology.parts[i].indexCount, topology.parts[j].indexStart, topology.parts[j].indexCount)) {
+        issues.push({ code: "part-index-range-overlap", message: `part ${topology.parts[i].name} overlaps index range of part ${topology.parts[j].name}` });
+      }
+    }
+    validatePartRegionCoverage(topology, topology.parts[i], issues);
+  }
 }
 
 function validatePart(part: CanonicalTopologyPart, vertexCount: number, indexCount: number, issues: CanonicalValidationIssue[]): void {
@@ -109,6 +117,22 @@ function validatePart(part: CanonicalTopologyPart, vertexCount: number, indexCou
   if (part.indexStart < 0 || part.indexCount <= 0 || part.indexStart + part.indexCount > indexCount) {
     issues.push({ code: "part-index-range-out-of-bounds", message: `part ${part.name} has invalid index range` });
   }
+}
+
+function validatePartRegionCoverage(topology: CanonicalTopology, part: CanonicalTopologyPart, issues: CanonicalValidationIssue[]): void {
+  if (part.vertexStart < 0 || part.vertexStart + part.vertexCount > topology.vertices.length) return;
+  for (let i = part.vertexStart; i < part.vertexStart + part.vertexCount; i++) {
+    const v = topology.vertices[i];
+    if (!v) {
+      issues.push({ code: "part-vertex-missing", message: `part ${part.name} references missing vertex ${i}` });
+    } else if (v.region !== part.region) {
+      issues.push({ code: "part-region-mismatch", message: `part ${part.name} region ${part.region} does not match vertex ${i} region ${v.region}` });
+    }
+  }
+}
+
+function overlap(startA: number, countA: number, startB: number, countB: number): boolean {
+  return startA < startB + countB && startB < startA + countA;
 }
 
 function regionNames(vertices: readonly CanonicalTopologyVertex[]): Set<RegionName> {

@@ -37,6 +37,7 @@ Capability matrix and production roadmap are queryable through
 | Non-property event dirty work reporting | IMPLEMENTED |
 | Canonical human (procedural block, replaceable) | PROTOTYPE |
 | Canonical topology validation | IMPLEMENTED |
+| Canonical topology asset adapter | IMPLEMENTED |
 | Canonical human parts (eyes/teeth/tongue/cavity) | IMPLEMENTED |
 | Parametric skeleton + joint placement | IMPLEMENTED |
 | Parametric anatomy solver (dimensions + constraints) | IMPLEMENTED |
@@ -203,11 +204,19 @@ JS port of the WGSL kernel produces byte-identical deformation to the CPU
 
 ### Canonical human parts (Phase 2)
 
-`validateCanonicalHuman()` is the production gate for any canonical asset. It
-checks stable monotonic vertex IDs, finite positions/normals, UV bounds,
-triangle indices, required semantic regions, required parts, and part range
-lookups. The current block human remains a prototype, but future production
-topology must pass this contract before it can replace it.
+`validateCanonicalHuman()` / `validateCanonicalTopology()` is the production
+gate for any canonical asset. It checks stable monotonic vertex IDs, finite
+positions/normals, UV bounds, triangle indices, required semantic regions,
+required parts, non-overlapping part ranges, per-part region coverage, and part
+range validity. The current block human remains a prototype, but future
+production topology must pass this contract before it can replace it.
+
+`adaptCanonicalTopologyAsset()` is the **replaceable asset boundary**: it takes
+a plain `CanonicalTopology` asset (vertices + indices + part descriptors),
+validates it against the same contract, and resolves it into a
+`CanonicalHuman` so the rest of the pipeline (morphs, skinning, renderer) never
+needs to know the topology came from a file. Malformed or non-conforming assets
+are rejected with structured issues instead of being adopted.
 
 The canonical human is a single global vertex/index array plus a set of
 **addressable sub-meshes** (`CanonicalHuman.parts`), each with:
