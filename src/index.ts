@@ -63,6 +63,8 @@ export type { IdentityBudget, IdentityChangeGate } from "./identity/solver/ident
 // Geometry
 export { CanonicalHuman, generateBlockHuman } from "./geometry/canonical/canonical-human";
 export type { RegionName, Vertex, MorphDelta, SparseMorph, PartGeometry, PartKind } from "./geometry/canonical/canonical-human";
+export { REQUIRED_CANONICAL_PARTS, REQUIRED_CANONICAL_REGIONS, validateCanonicalHuman } from "./geometry/canonical/canonical-validator";
+export type { CanonicalValidationIssue, CanonicalValidationReport } from "./geometry/canonical/canonical-validator";
 export { SparseMorphSet } from "./geometry/morph/sparse-morph";
 export { MorphDriver } from "./geometry/morph/morph-driver";
 
@@ -133,8 +135,8 @@ export { serializeDefinition, deserializeDocument, createHumanPackageDocument, m
 export type { HumanPackageDocument, HumanPackageHeader, HumanPackageMigration } from "./formats/human/human-package";
 
 // Production diagnostics / benchmarks
-export { DEFAULT_LOCALIZED_EDIT_BENCHMARKS, runLocalizedEditBenchmark } from "./testing/performance/localized-edit-benchmark";
-export type { LocalizedEditBenchmarkCase, LocalizedEditBenchmarkResult, LocalizedEditBenchmarkSummary } from "./testing/performance/localized-edit-benchmark";
+export { DEFAULT_LOCALIZED_EDIT_BENCHMARKS, runLocalizedEditBenchmark, runLocalizedEditGpuTimestampBenchmark } from "./testing/performance/localized-edit-benchmark";
+export type { GpuTimestampBenchmarkOptions, GpuTimestampBenchmarkResult, LocalizedEditBenchmarkCase, LocalizedEditBenchmarkResult, LocalizedEditBenchmarkSummary } from "./testing/performance/localized-edit-benchmark";
 
 // Roadmap / production tracking
 export { START_MD_PHASES, PHASE_STATUSES, phaseReport } from "./roadmap/phase-report";
@@ -156,6 +158,7 @@ export const CAPABILITY_MATRIX = {
   identitySolver: "IMPLEMENTED",
   constraintSolver: "IMPLEMENTED",
   canonicalHuman: "PROTOTYPE",
+  canonicalValidation: "IMPLEMENTED",
   canonicalParts: "IMPLEMENTED",
   skeleton: "IMPLEMENTED",
   parametricAnatomy: "IMPLEMENTED",
@@ -177,6 +180,7 @@ export const CAPABILITY_MATRIX = {
   gpuScheduler: "IMPLEMENTED",
   gpuMorphCompute: "IMPLEMENTED",
   localizedEditBenchmark: "PROTOTYPE",
+  gpuTimestampBenchmark: "PROTOTYPE",
   semanticLod: "IMPLEMENTED",
   perceptualLod: "PROTOTYPE",
   perceptualValidation: "PROTOTYPE",

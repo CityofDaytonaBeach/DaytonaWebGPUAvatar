@@ -36,6 +36,7 @@ Capability matrix and production roadmap are queryable through
 | Timeline dirty work reporting | IMPLEMENTED |
 | Non-property event dirty work reporting | IMPLEMENTED |
 | Canonical human (procedural block, replaceable) | PROTOTYPE |
+| Canonical topology validation | IMPLEMENTED |
 | Canonical human parts (eyes/teeth/tongue/cavity) | IMPLEMENTED |
 | Parametric skeleton + joint placement | IMPLEMENTED |
 | Parametric anatomy solver (dimensions + constraints) | IMPLEMENTED |
@@ -55,6 +56,7 @@ Capability matrix and production roadmap are queryable through
 | Neural skin residual runtime | PROTOTYPE |
 | GPU scheduler + dev profiler | IMPLEMENTED |
 | Localized edit benchmark | PROTOTYPE |
+| GPU timestamp benchmark | PROTOTYPE |
 | Semantic + perceptual LOD | IMPLEMENTED |
 | Perceptual validation reports | PROTOTYPE |
 | WebGPU renderer + WGSL shaders | IMPLEMENTED |
@@ -155,8 +157,9 @@ Key files:
 - **Benchmarkable locality**: `runLocalizedEditBenchmark()` exercises real
   `Human.modify(...)` events and reports CPU time, dirty regions, compute passes,
   semantic affected systems, kernel kinds, touched vertices, and morph deltas.
-  GPU timing remains explicit `null` until a WebGPU timestamp-query benchmark
-  path is wired.
+  `runLocalizedEditGpuTimestampBenchmark()` adds WebGPU timestamp-query timing
+  when a compatible `GPUDevice` is supplied; otherwise it reports an explicit
+  unsupported reason and keeps timings `null`.
 - **Compiled vertex ranges**: `DeltaCompiler` can receive canonical semantic
   ranges and fills `KernelWork.vertexRanges` for localized work such as nose,
   jaw, body, and expression edits instead of leaving range selection implicit.
@@ -199,6 +202,12 @@ JS port of the WGSL kernel produces byte-identical deformation to the CPU
 `MorphKernel.accumulate` reference (verified via `npm test`).
 
 ### Canonical human parts (Phase 2)
+
+`validateCanonicalHuman()` is the production gate for any canonical asset. It
+checks stable monotonic vertex IDs, finite positions/normals, UV bounds,
+triangle indices, required semantic regions, required parts, and part range
+lookups. The current block human remains a prototype, but future production
+topology must pass this contract before it can replace it.
 
 The canonical human is a single global vertex/index array plus a set of
 **addressable sub-meshes** (`CanonicalHuman.parts`), each with:

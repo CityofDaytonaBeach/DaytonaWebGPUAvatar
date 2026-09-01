@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { CanonicalHuman } from "./canonical-human";
+import { validateCanonicalHuman } from "./canonical-validator";
 import { Human } from "../../human";
 
 const BONES = [
@@ -14,6 +15,15 @@ const EXPECTED_PARTS = [
 ];
 
 describe("CanonicalHuman parts", () => {
+  it("passes the canonical asset validation contract", () => {
+    const report = validateCanonicalHuman(new CanonicalHuman(BONES));
+
+    expect(report.valid).toBe(true);
+    expect(report.issues).toEqual([]);
+    expect(report.vertexCount).toBeGreaterThan(0);
+    expect(report.triangleCount).toBeGreaterThan(0);
+  });
+
   it("exposes the detail parts with non-overlapping stable vertex ranges", () => {
     const c = new CanonicalHuman(BONES);
     const names = c.parts.map((p) => p.name);
@@ -62,6 +72,15 @@ describe("CanonicalHuman parts", () => {
     const firstDetailStart = c.parts[0].indexStart;
     expect(firstDetailStart).toBeGreaterThan(0);
     expect(c.indices.length).toBeGreaterThan(firstDetailStart);
+  });
+
+  it("reports invalid canonical topology without throwing", () => {
+    const c = new CanonicalHuman(BONES);
+    c.vertices[0].id = 99;
+    const report = validateCanonicalHuman(c);
+
+    expect(report.valid).toBe(false);
+    expect(report.issues.map((issue) => issue.code)).toContain("vertex-id-order");
   });
 });
 

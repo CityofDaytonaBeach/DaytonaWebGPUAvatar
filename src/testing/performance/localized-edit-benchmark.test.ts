@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runLocalizedEditBenchmark } from "./localized-edit-benchmark";
+import { runLocalizedEditBenchmark, runLocalizedEditGpuTimestampBenchmark } from "./localized-edit-benchmark";
 
 describe("localized edit benchmark", () => {
   it("reports real event-path metrics for default benchmark cases", async () => {
@@ -38,5 +38,13 @@ describe("localized edit benchmark", () => {
 
     expect(nose.verticesModified).toBeGreaterThan(0);
     expect(body.verticesModified).toBeGreaterThan(nose.verticesModified);
+  });
+
+  it("reports unsupported GPU timestamp benchmark when no device is provided", async () => {
+    const result = await runLocalizedEditGpuTimestampBenchmark({ cases: [] });
+
+    expect(result.supported).toBe(false);
+    expect(result.reason).toMatch(/GPU device not provided/);
+    expect(result.cpuSummary.results).toEqual([]);
   });
 });
