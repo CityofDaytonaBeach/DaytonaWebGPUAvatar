@@ -37,8 +37,10 @@ export { vec3, IDENTITY_QUAT, identityMatrix, multiplyMatrices } from "./core/ma
 export type { Vec3, Vec4, Quat } from "./core/math/vec";
 export { DependencyGraph } from "./compiler/dependency/dependency-graph";
 export type { DependencyNode } from "./compiler/dependency/dependency-graph";
+export { affectedSystemsForChange, systemForCategory } from "./compiler/dependency/affected-systems";
+export type { AffectedSystem, AffectedSystemName } from "./compiler/dependency/affected-systems";
 export { DeltaCompiler, CATEGORY_TO_KERNEL } from "./compiler/delta/delta-compiler";
-export type { KernelWork, KernelKind } from "./compiler/delta/delta-compiler";
+export type { DeltaVertexRangeSource, KernelWork, KernelKind } from "./compiler/delta/delta-compiler";
 export { DirtyRegionTracker } from "./compiler/delta/dirty-regions";
 export { ComputeGraph } from "./compiler/compute/compute-graph";
 export type { GraphNode } from "./compiler/compute/compute-graph";
@@ -147,7 +149,9 @@ export const CAPABILITY_MATRIX = {
   propertyIds: "IMPLEMENTED",
   gpuParameterBuffer: "IMPLEMENTED",
   dependencyGraph: "IMPLEMENTED",
+  affectedSystemDiagnostics: "IMPLEMENTED",
   deltaCompiler: "IMPLEMENTED",
+  vertexRangeCompilation: "IMPLEMENTED",
   sparseMorph: "IMPLEMENTED",
   identitySolver: "IMPLEMENTED",
   constraintSolver: "IMPLEMENTED",
@@ -165,6 +169,8 @@ export const CAPABILITY_MATRIX = {
   facialExpression: "IMPLEMENTED",
   speechVisemes: "IMPLEMENTED",
   timelineEventSourcing: "IMPLEMENTED",
+  timelineDirtyReporting: "IMPLEMENTED",
+  nonPropertyEventDirtyReporting: "IMPLEMENTED",
   parameterTransitions: "PROTOTYPE",
   snapshotRestore: "IMPLEMENTED",
   undoRedo: "IMPLEMENTED",

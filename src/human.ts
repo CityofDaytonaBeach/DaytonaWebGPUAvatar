@@ -6,6 +6,7 @@ import { CharacterTimeline, Snapshot } from "./core/timeline/character-timeline"
 import { ConstraintSolver, ConstraintProfile } from "./core/constraints/solver";
 import { DependencyGraph } from "./compiler/dependency/dependency-graph";
 import { DeltaCompiler, KernelWork } from "./compiler/delta/delta-compiler";
+import { AffectedSystem, affectedSystemsForChange } from "./compiler/dependency/affected-systems";
 import { DirtyRegionTracker } from "./compiler/delta/dirty-regions";
 import { IdentitySolver } from "./identity/solver/identity-solver";
 import { CanonicalHuman, RegionName } from "./geometry/canonical/canonical-human";
@@ -46,6 +47,7 @@ export interface HumanModifyResult {
   cancelled: boolean;
   reason?: string;
   affectedKernelWork: KernelWork[];
+  affectedSystems: AffectedSystem[];
   dirtyRegions: string[];
 }
 
@@ -101,10 +103,10 @@ export class Human {
     this.timeline = new CharacterTimeline(this.definition);
     this.constraints = new ConstraintSolver(this.registry);
     this.deps = new DependencyGraph(this.registry);
-    this.delta = new DeltaCompiler(this.registry, this.deps);
     this.dirty = new DirtyRegionTracker(this.registry);
     this.identity = new IdentitySolver(this.registry);
     this.canonical = new CanonicalHuman(DEFAULT_BONE_NAMES);
+    this.delta = new DeltaCompiler(this.registry, this.deps, this.canonical);
     this.morphs = new SparseMorphSet(this.canonical);
     this.morphDriver = new MorphDriver(this.registry);
     this.morphKernel = new MorphKernel(this.morphs, this.morphDriver, opts.device ?? null);
@@ -281,7 +283,7 @@ export class Human {
   perform(command: string, source: EventSource = "ui"): HumanModifyResult {
     const plan = this.compileMotion(command);
     if (plan.kind === "unknown") {
-      return { cancelled: true, reason: plan.reason, affectedKernelWork: [], dirtyRegions: [] };
+      return { cancelled: true, reason: plan.reason, affectedKernelWork: [], affectedSystems: [], dirtyRegions: [] };
     }
     return this.applyEvent(createEvent("pose", source, { payload: { command, plan, poses: plan.poses } }));
   }
@@ -441,27 +443,33 @@ export class Human {
     // 1. Identity preservation gate.
     const gate = this.identity.gate(event, this.definition, opts.identityBudget);
     if (!gate.allowed) {
-      return { cancelled: true, reason: gate.reason, affectedKernelWork: [], dirtyRegions: [] };
+      return { cancelled: true, reason: gate.reason, affectedKernelWork: [], affectedSystems: [], dirtyRegions: [] };
     }
 
-    // 2. Functional application against a clone of current state.
+    // 2. Functional application plus event-specific state changes.
+    const beforeDefinition = this.definition.serialize();
     const propChanges = applyEventToDefinition(this.definition, event) ?? [];
 
     // 3. Timeline records it (event sourcing + undo/redo).
     this.timeline.push(event);
     this.attachments.applyEvent(event);
+    if (event.type === "expression") this.applyExpressionEvent(event);
     if (event.type === "pose") this.applyPoseEvent(event);
     if (event.type === "transition") this.registerTransitionEvent(event);
     if (event.type === "advanceTime") propChanges.push(...this.applyAdvanceTimeEvent(event));
+    for (const id of this.changedIdsBetween(beforeDefinition, this.definition.serialize())) {
+      if (!propChanges.includes(id)) propChanges.push(id);
+    }
 
     // 4. Constraint validation of resulting definition.
     const constraint = this.constraints.validate(this.definition);
     if (constraint.satisfaction < 0.2) {
-      return { cancelled: true, reason: "constraint violation: " + constraint.messages.join("; "), affectedKernelWork: [], dirtyRegions: [] };
+      return { cancelled: true, reason: "constraint violation: " + constraint.messages.join("; "), affectedKernelWork: [], affectedSystems: [], dirtyRegions: [] };
     }
 
     // 5. Mark dirty + compile minimal GPU work.
-    const kernelWork = this.compileForChange(propChanges);
+    const kernelWork = [...this.compileForChange(propChanges), ...this.kernelWorkForEvent(event)];
+    const affectedSystems = [...affectedSystemsForChange(this.registry, this.deps, propChanges), ...this.affectedSystemsForEvent(event)];
 
     // 6. Run morph compute (CPU reference path).
     const delta = new Float32Array(this.canonical.vertexCount * 3);
@@ -477,7 +485,7 @@ export class Human {
       cpuTimeMs: 0,
     });
 
-    return { cancelled: false, affectedKernelWork: kernelWork, dirtyRegions: dirtyRegionNames };
+    return { cancelled: false, affectedKernelWork: kernelWork, affectedSystems, dirtyRegions: dirtyRegionNames };
   }
 
   private compileForChange(changedIds: number[]): KernelWork[] {
@@ -506,7 +514,6 @@ export class Human {
   }
 
   setExpression(expr: SemanticExpression, intensity = 1): HumanModifyResult {
-    this.facial.apply(this.definition, expr, intensity);
     return this.applyEvent(createEvent("expression", "ui", { payload: { expression: expr, intensity } }));
   }
 
@@ -543,7 +550,7 @@ export class Human {
       return this.speak(intent.text ?? "");
     }
     if (intent.type === "unknown") {
-      return { cancelled: true, reason: `uninterpretable prompt: "${text}"`, affectedKernelWork: [], dirtyRegions: [] };
+      return { cancelled: true, reason: `uninterpretable prompt: "${text}"`, affectedKernelWork: [], affectedSystems: [], dirtyRegions: [] };
     }
     return this.applyEvent(intentToEvent(intent, source));
   }
@@ -555,21 +562,23 @@ export class Human {
   // --------------------------------------------------------------- timeline
 
   undo(): HumanModifyResult {
+    const before = this.definition.serialize();
     const def = this.timeline.undo();
     if (def) this.definition = def;
     this.rebuildTemporalStateFromTimeline();
     this.rebuildAttachmentsFromTimeline();
     this.rebuildPoseFromTimeline();
-    return this.resultFromDefinition();
+    return this.resultFromChangedIds(this.changedIdsBetween(before, this.definition.serialize()));
   }
 
   redo(): HumanModifyResult {
+    const before = this.definition.serialize();
     const def = this.timeline.redo();
     if (def) this.definition = def;
     this.rebuildTemporalStateFromTimeline();
     this.rebuildAttachmentsFromTimeline();
     this.rebuildPoseFromTimeline();
-    return this.resultFromDefinition();
+    return this.resultFromChangedIds(this.changedIdsBetween(before, this.definition.serialize()));
   }
 
   snapshot(): Snapshot {
@@ -577,11 +586,12 @@ export class Human {
   }
 
   restore(atEventIndex: number): HumanModifyResult {
+    const before = this.definition.serialize();
     this.definition = this.timeline.restore(atEventIndex);
     this.rebuildTemporalStateFromTimeline();
     this.rebuildAttachmentsFromTimeline();
     this.rebuildPoseFromTimeline();
-    return this.resultFromDefinition();
+    return this.resultFromChangedIds(this.changedIdsBetween(before, this.definition.serialize()));
   }
 
   branch(): void {
@@ -606,7 +616,26 @@ export class Human {
   }
 
   private resultFromDefinition(): HumanModifyResult {
-    return { cancelled: false, affectedKernelWork: [], dirtyRegions: this.dirty.describe() };
+    return { cancelled: false, affectedKernelWork: [], affectedSystems: [], dirtyRegions: this.dirty.describe() };
+  }
+
+  private resultFromChangedIds(changedIds: number[]): HumanModifyResult {
+    if (changedIds.length === 0) return this.resultFromDefinition();
+    const kernelWork = this.compileForChange(changedIds);
+    return {
+      cancelled: false,
+      affectedKernelWork: kernelWork,
+      affectedSystems: affectedSystemsForChange(this.registry, this.deps, changedIds),
+      dirtyRegions: this.dirty.describe(),
+    };
+  }
+
+  private changedIdsBetween(before: Record<string, number>, after: Record<string, number>): number[] {
+    const changed: number[] = [];
+    for (const meta of this.registry.all()) {
+      if (before[meta.path] !== after[meta.path]) changed.push(meta.id);
+    }
+    return changed;
   }
 
   private rebuildAttachmentsFromTimeline(): void {
@@ -620,6 +649,33 @@ export class Human {
     }
     const poses = event.payload?.poses;
     if (Array.isArray(poses)) this.setPose(poses as BonePose[]);
+  }
+
+  private applyExpressionEvent(event: CharacterEvent): void {
+    const expression = event.payload?.expression;
+    const intensity = event.payload?.intensity;
+    if (typeof expression !== "string") return;
+    this.facial.apply(this.definition, expression as SemanticExpression, typeof intensity === "number" ? intensity : 1);
+  }
+
+  private kernelWorkForEvent(event: CharacterEvent): KernelWork[] {
+    if (event.type === "pose") {
+      return [{ kind: "Skinning", vertexRanges: [{ start: 0, count: this.canonical.vertexCount }], propertyIds: [], priority: 10 }];
+    }
+    if (isAttachmentEvent(event)) {
+      return [{ kind: "Attachment", vertexRanges: [], propertyIds: [], priority: 4 }];
+    }
+    return [];
+  }
+
+  private affectedSystemsForEvent(event: CharacterEvent): AffectedSystem[] {
+    if (event.type === "pose") {
+      return [{ system: "Animation", directPropertyIds: [], dependentPropertyIds: [], propertyPaths: [] }];
+    }
+    if (isAttachmentEvent(event)) {
+      return [{ system: "Attachment", directPropertyIds: [], dependentPropertyIds: [], propertyPaths: [] }];
+    }
+    return [];
   }
 
   private rebuildPoseFromTimeline(): void {
@@ -682,6 +738,7 @@ export class Human {
     const active = this.timeline.log().slice(0, this.timeline.index + 1);
     for (const event of active) {
       applyEventToDefinition(this.definition, event);
+      if (event.type === "expression") this.applyExpressionEvent(event);
       if (event.type === "transition") this.registerTransitionEvent(event);
       if (event.type === "advanceTime") this.applyAdvanceTimeEvent(event);
     }

@@ -1,6 +1,7 @@
 import { Human } from "../../human";
 import { EventSource } from "../../core/events/character-event";
 import { KernelKind } from "../../compiler/delta/delta-compiler";
+import { AffectedSystemName } from "../../compiler/dependency/affected-systems";
 
 export interface LocalizedEditBenchmarkCase {
   name: string;
@@ -14,6 +15,7 @@ export interface LocalizedEditBenchmarkResult {
   cpuTimeMs: number;
   gpuTimeMs: number | null;
   dirtyRegions: string[];
+  affectedSystems: AffectedSystemName[];
   computePasses: number;
   kernelKinds: KernelKind[];
   verticesModified: number;
@@ -53,6 +55,7 @@ export async function runLocalizedEditBenchmark(
       cpuTimeMs,
       gpuTimeMs: null,
       dirtyRegions: result.dirtyRegions,
+      affectedSystems: result.affectedSystems.map((system) => system.system),
       computePasses: result.affectedKernelWork.length,
       kernelKinds: result.affectedKernelWork.map((work) => work.kind),
       verticesModified: metrics?.verticesModified ?? 0,

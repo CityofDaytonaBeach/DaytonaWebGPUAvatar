@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import { createDefaultRegistry } from "../core/schema/descriptors";
 import { HumanDefinition } from "../core/schema/human-definition";
 import { DependencyGraph } from "./dependency/dependency-graph";
+import { affectedSystemsForChange } from "./dependency/affected-systems";
 import { DeltaCompiler } from "./delta/delta-compiler";
+import { CanonicalHuman } from "../geometry/canonical/canonical-human";
 import { CharacterTimeline } from "../core/timeline/character-timeline";
 import { createEvent } from "../core/events/character-event";
 import { IdentitySolver } from "../identity/solver/identity-solver";
@@ -26,6 +28,19 @@ describe("DependencyGraph", () => {
     // Unrelated systems must NOT be impacted.
     expect(affected.has(registry.require("hair.length").id)).toBe(false);
     expect(affected.has(registry.require("expression.mouthSmileLeft").id)).toBe(false);
+  });
+
+  it("groups affected properties into semantic human systems", () => {
+    const { registry } = makeHuman();
+    const graph = new DependencyGraph(registry);
+    const nose = affectedSystemsForChange(registry, graph, [registry.require("face.nose.width").id]);
+    const hair = affectedSystemsForChange(registry, graph, [registry.require("hair.length").id]);
+    const height = affectedSystemsForChange(registry, graph, [registry.require("global.height").id]);
+
+    expect(nose.map((entry) => entry.system)).toEqual(["FaceGeometry"]);
+    expect(hair.map((entry) => entry.system)).toEqual(["HairSystem"]);
+    expect(height.map((entry) => entry.system)).toContain("Skeleton");
+    expect(height.map((entry) => entry.system)).not.toContain("HairSystem");
   });
 });
 
@@ -52,6 +67,19 @@ describe("DeltaCompiler", () => {
     // Merge duplicates: only one SparseMorph item.
     const sparse = merged.filter((w) => w.kind === "SparseMorph");
     expect(sparse.length).toBe(1);
+  });
+
+  it("assigns localized vertex ranges when canonical ranges are available", () => {
+    const { registry } = makeHuman();
+    const graph = new DependencyGraph(registry);
+    const canonical = new CanonicalHuman(["root", "pelvis", "spine_01", "spine_02", "chest", "neck", "head", "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "hand_l", "hand_r", "thigh_l", "thigh_r", "shin_l", "shin_r", "foot_l", "foot_r"]);
+    const delta = new DeltaCompiler(registry, graph, canonical);
+    const noseWork = delta.compile([registry.require("face.nose.width").id]).find((work) => work.kind === "SparseMorph")!;
+    const bodyWork = delta.compile([registry.require("body.muscularity").id]).find((work) => work.kind === "SparseMorph")!;
+
+    expect(noseWork.vertexRanges).toEqual([canonical.regionRanges.get("nose")]);
+    expect(bodyWork.vertexRanges).toEqual([canonical.regionRanges.get("torso")]);
+    expect(bodyWork.vertexRanges[0].count).toBeGreaterThan(noseWork.vertexRanges[0].count);
   });
 });
 

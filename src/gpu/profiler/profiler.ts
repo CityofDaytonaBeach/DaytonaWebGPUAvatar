@@ -1,4 +1,4 @@
-import { CanonicalHuman } from "../../geometry/canonical/canonical-human";
+import { CanonicalHuman, RegionName } from "../../geometry/canonical/canonical-human";
 
 export interface FrameMetrics {
   frameTimeMs: number;
@@ -78,10 +78,28 @@ export function countDirtyVertices(
   canonical: CanonicalHuman,
   dirtyRegionNames: string[]
 ): number {
-  let count = 0;
+  const touched = new Set<number>();
   for (const name of dirtyRegionNames) {
-    const range = canonical.regionRanges.get(name as never);
-    if (range) count += range.count;
+    for (const region of regionsForDirtyName(name)) {
+      for (const vertex of canonical.vertices) {
+        if (vertex.region === region) touched.add(vertex.id);
+      }
+    }
   }
-  return count;
+  return touched.size;
+}
+
+function regionsForDirtyName(name: string): RegionName[] {
+  const normalized = name.toLowerCase();
+  switch (normalized) {
+    case "face":
+      return ["face", "nose", "jaw", "eyes", "eye_sclera", "eye_iris", "mouth", "teeth", "tongue", "mouth_cavity"];
+    case "body":
+      return ["torso", "neck", "upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "hand_l", "hand_r", "thigh_l", "thigh_r", "shin_l", "shin_r"];
+    case "skeleton":
+    case "global":
+      return ["torso", "neck", "head", "face", "nose", "jaw", "eyes", "eye_sclera", "eye_iris", "mouth", "teeth", "tongue", "mouth_cavity", "upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "hand_l", "hand_r", "thigh_l", "thigh_r", "shin_l", "shin_r"];
+    default:
+      return [normalized as RegionName];
+  }
 }

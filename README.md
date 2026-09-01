@@ -23,7 +23,9 @@ Capability matrix and production roadmap are queryable through
 | Human Definition Language + schema compiler | IMPLEMENTED |
 | Stable numeric property IDs + GPU buffer layout | IMPLEMENTED |
 | Human dependency graph | IMPLEMENTED |
+| Affected-system diagnostics | IMPLEMENTED |
 | Human delta compiler | IMPLEMENTED |
+| Vertex-range delta compilation | IMPLEMENTED |
 | Sparse morph format | IMPLEMENTED |
 | GPU sparse-morph compute (WGSL) + deform | IMPLEMENTED |
 | GPU-resident rendering (deformed mesh) | IMPLEMENTED |
@@ -31,6 +33,8 @@ Capability matrix and production roadmap are queryable through
 | Anatomical constraint solver | IMPLEMENTED |
 | Constraint profiles (REALISTIC / STYLIZED / FANTASY) | IMPLEMENTED |
 | Event-sourced timeline, undo/redo, snapshots | IMPLEMENTED |
+| Timeline dirty work reporting | IMPLEMENTED |
+| Non-property event dirty work reporting | IMPLEMENTED |
 | Canonical human (procedural block, replaceable) | PROTOTYPE |
 | Canonical human parts (eyes/teeth/tongue/cavity) | IMPLEMENTED |
 | Parametric skeleton + joint placement | IMPLEMENTED |
@@ -150,8 +154,18 @@ Key files:
 - **Locality proved by tests**: a nose edit touches only nose-range vertices and the `SparseMorph` kernel — never hair/cloth/clothing.
 - **Benchmarkable locality**: `runLocalizedEditBenchmark()` exercises real
   `Human.modify(...)` events and reports CPU time, dirty regions, compute passes,
-  kernel kinds, touched vertices, and morph deltas. GPU timing remains explicit
-  `null` until a WebGPU timestamp-query benchmark path is wired.
+  semantic affected systems, kernel kinds, touched vertices, and morph deltas.
+  GPU timing remains explicit `null` until a WebGPU timestamp-query benchmark
+  path is wired.
+- **Compiled vertex ranges**: `DeltaCompiler` can receive canonical semantic
+  ranges and fills `KernelWork.vertexRanges` for localized work such as nose,
+  jaw, body, and expression edits instead of leaving range selection implicit.
+- **Timeline dirty reporting**: `undo()`, `redo()`, and `restore()` diff the
+  reconstructed HDL state and return affected systems/kernel work, so timeline
+  navigation can trigger the same minimal recomputation path as direct edits.
+- **Non-property event work**: pose events return `Skinning` work, attachment
+  events return `Attachment` work, and expression events now replay through the
+  timeline before compiling their changed `expression.*` properties.
 
 ## Demo ("Phase 0/1/GPU proof")
 

@@ -36,12 +36,15 @@ describe("Human — Phase 1 proof-of-concept", () => {
     human.modify({ "face.jaw.width": 1.2 });
     expect(human.get("face.jaw.width")).toBe(1.2);
 
-    human.undo();
+    const undoJaw = human.undo();
     expect(human.get("face.jaw.width")).toBe(1.0);
     expect(human.get("face.nose.width")).toBe(0.6);
+    expect(undoJaw.affectedKernelWork.map((work) => work.kind)).toContain("SparseMorph");
+    expect(undoJaw.affectedSystems.map((system) => system.system)).toContain("FaceGeometry");
 
-    human.undo();
+    const undoNose = human.undo();
     expect(human.get("face.nose.width")).toBe(1.0);
+    expect(undoNose.affectedKernelWork.map((work) => work.kind)).toContain("SparseMorph");
   });
 
   it("restores exact state from a timeline snapshot", async () => {
@@ -60,8 +63,9 @@ describe("Human — Phase 1 proof-of-concept", () => {
     expect(human.get("face.jaw.width")).toBe(1.0);
     expect(human.listAttachments()).toHaveLength(0);
 
-    human.redo();
+    const redone = human.redo();
     expect(human.get("face.jaw.width")).toBe(1.25);
+    expect(redone.affectedSystems.map((system) => system.system)).toContain("FaceGeometry");
   });
 
   it("morph delta is localized in magnitude per region", async () => {
@@ -136,6 +140,8 @@ describe("Human — Phase 1 proof-of-concept", () => {
     const added = human.addTattoo("tattoo-forearm", { region: "forearm_l" }, { ink: "black" });
     expect(added.cancelled).toBe(false);
     expect(added.dirtyRegions).toEqual(["Attachment"]);
+    expect(added.affectedKernelWork.map((work) => work.kind)).toContain("Attachment");
+    expect(added.affectedSystems.map((system) => system.system)).toContain("Attachment");
     expect(human.listAttachments()).toHaveLength(1);
     expect(human.attachmentPosition("tattoo-forearm")).not.toBeNull();
 
@@ -178,6 +184,8 @@ describe("Human — Phase 1 proof-of-concept", () => {
 
     expect(result.cancelled).toBe(false);
     expect(result.dirtyRegions).toEqual(["Animation"]);
+    expect(result.affectedKernelWork.map((work) => work.kind)).toContain("Skinning");
+    expect(result.affectedSystems.map((system) => system.system)).toContain("Animation");
     expect(sumAbsDiff(raised, rest)).toBeGreaterThan(0.1);
 
     human.undo();
@@ -191,7 +199,23 @@ describe("Human — Phase 1 proof-of-concept", () => {
 
     expect(result.cancelled).toBe(false);
     expect(result.dirtyRegions).toEqual(["Animation"]);
+    expect(result.affectedKernelWork.map((work) => work.kind)).toContain("Skinning");
     expect(sumAbsDiff(human.skinScene(), rest)).toBeGreaterThan(0.01);
+  });
+
+  it("reports expression dirty work and replays expression through timeline", async () => {
+    const human = await Human.create();
+    const result = human.setExpression("smile", 1);
+
+    expect(result.cancelled).toBe(false);
+    expect(result.affectedKernelWork.map((work) => work.kind)).toContain("MorphAccumulation");
+    expect(result.affectedSystems.map((system) => system.system)).toContain("Expression");
+    expect(human.get("expression.mouthSmileLeft")).toBe(1);
+
+    human.undo();
+    expect(human.get("expression.mouthSmileLeft")).toBe(0);
+    human.redo();
+    expect(human.get("expression.mouthSmileLeft")).toBe(1);
   });
 });
 
