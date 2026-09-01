@@ -14,7 +14,9 @@ animation layer, and a prompt interpreter — all behind one event-driven API.
 
 ## Status
 
-Capability matrix (see `CAPABILITY_MATRIX` in `src/index.ts`):
+Capability matrix and production roadmap are queryable through
+`CAPABILITY_MATRIX`, `capabilityReport()`, `START_MD_PHASES`, and
+`phaseReport()` in `src/index.ts`:
 
 | System | Status |
 | --- | --- |
@@ -48,11 +50,13 @@ Capability matrix (see `CAPABILITY_MATRIX` in `src/index.ts`):
 | Cloth physics runtime | PROTOTYPE |
 | Neural skin residual runtime | PROTOTYPE |
 | GPU scheduler + dev profiler | IMPLEMENTED |
+| Localized edit benchmark | PROTOTYPE |
 | Semantic + perceptual LOD | IMPLEMENTED |
 | Perceptual validation reports | PROTOTYPE |
 | WebGPU renderer + WGSL shaders | IMPLEMENTED |
 | WebGL2 fallback renderer | IMPLEMENTED |
 | Prompt interpreter (patch-based) | IMPLEMENTED |
+| Phase tracking aligned to `start.md` | IMPLEMENTED |
 
 ## Quick start
 
@@ -131,9 +135,23 @@ Key files:
 - **Non-destructive**: `"make the nose 5% narrower"` → `{ op: "adjust", path: "anatomy.face.nose.width", multiply: 0.95 }`. Never regenerates the human.
 - **Patch-based prompts**: AI emits only changed paths; unrelated identity never drifts.
 - **Single source of truth**: one schema generates IDs, GPU offsets, defaults, WGSL layout, and validation — CPU/GPU offsets are tested to match.
+- **Generated WGSL layout**: `generateHumanParamsWgsl()` emits `HumanParams`
+  from the registry and `validateWgslLayout()` checks CPU offsets against the
+  shader-visible layout before production GPU work depends on it.
+- **Generated validation artifacts**: `generateHumanDefinitionJsonSchema()` and
+  `validateHumanDefinitionRecord()` derive JSON Schema/runtime validation from
+  the same property registry instead of a hand-maintained parallel schema.
 - **Deterministic**: same definition + seed + asset package reproduces the same person.
+- **Versioned packages**: serialized HDL includes package, schema, and topology
+  metadata so unsupported persisted characters fail explicitly instead of
+  silently loading into the wrong runtime. `migrateHumanPackageDocument()`
+  provides explicit schema migrations for legacy HDL packages.
 - **GPU-resident**: hot state stays on the GPU; the CPU sends small change events.
 - **Locality proved by tests**: a nose edit touches only nose-range vertices and the `SparseMorph` kernel — never hair/cloth/clothing.
+- **Benchmarkable locality**: `runLocalizedEditBenchmark()` exercises real
+  `Human.modify(...)` events and reports CPU time, dirty regions, compute passes,
+  kernel kinds, touched vertices, and morph deltas. GPU timing remains explicit
+  `null` until a WebGPU timestamp-query benchmark path is wired.
 
 ## Demo ("Phase 0/1/GPU proof")
 

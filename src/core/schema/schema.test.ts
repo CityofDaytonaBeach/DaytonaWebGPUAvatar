@@ -3,6 +3,8 @@ import { PropertyRegistry, makePropertyId, propertyCategory } from "./registry";
 import { PropertyCategory, PersistenceType, IdentityImportance } from "./property";
 import { createDefaultRegistry, DEFAULT_PROPERTY_DESCRIPTORS } from "./descriptors";
 import { HumanDefinition } from "./human-definition";
+import { generateHumanParamsWgsl, validateWgslLayout, wgslFieldName } from "./gpu-layout";
+import { generateHumanDefinitionJsonSchema, validateHumanDefinitionRecord } from "./json-schema";
 
 describe("PropertyRegistry", () => {
   it("assigns stable ids per category base", () => {
@@ -39,6 +41,51 @@ describe("PropertyRegistry", () => {
     const r = createDefaultRegistry();
     expect(r.require("face.nose.width").default).toBe(1.0);
     expect(r.require("expression.mouthSmileLeft").persistence).toBe(PersistenceType.Performance);
+  });
+
+  it("generates deterministic JSON Schema from the registry", () => {
+    const r = createDefaultRegistry();
+    const schema = generateHumanDefinitionJsonSchema(r);
+    const nose = r.require("face.nose.width");
+
+    expect(schema.additionalProperties).toBe(false);
+    expect(schema.required).toContain("face.nose.width");
+    expect(schema.properties["face.nose.width"].minimum).toBe(nose.min);
+    expect(schema.properties["face.nose.width"].maximum).toBe(nose.max);
+    expect(schema.properties["face.nose.width"].metadata.id).toBe(nose.id);
+    expect(JSON.stringify(schema)).toBe(JSON.stringify(generateHumanDefinitionJsonSchema(r)));
+  });
+
+  it("validates flat HDL records against registry metadata", () => {
+    const r = createDefaultRegistry();
+    const valid = validateHumanDefinitionRecord(r, { "face.nose.width": 0.9, "identity.seed": 123 });
+    const invalid = validateHumanDefinitionRecord(r, { "face.nose.width": 99, "not.real": 1 });
+
+    expect(valid.valid).toBe(true);
+    expect(invalid.valid).toBe(false);
+    expect(invalid.issues.map((issue) => issue.path)).toContain("face.nose.width");
+    expect(invalid.issues.map((issue) => issue.path)).toContain("not.real");
+  });
+
+  it("generates WGSL parameter layout from registry offsets", () => {
+    const r = createDefaultRegistry();
+    const layout = validateWgslLayout(r);
+    const wgsl = generateHumanParamsWgsl(r);
+
+    expect(layout.valid).toBe(true);
+    expect(layout.byteSize).toBe(r.sizeBytes);
+    expect(wgsl).toContain("struct HumanParams");
+    expect(wgsl).toContain(`${wgslFieldName("face.nose.width")} : f32`);
+    expect(wgsl).toContain(`${wgslFieldName("identity.seed")} : u32`);
+  });
+
+  it("reports unsupported WGSL parameter types", () => {
+    const r = new PropertyRegistry();
+    r.register([{ path: "debug.flag", type: "bool", default: 0, category: PropertyCategory.Global, persistence: PersistenceType.Transient }]);
+    const layout = validateWgslLayout(r);
+
+    expect(layout.valid).toBe(false);
+    expect(layout.issues[0].message).toMatch(/not supported/);
   });
 });
 

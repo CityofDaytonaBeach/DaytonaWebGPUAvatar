@@ -8,6 +8,10 @@ export { HumanDefinition } from "./core/schema/human-definition";
 export { PropertyRegistry, makePropertyId, propertyCategory, alignUp } from "./core/schema/registry";
 export type { PropertyDescriptor } from "./core/schema/registry";
 export { DEFAULT_PROPERTY_DESCRIPTORS, createDefaultRegistry } from "./core/schema/descriptors";
+export { generateHumanParamsWgsl, validateWgslLayout, wgslFieldName, wgslLayoutFields } from "./core/schema/gpu-layout";
+export type { WgslLayoutField, WgslLayoutValidationIssue, WgslLayoutValidationResult } from "./core/schema/gpu-layout";
+export { generateHumanDefinitionJsonSchema, validateHumanDefinitionRecord } from "./core/schema/json-schema";
+export type { HumanDefinitionJsonSchema, JsonSchemaProperty, SchemaValidationIssue, SchemaValidationResult } from "./core/schema/json-schema";
 export {
   PropertyCategory,
   PersistenceType,
@@ -123,10 +127,21 @@ export { DeterministicPromptInterpreter, intentToEvent } from "./ai/prompt/inter
 export type { PromptInterpreter, Intent, IntentType } from "./ai/prompt/interpreter";
 
 // Formats
-export { serializeDefinition, deserializeDocument, PACKAGE_MAGIC } from "./formats/human/human-package";
-export type { HumanPackageHeader } from "./formats/human/human-package";
+export { serializeDefinition, deserializeDocument, createHumanPackageDocument, migrateHumanPackageDocument, PACKAGE_MAGIC, PACKAGE_VERSION, DEFAULT_TOPOLOGY_REF, DEFAULT_SCHEMA_VERSION, DEFAULT_PACKAGE_MIGRATIONS } from "./formats/human/human-package";
+export type { HumanPackageDocument, HumanPackageHeader, HumanPackageMigration } from "./formats/human/human-package";
 
-// Capability matrix (informational).
+// Production diagnostics / benchmarks
+export { DEFAULT_LOCALIZED_EDIT_BENCHMARKS, runLocalizedEditBenchmark } from "./testing/performance/localized-edit-benchmark";
+export type { LocalizedEditBenchmarkCase, LocalizedEditBenchmarkResult, LocalizedEditBenchmarkSummary } from "./testing/performance/localized-edit-benchmark";
+
+// Roadmap / production tracking
+export { START_MD_PHASES, PHASE_STATUSES, phaseReport } from "./roadmap/phase-report";
+export type { PhaseMilestone, PhaseReport, PhaseStatus } from "./roadmap/phase-report";
+
+export const CAPABILITY_STATUSES = ["IMPLEMENTED", "PARTIAL", "PROTOTYPE", "PLANNED"] as const;
+export type CapabilityStatus = typeof CAPABILITY_STATUSES[number];
+
+// Capability matrix (queryable; do not claim prototype systems as implemented).
 export const CAPABILITY_MATRIX = {
   schemaCompiler: "IMPLEMENTED",
   propertyIds: "IMPLEMENTED",
@@ -155,6 +170,7 @@ export const CAPABILITY_MATRIX = {
   undoRedo: "IMPLEMENTED",
   gpuScheduler: "IMPLEMENTED",
   gpuMorphCompute: "IMPLEMENTED",
+  localizedEditBenchmark: "PROTOTYPE",
   semanticLod: "IMPLEMENTED",
   perceptualLod: "PROTOTYPE",
   perceptualValidation: "PROTOTYPE",
@@ -164,8 +180,46 @@ export const CAPABILITY_MATRIX = {
   clothPhysics: "PROTOTYPE",
   sdfCollision: "PROTOTYPE",
   neuralSkin: "PROTOTYPE",
-} as const;
+  phaseTracking: "IMPLEMENTED",
+} as const satisfies Record<string, CapabilityStatus>;
 
 export type Capability = keyof typeof CAPABILITY_MATRIX;
+
+export interface CapabilityEntry {
+  name: Capability;
+  status: CapabilityStatus;
+  productionReady: boolean;
+}
+
+export interface CapabilityReport {
+  total: number;
+  counts: Record<CapabilityStatus, number>;
+  entries: CapabilityEntry[];
+  implemented: Capability[];
+  prototypes: Capability[];
+  planned: Capability[];
+}
+
+export function capabilityReport(): CapabilityReport {
+  const counts: Record<CapabilityStatus, number> = {
+    IMPLEMENTED: 0,
+    PARTIAL: 0,
+    PROTOTYPE: 0,
+    PLANNED: 0,
+  };
+  const entries: CapabilityEntry[] = Object.entries(CAPABILITY_MATRIX).map(([name, status]) => {
+    const typedStatus: CapabilityStatus = status;
+    counts[typedStatus] += 1;
+    return { name: name as Capability, status: typedStatus, productionReady: typedStatus === "IMPLEMENTED" };
+  });
+  return {
+    total: entries.length,
+    counts,
+    entries,
+    implemented: entries.filter((e) => e.status === "IMPLEMENTED").map((e) => e.name),
+    prototypes: entries.filter((e) => e.status === "PROTOTYPE").map((e) => e.name),
+    planned: entries.filter((e) => e.status === "PLANNED").map((e) => e.name),
+  };
+}
 
 export const VERSION = "0.4.0";
