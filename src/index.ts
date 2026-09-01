@@ -21,6 +21,8 @@ export { createEvent, applyEventToDefinition } from "./core/events/character-eve
 export type { CharacterEvent, CharacterEventType, EventSource } from "./core/events/character-event";
 export { CharacterTimeline } from "./core/timeline/character-timeline";
 export type { Snapshot } from "./core/timeline/character-timeline";
+export { createParameterTransition, sampleTransition, transitionComplete } from "./core/transitions/parameter-transition";
+export type { ParameterTransition, TransitionCurve, TransitionSpec } from "./core/transitions/parameter-transition";
 
 // Constraints
 export { ConstraintSolver, CONSTRAINT_PROFILES } from "./core/constraints/solver";
@@ -45,6 +47,8 @@ export type { AnatomyDimensions, AnatomyConstraint } from "./anatomy/parametric/
 export { buildBoneMatrices, combinedSkinMatrices, composeMatrix, invertMatrix } from "./anatomy/skeleton/bone-matrix";
 export { buildInfluences, skinMeshCPU, skinNormalsCPU, normalizeWeights, MAX_INFLUENCES } from "./gpu/kernels/skin-mesh";
 export type { SkinInfluences } from "./gpu/kernels/skin-mesh";
+export { buildInternalAnatomyView } from "./anatomy/internal/internal-anatomy";
+export type { InternalAnatomyMode, InternalAnatomyPrimitive, InternalAnatomyPrimitiveKind, InternalAnatomyView } from "./anatomy/internal/internal-anatomy";
 
 // Identity
 export { IdentitySolver } from "./identity/solver/identity-solver";
@@ -136,6 +140,7 @@ export const CAPABILITY_MATRIX = {
   canonicalParts: "IMPLEMENTED",
   skeleton: "IMPLEMENTED",
   parametricAnatomy: "IMPLEMENTED",
+  internalAnatomyModes: "PROTOTYPE",
   skeletalAnimation: "IMPLEMENTED",
   motionCompiler: "PROTOTYPE",
   gpuSkinning: "IMPLEMENTED",
@@ -145,6 +150,8 @@ export const CAPABILITY_MATRIX = {
   facialExpression: "IMPLEMENTED",
   speechVisemes: "IMPLEMENTED",
   timelineEventSourcing: "IMPLEMENTED",
+  parameterTransitions: "PROTOTYPE",
+  snapshotRestore: "IMPLEMENTED",
   undoRedo: "IMPLEMENTED",
   gpuScheduler: "IMPLEMENTED",
   gpuMorphCompute: "IMPLEMENTED",

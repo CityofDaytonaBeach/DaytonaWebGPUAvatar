@@ -1,6 +1,6 @@
 import { CharacterEvent, createEvent, EventSource } from "../../core/events/character-event";
 
-export type IntentType = "appearance.modify" | "appearance.set" | "expression" | "pose" | "speak" | "wear" | "tattoo" | "time.advance" | "unknown";
+export type IntentType = "appearance.modify" | "appearance.set" | "expression" | "pose" | "speak" | "wear" | "tattoo" | "time.advance" | "time.transition" | "unknown";
 
 export interface Intent {
   type: IntentType;
@@ -62,6 +62,13 @@ export class DeterministicPromptInterpreter implements PromptInterpreter {
     if (p.includes("black hair")) {
       return { type: "appearance.set", confidence: 0.9, changes: { "hair.colorR": 0.1, "hair.colorG": 0.08, "hair.colorB": 0.07 } };
     }
+    if ((p.includes("grow") || p.includes("longer hair")) && p.includes("hair")) {
+      return { type: "time.transition", confidence: 0.82, payload: { path: "hair.length", targetDelta: 0.18, duration: parseDurationSeconds(p), curve: "biological" } };
+    }
+    if (p.includes("age") || p.includes("older")) {
+      const years = parseYears(p) ?? 1;
+      return { type: "time.transition", confidence: 0.8, payload: { path: "skin.age", targetDelta: years, duration: years * 365 * 24 * 60 * 60, curve: "biological" } };
+    }
     if (p.includes("grow") || p.includes("longer hair")) {
       return { type: "appearance.modify", confidence: 0.8, changes: { "hair.length": 1.4 } };
     }
@@ -94,7 +101,55 @@ export function intentToEvent(intent: Intent, source: EventSource = "ai"): Chara
       return createEvent("pose", source, { payload: intent.payload });
     case "time.advance":
       return createEvent("advanceTime", source, { payload: intent.payload });
+    case "time.transition":
+      return createEvent("transition", source, { payload: intent.payload });
     default:
       return createEvent("set", source, {});
   }
+}
+
+function parseDurationSeconds(prompt: string): number {
+  const value = parseNumber(prompt) ?? 1;
+  if (prompt.includes("year")) return value * 365 * 24 * 60 * 60;
+  if (prompt.includes("month")) return value * 30 * 24 * 60 * 60;
+  if (prompt.includes("week")) return value * 7 * 24 * 60 * 60;
+  if (prompt.includes("day")) return value * 24 * 60 * 60;
+  if (prompt.includes("hour")) return value * 60 * 60;
+  return 30 * 24 * 60 * 60;
+}
+
+function parseYears(prompt: string): number | null {
+  if (!prompt.includes("year")) return null;
+  return parseNumber(prompt);
+}
+
+function parseNumber(prompt: string): number | null {
+  const digit = prompt.match(/\b\d+(?:\.\d+)?\b/);
+  if (digit) return Number(digit[0]);
+  const words: Record<string, number> = {
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+    eleven: 11,
+    twelve: 12,
+    thirteen: 13,
+    fourteen: 14,
+    fifteen: 15,
+    sixteen: 16,
+    seventeen: 17,
+    eighteen: 18,
+    nineteen: 19,
+    twenty: 20,
+  };
+  for (const [word, value] of Object.entries(words).sort((a, b) => b[0].length - a[0].length)) {
+    if (prompt.includes(word)) return value;
+  }
+  return null;
 }

@@ -2,7 +2,7 @@ import { PropertyRegistry } from "./core/schema/registry";
 import { createDefaultRegistry } from "./core/schema/descriptors";
 import { HumanDefinition } from "./core/schema/human-definition";
 import { CharacterEvent, createEvent, applyEventToDefinition, EventSource } from "./core/events/character-event";
-import { CharacterTimeline } from "./core/timeline/character-timeline";
+import { CharacterTimeline, Snapshot } from "./core/timeline/character-timeline";
 import { ConstraintSolver, ConstraintProfile } from "./core/constraints/solver";
 import { DependencyGraph } from "./compiler/dependency/dependency-graph";
 import { DeltaCompiler, KernelWork } from "./compiler/delta/delta-compiler";
@@ -32,6 +32,8 @@ import { MotionCompiler, MotionPlan } from "./animation/motion/motion-compiler";
 import { PerceptualValidationReport, validatePerceptualHuman } from "./validation/perceptual-validator";
 import { projectTattooDecals, TattooDecal } from "./surface/tattoo/tattoo-decal";
 import { generateGarments, GarmentMesh } from "./surface/clothing/garment";
+import { buildInternalAnatomyView, InternalAnatomyMode, InternalAnatomyView } from "./anatomy/internal/internal-anatomy";
+import { createParameterTransition, ParameterTransition, sampleTransition, transitionComplete, TransitionCurve } from "./core/transitions/parameter-transition";
 
 export interface HumanCreateOptions {
   registry?: PropertyRegistry;
@@ -87,6 +89,7 @@ export class Human {
   private animation = new SkeletalAnimation();
   private motion = new MotionCompiler();
   private currentPose: BonePose[] = [];
+  private transitions: ParameterTransition[] = [];
   private skinInfluences = null as ReturnType<typeof buildInfluences> | null;
   private clock = 0;
   private gpu: WebGpuHumanPipeline | null = null;
@@ -388,6 +391,11 @@ export class Human {
     return validatePerceptualHuman(this.definition, this.canonical, this.solveAnatomy());
   }
 
+  /** Lazily derive modular internal-anatomy display data from persistent state. */
+  internalAnatomy(mode: InternalAnatomyMode = "anatomy"): InternalAnatomyView {
+    return buildInternalAnatomyView(this.solveAnatomy(), this.parametricSkeleton(), mode);
+  }
+
   /** Upload current params + morph weights to the GPU. No-op without a device. */
   uploadGpu(definition: HumanDefinition = this.definition): void {
     if (this.gpu) this.gpu.upload(definition);
@@ -437,12 +445,14 @@ export class Human {
     }
 
     // 2. Functional application against a clone of current state.
-    const propChanges = applyEventToDefinition(this.definition, event);
+    const propChanges = applyEventToDefinition(this.definition, event) ?? [];
 
     // 3. Timeline records it (event sourcing + undo/redo).
     this.timeline.push(event);
     this.attachments.applyEvent(event);
     if (event.type === "pose") this.applyPoseEvent(event);
+    if (event.type === "transition") this.registerTransitionEvent(event);
+    if (event.type === "advanceTime") propChanges.push(...this.applyAdvanceTimeEvent(event));
 
     // 4. Constraint validation of resulting definition.
     const constraint = this.constraints.validate(this.definition);
@@ -451,7 +461,7 @@ export class Human {
     }
 
     // 5. Mark dirty + compile minimal GPU work.
-    const kernelWork = this.compileForChange(propChanges ?? []);
+    const kernelWork = this.compileForChange(propChanges);
 
     // 6. Run morph compute (CPU reference path).
     const delta = new Float32Array(this.canonical.vertexCount * 3);
@@ -485,6 +495,16 @@ export class Human {
     return this.applyEvent(createEvent("adjust", source, { path, factor }));
   }
 
+  /** Schedule a deterministic time-based property transition through events. */
+  transition(path: string, targetValue: number, duration: number, curve: TransitionCurve = "linear", source: EventSource = "api"): HumanModifyResult {
+    return this.applyEvent(createEvent("transition", source, { payload: { path, targetValue, duration, curve } }));
+  }
+
+  /** Advance event time so active parameter transitions update the definition. */
+  advanceTime(seconds: number, source: EventSource = "simulation"): HumanModifyResult {
+    return this.applyEvent(createEvent("advanceTime", source, { payload: { seconds } }));
+  }
+
   setExpression(expr: SemanticExpression, intensity = 1): HumanModifyResult {
     this.facial.apply(this.definition, expr, intensity);
     return this.applyEvent(createEvent("expression", "ui", { payload: { expression: expr, intensity } }));
@@ -497,7 +517,7 @@ export class Human {
 
   /** Advance speech/simulation time. */
   update(dt: number): void {
-    this.clock += dt;
+    this.advanceTime(dt, "simulation");
     // Extract current speech track from timeline if a speak event exists.
     const track = this.currentSpeechTrack();
     if (track) {
@@ -537,6 +557,7 @@ export class Human {
   undo(): HumanModifyResult {
     const def = this.timeline.undo();
     if (def) this.definition = def;
+    this.rebuildTemporalStateFromTimeline();
     this.rebuildAttachmentsFromTimeline();
     this.rebuildPoseFromTimeline();
     return this.resultFromDefinition();
@@ -545,17 +566,27 @@ export class Human {
   redo(): HumanModifyResult {
     const def = this.timeline.redo();
     if (def) this.definition = def;
+    this.rebuildTemporalStateFromTimeline();
     this.rebuildAttachmentsFromTimeline();
     this.rebuildPoseFromTimeline();
     return this.resultFromDefinition();
   }
 
-  snapshot(): void {
-    this.timeline.snapshot();
+  snapshot(): Snapshot {
+    return this.timeline.snapshot();
+  }
+
+  restore(atEventIndex: number): HumanModifyResult {
+    this.definition = this.timeline.restore(atEventIndex);
+    this.rebuildTemporalStateFromTimeline();
+    this.rebuildAttachmentsFromTimeline();
+    this.rebuildPoseFromTimeline();
+    return this.resultFromDefinition();
   }
 
   branch(): void {
     this.timeline.branch();
+    this.rebuildTemporalStateFromTimeline();
     this.rebuildAttachmentsFromTimeline();
     this.rebuildPoseFromTimeline();
   }
@@ -600,8 +631,67 @@ export class Human {
       this.setPose([]);
     }
   }
+
+  private registerTransitionEvent(event: CharacterEvent): void {
+    const path = event.payload?.path;
+    const targetValue = event.payload?.targetValue;
+    const targetDelta = event.payload?.targetDelta;
+    const duration = event.payload?.duration;
+    const curve = event.payload?.curve;
+    if (typeof path !== "string" || typeof duration !== "number") return;
+    const target = typeof targetValue === "number"
+      ? targetValue
+      : typeof targetDelta === "number"
+        ? this.definition.get(path) + targetDelta
+        : undefined;
+    if (target === undefined) return;
+    this.transitions = this.transitions.filter((t) => t.path !== path);
+    this.transitions.push(createParameterTransition(this.definition, {
+      id: event.id,
+      path,
+      targetValue: target,
+      duration,
+      curve: isTransitionCurve(curve) ? curve : "linear",
+    }, this.clock));
+  }
+
+  private applyAdvanceTimeEvent(event: CharacterEvent): number[] {
+    const seconds = typeof event.payload?.seconds === "number" ? event.payload.seconds : 0;
+    this.clock = Math.max(0, this.clock + seconds);
+    return this.applyActiveTransitions();
+  }
+
+  private applyActiveTransitions(): number[] {
+    const changed: number[] = [];
+    const remaining: ParameterTransition[] = [];
+    for (const transition of this.transitions) {
+      const id = this.registry.require(transition.path).id;
+      const before = this.definition.getById(id);
+      this.definition.setById(id, sampleTransition(transition, this.clock));
+      if (this.definition.getById(id) !== before) changed.push(id);
+      if (!transitionComplete(transition, this.clock)) remaining.push(transition);
+    }
+    this.transitions = remaining;
+    return changed;
+  }
+
+  private rebuildTemporalStateFromTimeline(): void {
+    this.definition = this.timeline.baseDefinition();
+    this.clock = 0;
+    this.transitions = [];
+    const active = this.timeline.log().slice(0, this.timeline.index + 1);
+    for (const event of active) {
+      applyEventToDefinition(this.definition, event);
+      if (event.type === "transition") this.registerTransitionEvent(event);
+      if (event.type === "advanceTime") this.applyAdvanceTimeEvent(event);
+    }
+  }
 }
 
 function isAttachmentEvent(event: CharacterEvent): boolean {
   return event.type === "wear" || event.type === "addTattoo" || event.type === "removeAttachment";
+}
+
+function isTransitionCurve(value: unknown): value is TransitionCurve {
+  return value === "linear" || value === "ease" || value === "biological";
 }

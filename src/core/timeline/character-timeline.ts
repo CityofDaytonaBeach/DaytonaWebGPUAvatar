@@ -81,6 +81,16 @@ export class CharacterTimeline {
     return s;
   }
 
+  /** Restore the timeline pointer to a prior event index or snapshot index. */
+  restore(atEventIndex: number): HumanDefinition {
+    const max = this.events.length - 1;
+    if (!Number.isInteger(atEventIndex) || atEventIndex < -1 || atEventIndex > max) {
+      throw new Error(`Cannot restore timeline to event index ${atEventIndex}`);
+    }
+    this.pointer = atEventIndex;
+    return this.rebuild();
+  }
+
   /** Create a branch point at the current state (clears redo history). */
   branch(): HumanDefinition {
     this.events = this.events.slice(0, this.pointer + 1);
@@ -90,6 +100,11 @@ export class CharacterTimeline {
   /** Current reconstructed definition. */
   current(): HumanDefinition {
     return this.rebuild();
+  }
+
+  /** Base definition clone for deterministic higher-level replay systems. */
+  baseDefinition(): HumanDefinition {
+    return this.base.clone();
   }
 
   destroy(): void {

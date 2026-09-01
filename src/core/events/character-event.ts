@@ -11,6 +11,7 @@ export type CharacterEventType =
   | "wear"
   | "addTattoo"
   | "removeAttachment"
+  | "transition"
   | "advanceTime";
 
 /**
@@ -90,6 +91,7 @@ export function applyEventToDefinition(
     case "wear":
     case "addTattoo":
     case "removeAttachment":
+    case "transition":
     case "advanceTime":
       return null; // Timing/peripheral systems consume these separately.
     default:

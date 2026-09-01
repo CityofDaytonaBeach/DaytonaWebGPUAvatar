@@ -33,11 +33,14 @@ Capability matrix (see `CAPABILITY_MATRIX` in `src/index.ts`):
 | Canonical human parts (eyes/teeth/tongue/cavity) | IMPLEMENTED |
 | Parametric skeleton + joint placement | IMPLEMENTED |
 | Parametric anatomy solver (dimensions + constraints) | IMPLEMENTED |
+| Internal anatomy view modes | PROTOTYPE |
 | Bone matrices (FK) + inverse-bind skinning | IMPLEMENTED |
 | Skeletal animation (clips/blending) + GPU skinning | IMPLEMENTED |
 | Motion compiler / behavior commands | PROTOTYPE |
 | Facial expressions + speech visemes | IMPLEMENTED |
 | Human attachment coordinates | IMPLEMENTED |
+| Time-based parameter transitions | PROTOTYPE |
+| Snapshot restore | IMPLEMENTED |
 | Tattoo decal projection | PROTOTYPE |
 | Wearable clothing geometry | PROTOTYPE |
 | Procedural strand hair runtime | PROTOTYPE |
@@ -211,6 +214,15 @@ and a **matching parametric skeleton**:
 `parametricSkeleton()`. The demo adds Height / Waist / Shoulder sliders and
 renders the resolved skeleton markers + anatomy readout.
 
+### Internal anatomy view modes (Phase 3b)
+
+`buildInternalAnatomyView` and `human.internalAnatomy(mode)` derive read-only
+display primitives for `normal`, `skeleton`, `muscle`, `anatomy`, and
+`transparentSkin` modes from the same parametric anatomy/skeleton used by the
+runtime. This is a modular visualization prototype: it exposes joints, bones,
+and major muscle capsules without loading organs during normal rendering or
+making internal anatomy the source of persistent character truth.
+
 ### Rigging + skinning + skeletal animation (Phase 4)
 
 The parametric skeleton is now wired to the mesh as a live **skinning rig**:
@@ -248,6 +260,25 @@ looking toward the camera, and returning to neutral. `perform()` routes through
 `CharacterEvent("pose")`, so prompt/API motion uses the same event/timeline path
 as other character changes. Tests verify command compilation, prompt routing,
 animation dirty-region reporting, and undo restoring the rest pose.
+
+### Time-based parameter transitions (Phase 4c)
+
+`createParameterTransition`, `sampleTransition`, `human.transition(...)`, and
+`human.advanceTime(...)` implement deterministic property transitions for
+`linear`, `ease`, and `biological` curves. Transition and time advancement are
+`CharacterEvent`s, so progressive edits such as hair growth, body composition,
+or a timed expression parameter can replay through the same timeline/undo path
+instead of mutating geometry directly. The deterministic prompt interpreter now
+routes commands such as "grow her hair naturally for six months" and "age her
+fifteen years" into these transition events.
+
+### Snapshot restore (Phase 4d)
+
+`human.snapshot()` returns a timeline snapshot containing the active event index,
+and `human.restore(snapshot.atEventIndex)` rewinds or fast-forwards the
+event-sourced character to that exact point. Restore rebuilds temporal
+transitions, attachments, and pose state from the active event log, preserving the
+single-source timeline model.
 
 ### Human attachment coordinates (Phase 5)
 

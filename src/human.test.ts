@@ -44,6 +44,26 @@ describe("Human — Phase 1 proof-of-concept", () => {
     expect(human.get("face.nose.width")).toBe(1.0);
   });
 
+  it("restores exact state from a timeline snapshot", async () => {
+    const human = await Human.create();
+    human.modify({ "face.nose.width": 0.6 });
+    const snapshot = human.snapshot();
+
+    human.modify({ "face.jaw.width": 1.25 });
+    human.wear("watch", { bone: "forearm_l" });
+    expect(human.get("face.jaw.width")).toBe(1.25);
+    expect(human.listAttachments()).toHaveLength(1);
+
+    const restored = human.restore(snapshot.atEventIndex);
+    expect(restored.cancelled).toBe(false);
+    expect(human.get("face.nose.width")).toBe(0.6);
+    expect(human.get("face.jaw.width")).toBe(1.0);
+    expect(human.listAttachments()).toHaveLength(0);
+
+    human.redo();
+    expect(human.get("face.jaw.width")).toBe(1.25);
+  });
+
   it("morph delta is localized in magnitude per region", async () => {
     const human = await Human.create();
     const before = human.computeMorphDelta();
