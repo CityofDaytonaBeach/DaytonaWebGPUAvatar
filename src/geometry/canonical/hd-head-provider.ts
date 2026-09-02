@@ -5,7 +5,7 @@ import type {
   CanonicalTopologyVertex,
 } from './canonical-topology.js';
 import type { RegionName, PartKind } from './canonical-human.js';
-import { REQUIRED_HD_HEAD_REGIONS } from './regions.js';
+import { REQUIRED_HD_HEAD_REGIONS, REQUIRED_HD_BODY_REGIONS } from './regions.js';
 import { validateCanonicalTopology } from './canonical-validator.js';
 import type {
   CanonicalHumanAsset,
@@ -13,6 +13,7 @@ import type {
   CanonicalValidationResult,
 } from './canonical-provider.js';
 import type { HumanLandmark } from './landmark.js';
+import { buildHdBodySkin } from './hd-body-skin.js';
 
 /** Coordinate frame shared with the block human's skeleton (head bone ~y1.86). */
 export interface HdHeadOptions {
@@ -59,12 +60,14 @@ const REGION_ANCHORS: Partial<Record<RegionName, { x: number; y: number; z: numb
 };
 
 /**
- * Procedural DAYTONA HD HEAD V0.1 provider.
+ * Procedural DAYTONA HD HUMAN V0.1 provider.
  *
- * Generates an anatomy-rich head topology from scratch: a parametric cranium +
- * face skin mesh with fine-grained P4 semantic regions, real eye parts
+ * Generates an anatomy-rich FULL-BODY topology from scratch: a parametric
+ * cranium + face skin with fine-grained P4 head regions, real eye parts
  * (sclera / iris / pupil / separate cornea), teeth, tongue and mouth cavity,
- * ~30 surface-relative landmarks and skeleton skin weights — all exposed
+ * plus a parametric torso + limb skin with the full HD body region vocabulary
+ * and weighted skeleton skinning (pelvis / spine / chest / clavicle / limbs),
+ * ~45 surface-relative landmarks and skeleton skin weights — all exposed
  * through the CanonicalHumanProvider seam so the Human runtime consumes it
  * exactly like the block human.
  */
@@ -96,7 +99,7 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
       landmarks: this.buildLandmarks(canonical),
       metadata: {
         author: 'engine',
-        note: 'procedural HD head (Daytona HD HEAD V0.1)',
+        note: 'procedural HD human (Daytona HD BODY V0.1)',
       },
     };
   }
@@ -109,11 +112,15 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
       indices: asset.indices,
       parts: asset.parts,
     });
-    // The head is intentionally body-incomplete (HD HEAD V0.1), so the
-    // body-oriented validator's missing-region checks do not apply here.
+    // HD body is a TOP section (head), so the whole body may still be incomplete
+    // for strictly full-body validators; we assert the HD head + HD body region
+    // vocabularies explicitly and surface all other structural issues.
     const structural = report.issues.filter((i) => i.code !== 'missing-region');
     const present = new Set(asset.vertices.map((v) => v.region));
-    const missing = REQUIRED_HD_HEAD_REGIONS.filter((r) => !present.has(r)).map(
+    const missing = [
+      ...REQUIRED_HD_HEAD_REGIONS.filter((r) => !present.has(r)),
+      ...REQUIRED_HD_BODY_REGIONS.filter((r) => !present.has(r)),
+    ].map(
       (r) => ({ code: 'missing-hd-region', message: `missing required HD region ${r}` }) as const,
     );
     const issues = [...structural, ...missing];
@@ -121,7 +128,7 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
   }
 
   topologyVersion(): string {
-    return 'hd-head-0.1';
+    return 'hd-human-0.1';
   }
 
   // ------------------------------------------------------------------ mesh
@@ -131,11 +138,18 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
     indices: Uint32Array;
     parts: CanonicalTopologyPart[];
   } {
+    // HD BODY V0.1: full torso + limb skin FIRST so it renders as the base body,
+    // then the HD head skin, then the detail parts (eyes/teeth/tongue/cavity).
+    const body = buildHdBodySkin({ neckY: 1.68 });
     const skin = this.buildSkin();
     const append = this.buildDetailParts();
 
-    const vertices: CanonicalTopologyVertex[] = [...skin.vertices, ...append.vertices];
-    const indices = Uint32Array.from([...skin.indices, ...append.indices]);
+    const vertices: CanonicalTopologyVertex[] = [
+      ...body.vertices,
+      ...skin.vertices,
+      ...append.vertices,
+    ];
+    const indices = Uint32Array.from([...body.indices, ...skin.indices, ...append.indices]);
 
     // Stable vertex ids must equal the global index (the validator enforces this
     // and every consumer keys off index); re-number after concatenation.
@@ -145,9 +159,9 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
       name: p.name,
       kind: p.kind,
       region: p.region,
-      vertexStart: skin.vertices.length + append.startShift[i],
+      vertexStart: body.vertices.length + skin.vertices.length + append.startShift[i],
       vertexCount: p.vertexCount,
-      indexStart: skin.indices.length + append.indexShift[i],
+      indexStart: body.indices.length + skin.indices.length + append.indexShift[i],
       indexCount: p.indexCount,
     }));
 
@@ -474,6 +488,24 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
       { name: 'temple_left', region: 'temple_left', x: -0.09, y: 1.9, z: 0.16 },
       { name: 'temple_right', region: 'temple_right', x: 0.09, y: 1.9, z: 0.16 },
       { name: 'neck_front', region: 'neck', x: 0, y: 1.68, z: 0.18 },
+      // HD BODY V0.1 landmarks.
+      { name: 'chest_center', region: 'chest', x: 0, y: 1.42, z: 0.1 },
+      { name: 'abdomen_center', region: 'abdomen', x: 0, y: 1.18, z: 0.098 },
+      { name: 'pelvis_center', region: 'pelvis', x: 0, y: 0.97, z: 0.1 },
+      { name: 'shoulder_left', region: 'shoulder_left', x: -0.18, y: 1.58, z: 0.02 },
+      { name: 'shoulder_right', region: 'shoulder_right', x: 0.18, y: 1.58, z: 0.02 },
+      { name: 'upper_arm_left', region: 'upper_arm_left', x: -0.24, y: 1.4, z: 0 },
+      { name: 'upper_arm_right', region: 'upper_arm_right', x: 0.24, y: 1.4, z: 0 },
+      { name: 'forearm_left', region: 'forearm_left', x: -0.23, y: 1.05, z: 0 },
+      { name: 'forearm_right', region: 'forearm_right', x: 0.23, y: 1.05, z: 0 },
+      { name: 'hand_left', region: 'hand_left', x: -0.22, y: 0.92, z: 0 },
+      { name: 'hand_right', region: 'hand_right', x: 0.22, y: 0.92, z: 0 },
+      { name: 'thigh_left', region: 'thigh_left', x: -0.09, y: 0.78, z: 0.01 },
+      { name: 'thigh_right', region: 'thigh_right', x: 0.09, y: 0.78, z: 0.01 },
+      { name: 'shin_left', region: 'shin_left', x: -0.08, y: 0.4, z: 0.01 },
+      { name: 'shin_right', region: 'shin_right', x: 0.08, y: 0.4, z: 0.01 },
+      { name: 'foot_left', region: 'foot_left', x: -0.09, y: 0.1, z: 0.08 },
+      { name: 'foot_right', region: 'foot_right', x: 0.09, y: 0.1, z: 0.08 },
     ];
 
     const landmarks: HumanLandmark[] = [];

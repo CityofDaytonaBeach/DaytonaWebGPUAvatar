@@ -46,9 +46,10 @@ class CanvasHumanRenderer {
     const delta = human.computeMorphDelta();
 
     const proj = (x: number, y: number): [number, number] => {
-      // Head-first topology: zoom into the canonical head band (y 1.6..2.1).
-      const sy = ((2.12 - y) / 0.55) * h;
-      return [((x + 0.2) / 0.4) * w, sy];
+      // Full-body topology: map the whole human (feet y~0 to crown y~2.1) into
+      // the canvas, centered and fitted with a little x-splay for the limbs.
+      const sy = ((2.1 - y) / 2.25) * h;
+      return [((x + 0.45) / 0.9) * w, sy];
     };
 
     // Full 3D position of a vertex (skinned when animating, else morph-deformed).

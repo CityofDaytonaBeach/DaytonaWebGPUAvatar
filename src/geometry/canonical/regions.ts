@@ -73,3 +73,6 @@ export const EYELID_REGIONS: RegionName[] = [
 
 /** All fine-grained regions a conformant HD HEAD V0.1 topology must provide. */
 export const REQUIRED_HD_HEAD_REGIONS: RegionName[] = [...HD_HEAD_REGIONS];
+
+/** All fine-grained regions a conformant HD BODY V0.1 topology must provide. */
+export const REQUIRED_HD_BODY_REGIONS: RegionName[] = [...HD_BODY_REGIONS];
