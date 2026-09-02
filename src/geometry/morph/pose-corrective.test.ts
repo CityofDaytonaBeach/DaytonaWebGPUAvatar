@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Human } from '../../human.js';
-import { createDefaultRegistry } from '../../core/schema/registry.js';
+import { createDefaultRegistry } from '../../core/schema/descriptors.js';
 import { HumanDefinition } from '../../core/schema/human-definition.js';
 import { MorphDriver } from './morph-driver.js';
 import { HDCanonicalHumanProvider } from '../canonical/hd-head-provider.js';
@@ -71,8 +71,10 @@ describe('pose/skeleton correctives (P15)', () => {
     const human = await Human.create({ canonicalProvider: new HDCanonicalHumanProvider() });
     const rest = human.computeMorphDelta();
 
+    // Roll the head about z -> the headTilt chin corrective deflects lower-face
+    // vertices, so the morph delta is non-zero purely from pose (P15).
     human.setPose([
-      { name: 'head', localPos: { x: 0, y: 0, z: 0 }, localRot: quatFromEulerDeg(15, 0, 0) },
+      { name: 'head', localPos: { x: 0, y: 0, z: 0 }, localRot: quatFromEulerDeg(0, 0, 18) },
     ]);
     const posed = human.computeMorphDelta();
     expect(sumAbs(posed)).toBeGreaterThan(sumAbs(rest));
