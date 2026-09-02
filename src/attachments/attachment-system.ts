@@ -1,11 +1,11 @@
-import { buildBoneMatrices, combinedSkinMatrices } from "../anatomy/skeleton/bone-matrix";
-import { BoneDef } from "../anatomy/skeleton/skeleton";
-import { BonePose } from "../animation/skeleton/skeletal-animation";
-import { CharacterEvent } from "../core/events/character-event";
-import { Vec3, vec3 } from "../core/math/vec";
-import { CanonicalHuman, RegionName } from "../geometry/canonical/canonical-human";
+import { buildBoneMatrices, combinedSkinMatrices } from '../anatomy/skeleton/bone-matrix';
+import { BoneDef } from '../anatomy/skeleton/skeleton';
+import { BonePose } from '../animation/skeleton/skeletal-animation';
+import { CharacterEvent } from '../core/events/character-event';
+import { Vec3, vec3 } from '../core/math/vec';
+import { CanonicalHuman, RegionName } from '../geometry/canonical/canonical-human';
 
-export type AttachmentKind = "wearable" | "tattoo" | "piercing" | "generic";
+export type AttachmentKind = 'wearable' | 'tattoo' | 'piercing' | 'generic';
 
 export interface AttachmentAnchor {
   /** Semantic surface/region anchor; survives topology-preserving edits. */
@@ -27,9 +27,9 @@ export class AttachmentSystem {
   private readonly byId = new Map<string, HumanAttachment>();
 
   add(attachment: HumanAttachment): void {
-    if (!attachment.id) throw new Error("Attachment id is required");
+    if (!attachment.id) throw new Error('Attachment id is required');
     if (!attachment.anchor.region && !attachment.anchor.bone) {
-      throw new Error("Attachment anchor requires a region or bone");
+      throw new Error('Attachment anchor requires a region or bone');
     }
     this.byId.set(attachment.id, cloneAttachment(attachment));
   }
@@ -57,11 +57,11 @@ export class AttachmentSystem {
   }
 
   applyEvent(event: CharacterEvent): void {
-    if (event.type === "wear" || event.type === "addTattoo") {
+    if (event.type === 'wear' || event.type === 'addTattoo') {
       const attachment = event.payload?.attachment as HumanAttachment | undefined;
       if (attachment) this.add(attachment);
     }
-    if (event.type === "removeAttachment" && typeof event.payload?.id === "string") {
+    if (event.type === 'removeAttachment' && typeof event.payload?.id === 'string') {
       this.remove(event.payload.id);
     }
   }
@@ -71,7 +71,7 @@ export class AttachmentSystem {
     canonical: CanonicalHuman,
     skeleton: BoneDef[],
     poses: BonePose[] = [],
-    morphDelta?: Float32Array
+    morphDelta?: Float32Array,
   ): Vec3 {
     const offset = attachment.anchor.localPosition ?? vec3();
     if (attachment.anchor.bone) {
@@ -93,14 +93,23 @@ function cloneAttachment(attachment: HumanAttachment): HumanAttachment {
     anchor: {
       region: attachment.anchor.region,
       bone: attachment.anchor.bone,
-      localPosition: attachment.anchor.localPosition ? { ...attachment.anchor.localPosition } : undefined,
+      localPosition: attachment.anchor.localPosition
+        ? { ...attachment.anchor.localPosition }
+        : undefined,
     },
     data: attachment.data ? { ...attachment.data } : undefined,
   };
 }
 
-function regionCentroid(canonical: CanonicalHuman, region: RegionName, morphDelta?: Float32Array): Vec3 {
-  let x = 0, y = 0, z = 0, count = 0;
+function regionCentroid(
+  canonical: CanonicalHuman,
+  region: RegionName,
+  morphDelta?: Float32Array,
+): Vec3 {
+  let x = 0,
+    y = 0,
+    z = 0,
+    count = 0;
   for (const v of canonical.vertices) {
     if (v.region !== region) continue;
     const i = v.id * 3;
@@ -113,7 +122,12 @@ function regionCentroid(canonical: CanonicalHuman, region: RegionName, morphDelt
   return vec3(x / count, y / count, z / count);
 }
 
-function transformBoneLocal(bone: string, local: Vec3, skeleton: BoneDef[], poses: BonePose[]): Vec3 {
+function transformBoneLocal(
+  bone: string,
+  local: Vec3,
+  skeleton: BoneDef[],
+  poses: BonePose[],
+): Vec3 {
   const index = skeleton.findIndex((b) => b.name === bone);
   if (index < 0) throw new Error(`Unknown attachment bone: ${bone}`);
   const current = buildBoneMatrices(skeleton, poses).current.subarray(index * 16, index * 16 + 16);
@@ -125,7 +139,7 @@ function transformByDominantRegionBone(
   canonical: CanonicalHuman,
   region: RegionName,
   skeleton: BoneDef[],
-  poses: BonePose[]
+  poses: BonePose[],
 ): Vec3 {
   const bone = dominantRegionBone(canonical, region);
   const index = skeleton.findIndex((b) => b.name === bone);
@@ -157,6 +171,6 @@ function transformPoint(m: Float32Array, p: Vec3): Vec3 {
   return vec3(
     m[0] * p.x + m[4] * p.y + m[8] * p.z + m[12],
     m[1] * p.x + m[5] * p.y + m[9] * p.z + m[13],
-    m[2] * p.x + m[6] * p.y + m[10] * p.z + m[14]
+    m[2] * p.x + m[6] * p.y + m[10] * p.z + m[14],
   );
 }

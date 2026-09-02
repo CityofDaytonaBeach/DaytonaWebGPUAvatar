@@ -1,7 +1,7 @@
-import { Human } from "../../human";
-import { EventSource } from "../../core/events/character-event";
-import { KernelKind } from "../../compiler/delta/delta-compiler";
-import { AffectedSystemName } from "../../compiler/dependency/affected-systems";
+import { Human } from '../../human';
+import { EventSource } from '../../core/events/character-event';
+import { KernelKind } from '../../compiler/delta/delta-compiler';
+import { AffectedSystemName } from '../../compiler/dependency/affected-systems';
 
 // ─── Existing types (kept for backwards compatibility) ────────────────────────
 
@@ -109,7 +109,7 @@ export interface RegressionBaseline {
 
 export interface RegressionFlag {
   caseName: string;
-  metric: "cpu" | "gpu";
+  metric: 'cpu' | 'gpu';
   baselineMs: number;
   currentMs: number;
   changePercent: number;
@@ -126,10 +126,14 @@ export interface BenchmarkRegressionReport {
 // ─── Default cases ────────────────────────────────────────────────────────────
 
 export const DEFAULT_LOCALIZED_EDIT_BENCHMARKS: LocalizedEditBenchmarkCase[] = [
-  { name: "nose width localized edit", changes: { "face.nose.width": 0.9 }, source: "automation" },
-  { name: "jaw width localized edit", changes: { "face.jaw.width": 1.1 }, source: "automation" },
-  { name: "body muscularity broader edit", changes: { "body.muscularity": 0.72 }, source: "automation" },
-  { name: "hair cosmetic edit", changes: { "hair.length": 0.7 }, source: "automation" },
+  { name: 'nose width localized edit', changes: { 'face.nose.width': 0.9 }, source: 'automation' },
+  { name: 'jaw width localized edit', changes: { 'face.jaw.width': 1.1 }, source: 'automation' },
+  {
+    name: 'body muscularity broader edit',
+    changes: { 'body.muscularity': 0.72 },
+    source: 'automation',
+  },
+  { name: 'hair cosmetic edit', changes: { 'hair.length': 0.7 }, source: 'automation' },
 ];
 
 // ─── Feature detection ────────────────────────────────────────────────────────
@@ -143,18 +147,38 @@ export interface GpuFeatureStatus {
 
 export function detectGpuFeatureStatus(device?: GPUDevice): GpuFeatureStatus {
   if (!device) {
-    return { timestampQuerySupported: false, deviceAvailable: false, writeTimestampAvailable: false, reason: "No GPUDevice provided" };
+    return {
+      timestampQuerySupported: false,
+      deviceAvailable: false,
+      writeTimestampAvailable: false,
+      reason: 'No GPUDevice provided',
+    };
   }
-  const hasFeature = device.features.has("timestamp-query");
+  const hasFeature = device.features.has('timestamp-query');
   if (!hasFeature) {
-    return { timestampQuerySupported: false, deviceAvailable: true, writeTimestampAvailable: false, reason: "timestamp-query feature not enabled on device" };
+    return {
+      timestampQuerySupported: false,
+      deviceAvailable: true,
+      writeTimestampAvailable: false,
+      reason: 'timestamp-query feature not enabled on device',
+    };
   }
   const probe = device.createCommandEncoder();
-  const hasWrite = typeof (probe as TimestampCommandEncoder).writeTimestamp === "function";
+  const hasWrite = typeof (probe as TimestampCommandEncoder).writeTimestamp === 'function';
   if (!hasWrite) {
-    return { timestampQuerySupported: false, deviceAvailable: true, writeTimestampAvailable: false, reason: "GPUCommandEncoder.writeTimestamp unavailable in this runtime" };
+    return {
+      timestampQuerySupported: false,
+      deviceAvailable: true,
+      writeTimestampAvailable: false,
+      reason: 'GPUCommandEncoder.writeTimestamp unavailable in this runtime',
+    };
   }
-  return { timestampQuerySupported: true, deviceAvailable: true, writeTimestampAvailable: true, reason: null };
+  return {
+    timestampQuerySupported: true,
+    deviceAvailable: true,
+    writeTimestampAvailable: true,
+    reason: null,
+  };
 }
 
 // ─── Statistical helpers (zero-dependency, deterministic) ─────────────────────
@@ -166,10 +190,12 @@ function computeStats(values: readonly number[]): StatisticalSummary {
   const sorted = [...values].sort((a, b) => a - b);
   const n = sorted.length;
   const mean = sorted.reduce((s, v) => s + v, 0) / n;
-  const median = n % 2 === 1
-    ? sorted[(n - 1) / 2]
-    : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
-  const variance = sorted.reduce((s, v) => { const d = v - mean; return s + d * d; }, 0) / n;
+  const median = n % 2 === 1 ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+  const variance =
+    sorted.reduce((s, v) => {
+      const d = v - mean;
+      return s + d * d;
+    }, 0) / n;
   const standardDeviation = Math.sqrt(variance);
   const p5Index = Math.min(Math.floor(n * 0.05), n - 1);
   const p95Index = Math.min(Math.floor(n * 0.95), n - 1);
@@ -189,7 +215,7 @@ function computeStats(values: readonly number[]): StatisticalSummary {
 
 function readPeakMemory(): { cpuBytes: number | null; gpuBytes: number | null } {
   let cpuBytes: number | null = null;
-  if (typeof performance !== "undefined" && "memory" in performance) {
+  if (typeof performance !== 'undefined' && 'memory' in performance) {
     const mem = (performance as { memory?: { usedJSHeapSize?: number } }).memory;
     if (mem?.usedJSHeapSize != null) {
       cpuBytes = mem.usedJSHeapSize;
@@ -212,7 +238,7 @@ interface TimestampCommandEncoder extends GPUCommandEncoder {
 
 export async function runLocalizedEditBenchmark(
   cases: readonly LocalizedEditBenchmarkCase[] = DEFAULT_LOCALIZED_EDIT_BENCHMARKS,
-  createHuman: () => Promise<Human> = () => Human.create()
+  createHuman: () => Promise<Human> = () => Human.create(),
 ): Promise<LocalizedEditBenchmarkSummary> {
   const results: LocalizedEditBenchmarkResult[] = [];
   let baselineVertexCount = 0;
@@ -221,7 +247,7 @@ export async function runLocalizedEditBenchmark(
     const human = await createHuman();
     baselineVertexCount = human.canonicalRef.vertexCount;
     const start = nowMs();
-    const result = human.modify(item.changes, item.source ?? "automation");
+    const result = human.modify(item.changes, item.source ?? 'automation');
     const cpuTimeMs = nowMs() - start;
     const metrics = human.profiler.latest();
 
@@ -243,16 +269,20 @@ export async function runLocalizedEditBenchmark(
 }
 
 export async function runLocalizedEditGpuTimestampBenchmark(
-  options: GpuTimestampBenchmarkOptions = {}
+  options: GpuTimestampBenchmarkOptions = {},
 ): Promise<GpuTimestampBenchmarkResult> {
   const cases = options.cases ?? DEFAULT_LOCALIZED_EDIT_BENCHMARKS;
   const status = detectGpuFeatureStatus(options.device);
   if (!status.timestampQuerySupported) {
-    return { supported: false, reason: status.reason ?? "unknown", cpuSummary: await runLocalizedEditBenchmark(cases) };
+    return {
+      supported: false,
+      reason: status.reason ?? 'unknown',
+      cpuSummary: await runLocalizedEditBenchmark(cases),
+    };
   }
 
   const device = options.device!;
-  const format = options.format ?? "bgra8unorm";
+  const format = options.format ?? 'bgra8unorm';
   const width = options.width ?? 64;
   const height = options.height ?? 64;
   const results: LocalizedEditBenchmarkResult[] = [];
@@ -261,14 +291,24 @@ export async function runLocalizedEditGpuTimestampBenchmark(
   for (const item of cases) {
     const human = await Human.create({ device, format });
     baselineVertexCount = human.canonicalRef.vertexCount;
-    const texture = device.createTexture({ size: { width, height }, format, usage: GPUTextureUsage.RENDER_ATTACHMENT });
+    const texture = device.createTexture({
+      size: { width, height },
+      format,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
     const view = texture.createView();
-    const querySet = device.createQuerySet({ type: "timestamp", count: 2 });
-    const resolveBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC });
-    const readBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    const querySet = device.createQuerySet({ type: 'timestamp', count: 2 });
+    const resolveBuffer = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
+    });
+    const readBuffer = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
 
     const start = nowMs();
-    const result = human.modify(item.changes, item.source ?? "automation");
+    const result = human.modify(item.changes, item.source ?? 'automation');
     human.uploadGpu();
     const encoder = device.createCommandEncoder() as TimestampCommandEncoder;
     encoder.writeTimestamp!(querySet, 0);
@@ -314,12 +354,14 @@ export class BenchmarkSuite {
   private createHuman: () => Promise<Human>;
   private timestampDevice?: GPUDevice;
 
-  constructor(opts: {
-    config?: Partial<BenchmarkConfig>;
-    cases?: readonly LocalizedEditBenchmarkCase[];
-    createHuman?: () => Promise<Human>;
-    device?: GPUDevice;
-  } = {}) {
+  constructor(
+    opts: {
+      config?: Partial<BenchmarkConfig>;
+      cases?: readonly LocalizedEditBenchmarkCase[];
+      createHuman?: () => Promise<Human>;
+      device?: GPUDevice;
+    } = {},
+  ) {
     this.config = { ...DEFAULT_BENCHMARK_CONFIG, ...opts.config };
     this.cases = opts.cases ?? DEFAULT_LOCALIZED_EDIT_BENCHMARKS;
     this.createHuman = opts.createHuman ?? (() => Human.create());
@@ -363,7 +405,7 @@ export class BenchmarkSuite {
           iterResults.push(singleGpuResult);
         } else {
           const start = nowMs();
-          const result = human.modify(item.changes, item.source ?? "automation");
+          const result = human.modify(item.changes, item.source ?? 'automation');
           const cpuTimeMs = nowMs() - start;
           const metrics = human.profiler.latest();
           iterResults.push({
@@ -433,7 +475,7 @@ export class BenchmarkSuite {
       memoryPeakCpuBytes: peakCpuBytes,
       memoryPeakGpuBytes: peakMem.gpuBytes,
       gpuTimestampSupported: useGpu,
-      gpuTimestampReason: featureStatus.reason,
+      gpuTimestampReason: featureStatus.reason ?? undefined,
       cancelled,
       timedOut,
     };
@@ -441,21 +483,31 @@ export class BenchmarkSuite {
 
   private async runSingleWithGpuTimestamp(
     item: LocalizedEditBenchmarkCase,
-    device: GPUDevice
+    device: GPUDevice,
   ): Promise<LocalizedEditBenchmarkResult> {
-    const format: GPUTextureFormat = "bgra8unorm";
+    const format: GPUTextureFormat = 'bgra8unorm';
     const width = 64;
     const height = 64;
 
     const human = await Human.create({ device, format });
-    const texture = device.createTexture({ size: { width, height }, format, usage: GPUTextureUsage.RENDER_ATTACHMENT });
+    const texture = device.createTexture({
+      size: { width, height },
+      format,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+    });
     const view = texture.createView();
-    const querySet = device.createQuerySet({ type: "timestamp", count: 2 });
-    const resolveBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC });
-    const readBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    const querySet = device.createQuerySet({ type: 'timestamp', count: 2 });
+    const resolveBuffer = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
+    });
+    const readBuffer = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
 
     const start = nowMs();
-    const result = human.modify(item.changes, item.source ?? "automation");
+    const result = human.modify(item.changes, item.source ?? 'automation');
     human.uploadGpu();
     const encoder = device.createCommandEncoder() as TimestampCommandEncoder;
     encoder.writeTimestamp!(querySet, 0);
@@ -493,12 +545,12 @@ export class BenchmarkSuite {
 
 // ─── Regression detection ─────────────────────────────────────────────────────
 
-const DEFAULT_REGRESSION_THRESHOLD = 0.20; // 20% slower = regression
+const DEFAULT_REGRESSION_THRESHOLD = 0.2; // 20% slower = regression
 
 export function detectRegressions(
   summary: BenchmarkRunSummary,
   baseline: RegressionBaseline,
-  thresholdPercent: number = DEFAULT_REGRESSION_THRESHOLD
+  thresholdPercent: number = DEFAULT_REGRESSION_THRESHOLD,
 ): BenchmarkRegressionReport {
   const regressions: RegressionFlag[] = [];
   const improvements: RegressionFlag[] = [];
@@ -512,18 +564,46 @@ export function detectRegressions(
     if (cpuStats && cpuBaseline != null && cpuStats.samples > 0) {
       const change = (cpuStats.mean - cpuBaseline) / cpuBaseline;
       if (change > thresholdPercent) {
-        regressions.push({ caseName: name, metric: "cpu", baselineMs: cpuBaseline, currentMs: cpuStats.mean, changePercent: change, threshold: thresholdPercent });
+        regressions.push({
+          caseName: name,
+          metric: 'cpu',
+          baselineMs: cpuBaseline,
+          currentMs: cpuStats.mean,
+          changePercent: change,
+          threshold: thresholdPercent,
+        });
       } else if (change < -thresholdPercent) {
-        improvements.push({ caseName: name, metric: "cpu", baselineMs: cpuBaseline, currentMs: cpuStats.mean, changePercent: change, threshold: thresholdPercent });
+        improvements.push({
+          caseName: name,
+          metric: 'cpu',
+          baselineMs: cpuBaseline,
+          currentMs: cpuStats.mean,
+          changePercent: change,
+          threshold: thresholdPercent,
+        });
       }
     }
 
     if (gpuStats && gpuBaseline != null && gpuStats.samples > 0) {
       const change = (gpuStats.mean - gpuBaseline) / gpuBaseline;
       if (change > thresholdPercent) {
-        regressions.push({ caseName: name, metric: "gpu", baselineMs: gpuBaseline, currentMs: gpuStats.mean, changePercent: change, threshold: thresholdPercent });
+        regressions.push({
+          caseName: name,
+          metric: 'gpu',
+          baselineMs: gpuBaseline,
+          currentMs: gpuStats.mean,
+          changePercent: change,
+          threshold: thresholdPercent,
+        });
       } else if (change < -thresholdPercent) {
-        improvements.push({ caseName: name, metric: "gpu", baselineMs: gpuBaseline, currentMs: gpuStats.mean, changePercent: change, threshold: thresholdPercent });
+        improvements.push({
+          caseName: name,
+          metric: 'gpu',
+          baselineMs: gpuBaseline,
+          currentMs: gpuStats.mean,
+          changePercent: change,
+          threshold: thresholdPercent,
+        });
       }
     }
   }
@@ -534,12 +614,17 @@ export function detectRegressions(
 // ─── CI-ready output formats ──────────────────────────────────────────────────
 
 /** Produces JUnit-compatible XML for CI systems (GitHub Actions, Jenkins, etc.). */
-export function toJUnitXml(summary: BenchmarkRunSummary, regressions?: BenchmarkRegressionReport): string {
+export function toJUnitXml(
+  summary: BenchmarkRunSummary,
+  regressions?: BenchmarkRegressionReport,
+): string {
   const lines: string[] = ['<?xml version="1.0" encoding="UTF-8"?>'];
   const suiteCount = summary.cases.length;
   const failureCount = regressions?.regressions.length ?? 0;
   const totalTimeS = (summary.totalWallTimeMs / 1000).toFixed(3);
-  lines.push(`<testsuite name="localized-edit-benchmark" tests="${suiteCount}" failures="${failureCount}" time="${totalTimeS}">`);
+  lines.push(
+    `<testsuite name="localized-edit-benchmark" tests="${suiteCount}" failures="${failureCount}" time="${totalTimeS}">`,
+  );
 
   for (const name of summary.cases) {
     const cpuStats = summary.perCaseCpuStats[name];
@@ -549,27 +634,40 @@ export function toJUnitXml(summary: BenchmarkRunSummary, regressions?: Benchmark
       ? regressions!.regressions.find((r) => r.caseName === name)
       : undefined;
 
-    lines.push(`  <testcase name="${escapeXml(name)}" classname="benchmark/localized-edit" time="${cpuStats.mean.toFixed(4)}">`);
+    lines.push(
+      `  <testcase name="${escapeXml(name)}" classname="benchmark/localized-edit" time="${cpuStats.mean.toFixed(4)}">`,
+    );
     if (failure) {
-      lines.push(`    <failure message="${failure.metric} regression: +${(failure.changePercent * 100).toFixed(1)}%">`);
-      lines.push(`      Baseline: ${failure.baselineMs.toFixed(4)}ms, Current: ${failure.currentMs.toFixed(4)}ms`);
+      lines.push(
+        `    <failure message="${failure.metric} regression: +${(failure.changePercent * 100).toFixed(1)}%">`,
+      );
+      lines.push(
+        `      Baseline: ${failure.baselineMs.toFixed(4)}ms, Current: ${failure.currentMs.toFixed(4)}ms`,
+      );
       lines.push(`    </failure>`);
     }
     lines.push(`    <system-out>`);
-    lines.push(`      cpu: mean=${cpuStats.mean.toFixed(4)}ms p95=${cpuStats.p95.toFixed(4)}ms std=${cpuStats.standardDeviation.toFixed(4)}ms n=${cpuStats.samples}`);
+    lines.push(
+      `      cpu: mean=${cpuStats.mean.toFixed(4)}ms p95=${cpuStats.p95.toFixed(4)}ms std=${cpuStats.standardDeviation.toFixed(4)}ms n=${cpuStats.samples}`,
+    );
     if (gpuStats.samples > 0) {
-      lines.push(`      gpu: mean=${gpuStats.mean.toFixed(4)}ms p95=${gpuStats.p95.toFixed(4)}ms std=${gpuStats.standardDeviation.toFixed(4)}ms n=${gpuStats.samples}`);
+      lines.push(
+        `      gpu: mean=${gpuStats.mean.toFixed(4)}ms p95=${gpuStats.p95.toFixed(4)}ms std=${gpuStats.standardDeviation.toFixed(4)}ms n=${gpuStats.samples}`,
+      );
     }
     lines.push(`    </system-out>`);
     lines.push(`  </testcase>`);
   }
 
   lines.push(`</testsuite>`);
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** Produces a JSON summary suitable for CI artifact archival and dashboard ingestion. */
-export function toJsonSummary(summary: BenchmarkRunSummary, regressions?: BenchmarkRegressionReport): string {
+export function toJsonSummary(
+  summary: BenchmarkRunSummary,
+  regressions?: BenchmarkRegressionReport,
+): string {
   const payload = {
     meta: {
       timestamp: new Date().toISOString(),
@@ -594,43 +692,59 @@ export function toJsonSummary(summary: BenchmarkRunSummary, regressions?: Benchm
 }
 
 /** Produces a markdown table for PR comments and README badges. */
-export function toMarkdownTable(summary: BenchmarkRunSummary, regressions?: BenchmarkRegressionReport): string {
+export function toMarkdownTable(
+  summary: BenchmarkRunSummary,
+  regressions?: BenchmarkRegressionReport,
+): string {
   const lines: string[] = [];
-  lines.push("## Localized Edit Benchmark Results\n");
-  lines.push(`> Iterations: ${summary.config.iterations} (warmup: ${summary.config.warmupRuns}) · GPU ts: ${summary.gpuTimestampSupported ? "yes" : "no"} · Wall: ${(summary.totalWallTimeMs / 1000).toFixed(1)}s`);
+  lines.push('## Localized Edit Benchmark Results\n');
+  lines.push(
+    `> Iterations: ${summary.config.iterations} (warmup: ${summary.config.warmupRuns}) · GPU ts: ${summary.gpuTimestampSupported ? 'yes' : 'no'} · Wall: ${(summary.totalWallTimeMs / 1000).toFixed(1)}s`,
+  );
 
   if (summary.timedOut) {
-    lines.push("\n> **WARNING**: Benchmark timed out before completion.\n");
+    lines.push('\n> **WARNING**: Benchmark timed out before completion.\n');
   }
 
-  lines.push("");
-  lines.push("| Case | CPU mean (ms) | CPU p95 (ms) | CPU σ (ms) | GPU mean (ms) | GPU p95 (ms) | Status |");
-  lines.push("|------|---------------|--------------|------------|---------------|--------------|--------|");
+  lines.push('');
+  lines.push(
+    '| Case | CPU mean (ms) | CPU p95 (ms) | CPU σ (ms) | GPU mean (ms) | GPU p95 (ms) | Status |',
+  );
+  lines.push(
+    '|------|---------------|--------------|------------|---------------|--------------|--------|',
+  );
 
   for (const name of summary.cases) {
     const cpu = summary.perCaseCpuStats[name];
     const gpu = summary.perCaseGpuStats[name];
-    const regFlag = regressions?.regressions.find((r) => r.caseName === name && r.metric === "cpu");
-    const impFlag = regressions?.improvements.find((r) => r.caseName === name && r.metric === "cpu");
-    let status = "OK";
+    const regFlag = regressions?.regressions.find((r) => r.caseName === name && r.metric === 'cpu');
+    const impFlag = regressions?.improvements.find(
+      (r) => r.caseName === name && r.metric === 'cpu',
+    );
+    let status = 'OK';
     if (regFlag) status = `REGRESSION +${(regFlag.changePercent * 100).toFixed(1)}%`;
     else if (impFlag) status = `IMPROVED ${(impFlag.changePercent * 100).toFixed(1)}%`;
 
-    const gpuMean = gpu.samples > 0 ? gpu.mean.toFixed(4) : "n/a";
-    const gpuP95 = gpu.samples > 0 ? gpu.p95.toFixed(4) : "n/a";
+    const gpuMean = gpu.samples > 0 ? gpu.mean.toFixed(4) : 'n/a';
+    const gpuP95 = gpu.samples > 0 ? gpu.p95.toFixed(4) : 'n/a';
 
-    lines.push(`| ${name} | ${cpu.mean.toFixed(4)} | ${cpu.p95.toFixed(4)} | ${cpu.standardDeviation.toFixed(4)} | ${gpuMean} | ${gpuP95} | ${status} |`);
+    lines.push(
+      `| ${name} | ${cpu.mean.toFixed(4)} | ${cpu.p95.toFixed(4)} | ${cpu.standardDeviation.toFixed(4)} | ${gpuMean} | ${gpuP95} | ${status} |`,
+    );
   }
 
   if (summary.memoryPeakCpuBytes != null) {
     lines.push(`\nPeak CPU memory: ${(summary.memoryPeakCpuBytes / 1024 / 1024).toFixed(1)} MB`);
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** Machine-readable export: full result as JSON string. */
-export function exportBenchmarkResult(summary: BenchmarkRunSummary, regressions?: BenchmarkRegressionReport): string {
+export function exportBenchmarkResult(
+  summary: BenchmarkRunSummary,
+  regressions?: BenchmarkRegressionReport,
+): string {
   return toJsonSummary(summary, regressions);
 }
 
@@ -638,14 +752,15 @@ export function exportBenchmarkResult(summary: BenchmarkRunSummary, regressions?
 
 function escapeXml(s: string): string {
   return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 function nowMs(): number {
-  if (typeof performance !== "undefined" && typeof performance.now === "function") return performance.now();
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function')
+    return performance.now();
   return Date.now();
 }

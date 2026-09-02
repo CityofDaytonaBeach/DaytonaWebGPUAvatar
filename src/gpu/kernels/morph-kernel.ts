@@ -1,6 +1,6 @@
-import { SparseMorphSet } from "../../geometry/morph/sparse-morph";
-import { HumanDefinition } from "../../core/schema/human-definition";
-import { MorphDriver } from "../../geometry/morph/morph-driver";
+import { SparseMorphSet } from '../../geometry/morph/sparse-morph';
+import { HumanDefinition } from '../../core/schema/human-definition';
+import { MorphDriver } from '../../geometry/morph/morph-driver';
 
 /**
  * SparseMorph / MorphAccumulation kernel.
@@ -14,7 +14,7 @@ export class MorphKernel {
     private morphs: SparseMorphSet,
     private driver: MorphDriver,
     private device: GPUDevice | null = null,
-    private buffer: GPUBuffer | null = null
+    private buffer: GPUBuffer | null = null,
   ) {}
 
   /** Compute the accumulated morph delta into `out` (strides of 3 floats). */

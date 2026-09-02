@@ -1,5 +1,5 @@
-import { createDefaultRegistry } from "../../core/schema/descriptors";
-import { generateHumanParamsWgsl } from "../../core/schema/gpu-layout";
+import { createDefaultRegistry } from '../../core/schema/descriptors';
+import { generateHumanParamsWgsl } from '../../core/schema/gpu-layout';
 
 /** WGSL HumanParams generated from the authoritative default registry. */
 export const HUMAN_PARAM_STRUCT = generateHumanParamsWgsl(createDefaultRegistry());

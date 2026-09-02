@@ -1,12 +1,12 @@
-import { AnatomyDimensions } from "../../anatomy/parametric/parametric-anatomy";
-import { HumanAttachment } from "../../attachments/attachment-system";
-import { Vec3, vec3 } from "../../core/math/vec";
+import { AnatomyDimensions } from '../../anatomy/parametric/parametric-anatomy';
+import { HumanAttachment } from '../../attachments/attachment-system';
+import { Vec3, vec3 } from '../../core/math/vec';
 
 // ---------------------------------------------------------------------------
 // Public types – existing (unchanged)
 // ---------------------------------------------------------------------------
 
-export type GarmentKind = "shirt" | "sleeve" | "generic" | "pants" | "jacket" | "hat" | "shoes";
+export type GarmentKind = 'shirt' | 'sleeve' | 'generic' | 'pants' | 'jacket' | 'hat' | 'shoes';
 
 export interface GarmentVertex {
   position: Vec3;
@@ -35,8 +35,8 @@ export interface GarmentRenderMesh {
   id: string;
   kind: GarmentKind;
   positions: Float32Array; // xyz packed
-  normals: Float32Array;   // xyz packed
-  uvs: Float32Array;       // uv packed
+  normals: Float32Array; // xyz packed
+  uvs: Float32Array; // uv packed
   indices: Uint32Array;
   color: [number, number, number];
   vertexCount: number;
@@ -86,10 +86,10 @@ export interface GarmentLODMesh {
 export function generateGarments(
   attachments: HumanAttachment[],
   dims: AnatomyDimensions,
-  options: GarmentOptions = {}
+  options: GarmentOptions = {},
 ): GarmentMesh[] {
   return attachments.flatMap((attachment) => {
-    if (attachment.kind !== "wearable") return [];
+    if (attachment.kind !== 'wearable') return [];
     return [generateGarment(attachment, dims, options)];
   });
 }
@@ -97,27 +97,34 @@ export function generateGarments(
 export function generateGarment(
   attachment: HumanAttachment,
   dims: AnatomyDimensions,
-  options: GarmentOptions = {}
+  options: GarmentOptions = {},
 ): GarmentMesh {
-  if (attachment.kind !== "wearable") throw new Error("Garments require a wearable attachment");
+  if (attachment.kind !== 'wearable') throw new Error('Garments require a wearable attachment');
   const color = colorData(attachment.data?.color, options.defaultColor ?? [0.03, 0.04, 0.06]);
   const looseness = Math.max(0, numberData(attachment.data?.looseness, options.looseness ?? 0.04));
-  const label = typeof attachment.data?.type === "string" ? attachment.data.type.toLowerCase() : "";
-  const region = attachment.anchor.region ?? "";
+  const label = typeof attachment.data?.type === 'string' ? attachment.data.type.toLowerCase() : '';
+  const region = attachment.anchor.region ?? '';
 
-  if (region === "upperarm_l" || region === "upperarm_r" || label.includes("sleeve")) {
-    return makeSleeve(attachment.id, region === "upperarm_r" ? 1 : -1, dims, looseness, color);
+  if (region === 'upperarm_l' || region === 'upperarm_r' || label.includes('sleeve')) {
+    return makeSleeve(attachment.id, region === 'upperarm_r' ? 1 : -1, dims, looseness, color);
   }
-  if (label.includes("pants") || label.includes("trousers") || region === "upperleg_l" || region === "upperleg_r" || region === "lowerleg_l" || region === "lowerleg_r") {
+  if (
+    label.includes('pants') ||
+    label.includes('trousers') ||
+    region === 'thigh_l' ||
+    region === 'thigh_r' ||
+    region === 'shin_l' ||
+    region === 'shin_r'
+  ) {
     return makePants(attachment.id, dims, looseness, color);
   }
-  if (label.includes("jacket") || label.includes("coat") || label.includes("blazer")) {
+  if (label.includes('jacket') || label.includes('coat') || label.includes('blazer')) {
     return makeJacket(attachment.id, dims, looseness, color);
   }
-  if (label.includes("hat") || label.includes("cap") || region === "head") {
+  if (label.includes('hat') || label.includes('cap') || region === 'head') {
     return makeHat(attachment.id, dims, looseness, color);
   }
-  if (label.includes("shoe") || label.includes("boot") || label.includes("sneaker") || region === "foot_l" || region === "foot_r") {
+  if (label.includes('shoe') || label.includes('boot') || label.includes('sneaker')) {
     return makeShoes(attachment.id, dims, looseness, color);
   }
   return makeShirt(attachment.id, dims, looseness, color);
@@ -152,12 +159,24 @@ export function toRenderMesh(garment: GarmentMesh): GarmentRenderMesh {
   }
   const idx = garment.indices;
   for (let t = 0; t < ic; t += 3) {
-    const i0 = idx[t], i1 = idx[t + 1], i2 = idx[t + 2];
-    const ax = positions[i0 * 3], ay = positions[i0 * 3 + 1], az = positions[i0 * 3 + 2];
-    const bx = positions[i1 * 3], by = positions[i1 * 3 + 1], bz = positions[i1 * 3 + 2];
-    const cx = positions[i2 * 3], cy = positions[i2 * 3 + 1], cz = positions[i2 * 3 + 2];
-    const e1x = bx - ax, e1y = by - ay, e1z = bz - az;
-    const e2x = cx - ax, e2y = cy - ay, e2z = cz - az;
+    const i0 = idx[t],
+      i1 = idx[t + 1],
+      i2 = idx[t + 2];
+    const ax = positions[i0 * 3],
+      ay = positions[i0 * 3 + 1],
+      az = positions[i0 * 3 + 2];
+    const bx = positions[i1 * 3],
+      by = positions[i1 * 3 + 1],
+      bz = positions[i1 * 3 + 2];
+    const cx = positions[i2 * 3],
+      cy = positions[i2 * 3 + 1],
+      cz = positions[i2 * 3 + 2];
+    const e1x = bx - ax,
+      e1y = by - ay,
+      e1z = bz - az;
+    const e2x = cx - ax,
+      e2y = cy - ay,
+      e2z = cz - az;
     let nx = e1y * e2z - e1z * e2y;
     let ny = e1z * e2x - e1x * e2z;
     let nz = e1x * e2y - e1y * e2x;
@@ -168,7 +187,9 @@ export function toRenderMesh(garment: GarmentMesh): GarmentRenderMesh {
     }
   }
   for (let i = 0; i < vc; i++) {
-    const nx = normals[i * 3], ny = normals[i * 3 + 1], nz = normals[i * 3 + 2];
+    const nx = normals[i * 3],
+      ny = normals[i * 3 + 1],
+      nz = normals[i * 3 + 2];
     const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
     normals[i * 3] = nx / len;
     normals[i * 3 + 1] = ny / len;
@@ -191,7 +212,7 @@ export function toRenderMesh(garment: GarmentMesh): GarmentRenderMesh {
 /** Create a cloth-simulation mesh from a garment for physics integration. */
 export function toPhysicsMesh(
   garment: GarmentMesh,
-  options: { gravity?: Vec3; damping?: number; particleMass?: number } = {}
+  options: { gravity?: Vec3; damping?: number; particleMass?: number } = {},
 ): GarmentPhysicsMesh {
   const gravity = options.gravity ?? vec3(0, -9.81, 0);
   const damping = options.damping ?? 0.98;
@@ -218,13 +239,17 @@ export function toPhysicsMesh(
     edgeMap.set(key, constraints.length);
     const pa = verts[a].position;
     const pb = verts[b].position;
-    const dx = pb.x - pa.x, dy = pb.y - pa.y, dz = pb.z - pa.z;
+    const dx = pb.x - pa.x,
+      dy = pb.y - pa.y,
+      dz = pb.z - pa.z;
     const restLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
     constraints.push({ a, b, restLength: restLen, stiffness: 1.0 });
   }
 
   for (let t = 0; t < triCount; t++) {
-    const i0 = idx[t * 3], i1 = idx[t * 3 + 1], i2 = idx[t * 3 + 2];
+    const i0 = idx[t * 3],
+      i1 = idx[t * 3 + 1],
+      i2 = idx[t * 3 + 2];
     addEdge(i0, i1);
     addEdge(i1, i2);
     addEdge(i2, i0);
@@ -250,7 +275,7 @@ export function toPhysicsMesh(
 export function simulateClothStep(
   physics: GarmentPhysicsMesh,
   dt: number,
-  solverIterations: number = 3
+  solverIterations: number = 3,
 ): void {
   const { particles, constraints, gravity, damping } = physics;
   const dtSq = dt * dt;
@@ -281,10 +306,20 @@ export function simulateClothStep(
       const dy = pb.position.y - pa.position.y;
       const dz = pb.position.z - pa.position.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-8;
-      const diff = (dist - c.restLength) / dist * 0.5 * c.stiffness;
-      const ox = dx * diff, oy = dy * diff, oz = dz * diff;
-      if (!pa.pinned) { pa.position.x += ox; pa.position.y += oy; pa.position.z += oz; }
-      if (!pb.pinned) { pb.position.x -= ox; pb.position.y -= oy; pb.position.z -= oz; }
+      const diff = ((dist - c.restLength) / dist) * 0.5 * c.stiffness;
+      const ox = dx * diff,
+        oy = dy * diff,
+        oz = dz * diff;
+      if (!pa.pinned) {
+        pa.position.x += ox;
+        pa.position.y += oy;
+        pa.position.z += oz;
+      }
+      if (!pb.pinned) {
+        pb.position.x -= ox;
+        pb.position.y -= oy;
+        pb.position.z -= oz;
+      }
     }
   }
 }
@@ -296,14 +331,19 @@ export function applyDrape(
   attachmentRegions: Map<number, string>,
   dims: AnatomyDimensions,
   dt: number = 1 / 60,
-  steps: number = 5
+  steps: number = 5,
 ): void {
   const { particles } = physics;
 
   // Pin particles that correspond to attachment regions (neckline, shoulders, waistband).
   for (let i = 0; i < particles.length; i++) {
     const region = attachmentRegions.get(i);
-    if (region === "neck" || region === "shoulder_l" || region === "shoulder_r" || region === "waistband") {
+    if (
+      region === 'neck' ||
+      region === 'shoulder_l' ||
+      region === 'shoulder_r' ||
+      region === 'waistband'
+    ) {
       particles[i].pinned = true;
     }
   }
@@ -348,7 +388,7 @@ export function applyDrape(
 export function generateWrinkles(
   garment: GarmentMesh,
   dims: AnatomyDimensions,
-  options: { frequency?: number; amplitude?: number; seed?: number } = {}
+  options: { frequency?: number; amplitude?: number; seed?: number } = {},
 ): Vec3[] {
   const frequency = options.frequency ?? 12;
   const amplitude = options.amplitude ?? 0.003;
@@ -356,7 +396,9 @@ export function generateWrinkles(
 
   const offsets: Vec3[] = garment.vertices.map((vt) => {
     // Deterministic pseudo-random from position hash.
-    const h = pseudoHash(vt.position.x * 127.1 + vt.position.y * 311.7 + vt.position.z * 74.7 + seed);
+    const h = pseudoHash(
+      vt.position.x * 127.1 + vt.position.y * 311.7 + vt.position.z * 74.7 + seed,
+    );
     const h2 = pseudoHash(vt.position.y * 269.5 + vt.position.z * 183.3 + seed + 1.0);
     const h3 = pseudoHash(vt.position.z * 419.2 + vt.position.x * 371.9 + seed + 2.0);
 
@@ -368,7 +410,7 @@ export function generateWrinkles(
     return vec3(
       (h - 0.5) * 2 * amplitude * intensity,
       (h2 - 0.5) * amplitude * intensity * 0.3,
-      (h3 - 0.5) * 2 * amplitude * intensity
+      (h3 - 0.5) * 2 * amplitude * intensity,
     );
   });
 
@@ -389,7 +431,7 @@ export function applyWrinkles(renderMesh: GarmentRenderMesh, offsets: Vec3[]): v
 export function generateGarmentLODs(
   attachment: HumanAttachment,
   dims: AnatomyDimensions,
-  options: GarmentOptions = {}
+  options: GarmentOptions = {},
 ): GarmentLODMesh[] {
   const garment = generateGarment(attachment, dims, options);
   const full = toRenderMesh(garment);
@@ -397,13 +439,24 @@ export function generateGarmentLODs(
 
   return [
     { level: 0, render: full, physics: fullPhysics },
-    { level: 1, render: decimateRenderMesh(full, 0.5), physics: decimatePhysicsMesh(fullPhysics, 0.5) },
-    { level: 2, render: decimateRenderMesh(full, 0.25), physics: decimatePhysicsMesh(fullPhysics, 0.25) },
+    {
+      level: 1,
+      render: decimateRenderMesh(full, 0.5),
+      physics: decimatePhysicsMesh(fullPhysics, 0.5),
+    },
+    {
+      level: 2,
+      render: decimateRenderMesh(full, 0.25),
+      physics: decimatePhysicsMesh(fullPhysics, 0.25),
+    },
   ];
 }
 
 /** Select the best LOD level based on screen-space size or distance. */
-export function selectLOD(distance: number, lodThresholds: [number, number] = [1.5, 4.0]): GarmentLODLevel {
+export function selectLOD(
+  distance: number,
+  lodThresholds: [number, number] = [1.5, 4.0],
+): GarmentLODLevel {
   if (distance < lodThresholds[0]) return 0;
   if (distance < lodThresholds[1]) return 1;
   return 2;
@@ -413,22 +466,45 @@ export function selectLOD(distance: number, lodThresholds: [number, number] = [1
 // Internal: garment generators (shirt/sleeve now subdivide + proper UVs)
 // ---------------------------------------------------------------------------
 
-function makeShirt(id: string, dims: AnatomyDimensions, looseness: number, color: [number, number, number]): GarmentMesh {
+function makeShirt(
+  id: string,
+  dims: AnatomyDimensions,
+  looseness: number,
+  color: [number, number, number],
+): GarmentMesh {
   const chest = Math.max(dims.chestHalfWidth, dims.waistHalfWidth) + looseness;
   const waist = dims.waistHalfWidth + looseness * 0.7;
   const depth = dims.torsoHalfDepth + looseness;
   const top = dims.shoulderHeight + 0.03;
   const bottom = dims.hipHeight - 0.08;
   const vertices: GarmentVertex[] = [
-    v(-chest, top, depth, 0, 0), v(chest, top, depth, 1, 0), v(waist, bottom, depth, 1, 1), v(-waist, bottom, depth, 0, 1),
-    v(chest, top, -depth, 0, 0), v(-chest, top, -depth, 1, 0), v(-waist, bottom, -depth, 1, 1), v(waist, bottom, -depth, 0, 1),
-    v(-chest, top, -depth, 0, 0), v(-chest, top, depth, 1, 0), v(-waist, bottom, depth, 1, 1), v(-waist, bottom, -depth, 0, 1),
-    v(chest, top, depth, 0, 0), v(chest, top, -depth, 1, 0), v(waist, bottom, -depth, 1, 1), v(waist, bottom, depth, 0, 1),
+    v(-chest, top, depth, 0, 0),
+    v(chest, top, depth, 1, 0),
+    v(waist, bottom, depth, 1, 1),
+    v(-waist, bottom, depth, 0, 1),
+    v(chest, top, -depth, 0, 0),
+    v(-chest, top, -depth, 1, 0),
+    v(-waist, bottom, -depth, 1, 1),
+    v(waist, bottom, -depth, 0, 1),
+    v(-chest, top, -depth, 0, 0),
+    v(-chest, top, depth, 1, 0),
+    v(-waist, bottom, depth, 1, 1),
+    v(-waist, bottom, -depth, 0, 1),
+    v(chest, top, depth, 0, 0),
+    v(chest, top, -depth, 1, 0),
+    v(waist, bottom, -depth, 1, 1),
+    v(waist, bottom, depth, 0, 1),
   ];
-  return { id, kind: "shirt", vertices, indices: quadIndices(4), color };
+  return { id, kind: 'shirt', vertices, indices: quadIndices(4), color };
 }
 
-function makeSleeve(id: string, side: -1 | 1, dims: AnatomyDimensions, looseness: number, color: [number, number, number]): GarmentMesh {
+function makeSleeve(
+  id: string,
+  side: -1 | 1,
+  dims: AnatomyDimensions,
+  looseness: number,
+  color: [number, number, number],
+): GarmentMesh {
   const radius = dims.height * 0.055 + looseness;
   const x0 = side * dims.shoulderHalfWidth;
   const x1 = side * (dims.shoulderHalfWidth + dims.upperarmLength + dims.forearmLength * 0.55);
@@ -436,13 +512,24 @@ function makeSleeve(id: string, side: -1 | 1, dims: AnatomyDimensions, looseness
   const y1 = dims.shoulderHeight - dims.forearmLength * 0.85;
   const z = radius;
   const vertices: GarmentVertex[] = [
-    v(x0, y0 + radius, z, 0, 0), v(x1, y1 + radius, z, 1, 0), v(x1, y1 - radius, z, 1, 1), v(x0, y0 - radius, z, 0, 1),
-    v(x1, y1 + radius, -z, 0, 0), v(x0, y0 + radius, -z, 1, 0), v(x0, y0 - radius, -z, 1, 1), v(x1, y1 - radius, -z, 0, 1),
+    v(x0, y0 + radius, z, 0, 0),
+    v(x1, y1 + radius, z, 1, 0),
+    v(x1, y1 - radius, z, 1, 1),
+    v(x0, y0 - radius, z, 0, 1),
+    v(x1, y1 + radius, -z, 0, 0),
+    v(x0, y0 + radius, -z, 1, 0),
+    v(x0, y0 - radius, -z, 1, 1),
+    v(x1, y1 - radius, -z, 0, 1),
   ];
-  return { id, kind: "sleeve", vertices, indices: quadIndices(2), color };
+  return { id, kind: 'sleeve', vertices, indices: quadIndices(2), color };
 }
 
-function makePants(id: string, dims: AnatomyDimensions, looseness: number, color: [number, number, number]): GarmentMesh {
+function makePants(
+  id: string,
+  dims: AnatomyDimensions,
+  looseness: number,
+  color: [number, number, number],
+): GarmentMesh {
   const hip = dims.hipHalfWidth + looseness;
   const thigh = dims.height * 0.055 + looseness;
   const waist = dims.waistHalfWidth + looseness * 0.6;
@@ -455,34 +542,75 @@ function makePants(id: string, dims: AnatomyDimensions, looseness: number, color
   const indices: number[] = [];
 
   // Waistband front
-  subdividedQuad(verts, indices, segments,
-    vec3(-waist, top, depth), vec3(waist, top, depth),
-    vec3(hip, knee, depth), vec3(-hip, knee, depth));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(-waist, top, depth),
+    vec3(waist, top, depth),
+    vec3(hip, knee, depth),
+    vec3(-hip, knee, depth),
+  );
   // Waistband back
-  subdividedQuad(verts, indices, segments,
-    vec3(waist, top, -depth), vec3(-waist, top, -depth),
-    vec3(-hip, knee, -depth), vec3(hip, knee, -depth));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(waist, top, -depth),
+    vec3(-waist, top, -depth),
+    vec3(-hip, knee, -depth),
+    vec3(hip, knee, -depth),
+  );
   // Left leg front
-  subdividedQuad(verts, indices, segments,
-    vec3(-hip, knee, depth * 0.55), vec3(-thigh * 0.15, knee, depth * 0.55),
-    vec3(-thigh * 0.15, ankle, depth * 0.35), vec3(-thigh, ankle, depth * 0.35));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(-hip, knee, depth * 0.55),
+    vec3(-thigh * 0.15, knee, depth * 0.55),
+    vec3(-thigh * 0.15, ankle, depth * 0.35),
+    vec3(-thigh, ankle, depth * 0.35),
+  );
   // Left leg back
-  subdividedQuad(verts, indices, segments,
-    vec3(-thigh * 0.15, knee, -depth * 0.55), vec3(-hip, knee, -depth * 0.55),
-    vec3(-thigh, ankle, -depth * 0.35), vec3(-thigh * 0.15, ankle, -depth * 0.35));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(-thigh * 0.15, knee, -depth * 0.55),
+    vec3(-hip, knee, -depth * 0.55),
+    vec3(-thigh, ankle, -depth * 0.35),
+    vec3(-thigh * 0.15, ankle, -depth * 0.35),
+  );
   // Right leg front
-  subdividedQuad(verts, indices, segments,
-    vec3(thigh * 0.15, knee, depth * 0.55), vec3(hip, knee, depth * 0.55),
-    vec3(thigh, ankle, depth * 0.35), vec3(thigh * 0.15, ankle, depth * 0.35));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(thigh * 0.15, knee, depth * 0.55),
+    vec3(hip, knee, depth * 0.55),
+    vec3(thigh, ankle, depth * 0.35),
+    vec3(thigh * 0.15, ankle, depth * 0.35),
+  );
   // Right leg back
-  subdividedQuad(verts, indices, segments,
-    vec3(hip, knee, -depth * 0.55), vec3(thigh * 0.15, knee, -depth * 0.55),
-    vec3(thigh * 0.15, ankle, -depth * 0.35), vec3(thigh, ankle, -depth * 0.35));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(hip, knee, -depth * 0.55),
+    vec3(thigh * 0.15, knee, -depth * 0.55),
+    vec3(thigh * 0.15, ankle, -depth * 0.35),
+    vec3(thigh, ankle, -depth * 0.35),
+  );
 
-  return { id, kind: "pants", vertices: verts, indices: Uint32Array.from(indices), color };
+  return { id, kind: 'pants', vertices: verts, indices: Uint32Array.from(indices), color };
 }
 
-function makeJacket(id: string, dims: AnatomyDimensions, looseness: number, color: [number, number, number]): GarmentMesh {
+function makeJacket(
+  id: string,
+  dims: AnatomyDimensions,
+  looseness: number,
+  color: [number, number, number],
+): GarmentMesh {
   const chest = Math.max(dims.chestHalfWidth, dims.waistHalfWidth) + looseness + 0.015;
   const waist = dims.waistHalfWidth + looseness * 0.75 + 0.01;
   const depth = dims.torsoHalfDepth + looseness + 0.008;
@@ -494,33 +622,74 @@ function makeJacket(id: string, dims: AnatomyDimensions, looseness: number, colo
 
   // Front (split into left/right panels for lapel gap)
   const lapGap = 0.008;
-  subdividedQuad(verts, indices, segments,
-    vec3(-chest, top, depth), vec3(-lapGap, top, depth),
-    vec3(-waist, bottom, depth), vec3(-waist, bottom, depth));
-  subdividedQuad(verts, indices, segments,
-    vec3(lapGap, top, depth), vec3(chest, top, depth),
-    vec3(waist, bottom, depth), vec3(waist, bottom, depth));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(-chest, top, depth),
+    vec3(-lapGap, top, depth),
+    vec3(-waist, bottom, depth),
+    vec3(-waist, bottom, depth),
+  );
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(lapGap, top, depth),
+    vec3(chest, top, depth),
+    vec3(waist, bottom, depth),
+    vec3(waist, bottom, depth),
+  );
   // Back
-  subdividedQuad(verts, indices, segments,
-    vec3(chest, top, -depth), vec3(-chest, top, -depth),
-    vec3(-waist, bottom, -depth), vec3(waist, bottom, -depth));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(chest, top, -depth),
+    vec3(-chest, top, -depth),
+    vec3(-waist, bottom, -depth),
+    vec3(waist, bottom, -depth),
+  );
   // Left
-  subdividedQuad(verts, indices, segments,
-    vec3(-chest, top, -depth), vec3(-chest, top, depth),
-    vec3(-waist, bottom, depth), vec3(-waist, bottom, -depth));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(-chest, top, -depth),
+    vec3(-chest, top, depth),
+    vec3(-waist, bottom, depth),
+    vec3(-waist, bottom, -depth),
+  );
   // Right
-  subdividedQuad(verts, indices, segments,
-    vec3(chest, top, depth), vec3(chest, top, -depth),
-    vec3(waist, bottom, -depth), vec3(waist, bottom, depth));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(chest, top, depth),
+    vec3(chest, top, -depth),
+    vec3(waist, bottom, -depth),
+    vec3(waist, bottom, depth),
+  );
   // Top
-  subdividedQuad(verts, indices, segments,
-    vec3(-chest, top, -depth), vec3(chest, top, -depth),
-    vec3(chest, top, depth), vec3(-chest, top, depth));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(-chest, top, -depth),
+    vec3(chest, top, -depth),
+    vec3(chest, top, depth),
+    vec3(-chest, top, depth),
+  );
 
-  return { id, kind: "jacket", vertices: verts, indices: Uint32Array.from(indices), color };
+  return { id, kind: 'jacket', vertices: verts, indices: Uint32Array.from(indices), color };
 }
 
-function makeHat(id: string, dims: AnatomyDimensions, looseness: number, color: [number, number, number]): GarmentMesh {
+function makeHat(
+  id: string,
+  dims: AnatomyDimensions,
+  looseness: number,
+  color: [number, number, number],
+): GarmentMesh {
   const headR = dims.headScale * 0.09 + looseness;
   const headCenter = dims.shoulderHeight + dims.headScale * 0.09;
   const segments = 4;
@@ -540,7 +709,8 @@ function makeHat(id: string, dims: AnatomyDimensions, looseness: number, color: 
     for (let s = 0; s < segments; s++) {
       const a0 = (s / segments) * Math.PI * 2;
       const a1 = ((s + 1) / segments) * Math.PI * 2;
-      const u0 = s / segments, u1 = (s + 1) / segments;
+      const u0 = s / segments,
+        u1 = (s + 1) / segments;
       verts.push(
         { position: vec3(Math.cos(a0) * r0, y0, Math.sin(a0) * r0), uv: { u: u0, v: t0 } },
         { position: vec3(Math.cos(a1) * r0, y0, Math.sin(a1) * r0), uv: { u: u1, v: t0 } },
@@ -560,10 +730,17 @@ function makeHat(id: string, dims: AnatomyDimensions, looseness: number, color: 
   for (let s = 0; s < segments; s++) {
     const a0 = (s / segments) * Math.PI * 2;
     const a1 = ((s + 1) / segments) * Math.PI * 2;
-    const u0 = s / segments, u1 = (s + 1) / segments;
+    const u0 = s / segments,
+      u1 = (s + 1) / segments;
     verts.push(
-      { position: vec3(Math.cos(a0) * headR, brimY + brimThick, Math.sin(a0) * headR), uv: { u: u0, v: 0 } },
-      { position: vec3(Math.cos(a1) * headR, brimY + brimThick, Math.sin(a1) * headR), uv: { u: u1, v: 0 } },
+      {
+        position: vec3(Math.cos(a0) * headR, brimY + brimThick, Math.sin(a0) * headR),
+        uv: { u: u0, v: 0 },
+      },
+      {
+        position: vec3(Math.cos(a1) * headR, brimY + brimThick, Math.sin(a1) * headR),
+        uv: { u: u1, v: 0 },
+      },
       { position: vec3(Math.cos(a1) * brimR, brimY, Math.sin(a1) * brimR), uv: { u: u1, v: 1 } },
       { position: vec3(Math.cos(a0) * brimR, brimY, Math.sin(a0) * brimR), uv: { u: u0, v: 1 } },
     );
@@ -571,10 +748,15 @@ function makeHat(id: string, dims: AnatomyDimensions, looseness: number, color: 
     indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
   }
 
-  return { id, kind: "hat", vertices: verts, indices: Uint32Array.from(indices), color };
+  return { id, kind: 'hat', vertices: verts, indices: Uint32Array.from(indices), color };
 }
 
-function makeShoes(id: string, dims: AnatomyDimensions, looseness: number, color: [number, number, number]): GarmentMesh {
+function makeShoes(
+  id: string,
+  dims: AnatomyDimensions,
+  looseness: number,
+  color: [number, number, number],
+): GarmentMesh {
   const shoeL = dims.headScale * 0.13 + looseness;
   const shoeW = dims.headScale * 0.05 + looseness * 0.5;
   const shoeH = dims.headScale * 0.05 + looseness * 0.3;
@@ -587,31 +769,67 @@ function makeShoes(id: string, dims: AnatomyDimensions, looseness: number, color
   const indices: number[] = [];
 
   // Top face
-  subdividedQuad(verts, indices, segments,
-    vec3(heelX, topY, -shoeW), vec3(toeX, topY, -shoeW),
-    vec3(toeX, topY, shoeW), vec3(heelX, topY, shoeW));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(heelX, topY, -shoeW),
+    vec3(toeX, topY, -shoeW),
+    vec3(toeX, topY, shoeW),
+    vec3(heelX, topY, shoeW),
+  );
   // Front face (toe cap)
-  subdividedQuad(verts, indices, segments,
-    vec3(toeX, topY, -shoeW), vec3(toeX, topY, shoeW),
-    vec3(toeX, soleY, shoeW), vec3(toeX, soleY, -shoeW));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(toeX, topY, -shoeW),
+    vec3(toeX, topY, shoeW),
+    vec3(toeX, soleY, shoeW),
+    vec3(toeX, soleY, -shoeW),
+  );
   // Back face (heel)
-  subdividedQuad(verts, indices, segments,
-    vec3(heelX, topY, shoeW), vec3(heelX, topY, -shoeW),
-    vec3(heelX, soleY, -shoeW), vec3(heelX, soleY, shoeW));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(heelX, topY, shoeW),
+    vec3(heelX, topY, -shoeW),
+    vec3(heelX, soleY, -shoeW),
+    vec3(heelX, soleY, shoeW),
+  );
   // Left
-  subdividedQuad(verts, indices, segments,
-    vec3(heelX, topY, -shoeW), vec3(toeX, topY, -shoeW),
-    vec3(toeX, soleY, -shoeW), vec3(heelX, soleY, -shoeW));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(heelX, topY, -shoeW),
+    vec3(toeX, topY, -shoeW),
+    vec3(toeX, soleY, -shoeW),
+    vec3(heelX, soleY, -shoeW),
+  );
   // Right
-  subdividedQuad(verts, indices, segments,
-    vec3(toeX, topY, shoeW), vec3(heelX, topY, shoeW),
-    vec3(heelX, soleY, shoeW), vec3(toeX, soleY, shoeW));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(toeX, topY, shoeW),
+    vec3(heelX, topY, shoeW),
+    vec3(heelX, soleY, shoeW),
+    vec3(toeX, soleY, shoeW),
+  );
   // Bottom
-  subdividedQuad(verts, indices, segments,
-    vec3(heelX, soleY, shoeW), vec3(toeX, soleY, shoeW),
-    vec3(toeX, soleY, -shoeW), vec3(heelX, soleY, -shoeW));
+  subdividedQuad(
+    verts,
+    indices,
+    segments,
+    vec3(heelX, soleY, shoeW),
+    vec3(toeX, soleY, shoeW),
+    vec3(toeX, soleY, -shoeW),
+    vec3(heelX, soleY, -shoeW),
+  );
 
-  return { id, kind: "shoes", vertices: verts, indices: Uint32Array.from(indices), color };
+  return { id, kind: 'shoes', vertices: verts, indices: Uint32Array.from(indices), color };
 }
 
 // ---------------------------------------------------------------------------
@@ -623,7 +841,10 @@ function subdividedQuad(
   verts: GarmentVertex[],
   indexOut: number[],
   segments: number,
-  tl: Vec3, tr: Vec3, br: Vec3, bl: Vec3
+  tl: Vec3,
+  tr: Vec3,
+  br: Vec3,
+  bl: Vec3,
 ): void {
   const base = verts.length;
   for (let row = 0; row <= segments; row++) {
@@ -632,14 +853,11 @@ function subdividedQuad(
       const tu = col / segments;
       // Bilinear interpolation of position
       const x =
-        (1 - tu) * (1 - tv) * tl.x + tu * (1 - tv) * tr.x +
-        tu * tv * br.x + (1 - tu) * tv * bl.x;
+        (1 - tu) * (1 - tv) * tl.x + tu * (1 - tv) * tr.x + tu * tv * br.x + (1 - tu) * tv * bl.x;
       const y =
-        (1 - tu) * (1 - tv) * tl.y + tu * (1 - tv) * tr.y +
-        tu * tv * br.y + (1 - tu) * tv * bl.y;
+        (1 - tu) * (1 - tv) * tl.y + tu * (1 - tv) * tr.y + tu * tv * br.y + (1 - tu) * tv * bl.y;
       const z =
-        (1 - tu) * (1 - tv) * tl.z + tu * (1 - tv) * tr.z +
-        tu * tv * br.z + (1 - tu) * tv * bl.z;
+        (1 - tu) * (1 - tv) * tl.z + tu * (1 - tv) * tr.z + tu * tv * br.z + (1 - tu) * tv * bl.z;
       verts.push({ position: vec3(x, y, z), uv: { u: tu, v: tv } });
     }
   }
@@ -669,11 +887,11 @@ function v(x: number, y: number, z: number, u: number, vv: number): GarmentVerte
 }
 
 function numberData(value: unknown, fallback: number): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 function colorData(value: unknown, fallback: [number, number, number]): [number, number, number] {
-  if (Array.isArray(value) && value.length === 3 && value.every((n) => typeof n === "number")) {
+  if (Array.isArray(value) && value.length === 3 && value.every((n) => typeof n === 'number')) {
     return [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
   }
   return fallback;

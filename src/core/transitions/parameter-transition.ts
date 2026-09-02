@@ -1,22 +1,22 @@
-import { HumanDefinition, PrimitiveValue } from "../schema/human-definition";
+import { HumanDefinition, PrimitiveValue } from '../schema/human-definition';
 
 // ---------------------------------------------------------------------------
 // TransitionCurve – all supported easing / interpolation curves
 // ---------------------------------------------------------------------------
 
 export type TransitionCurve =
-  | "linear"
-  | "ease"
-  | "biological"
-  | "spring"
-  | "step"
-  | "elastic"
-  | "bounce"
-  | "sine"
-  | "cubic"
-  | "exponential";
+  | 'linear'
+  | 'ease'
+  | 'biological'
+  | 'spring'
+  | 'step'
+  | 'elastic'
+  | 'bounce'
+  | 'sine'
+  | 'cubic'
+  | 'exponential';
 
-export type EaseVariant = "easeIn" | "easeOut" | "easeInOut";
+export type EaseVariant = 'easeIn' | 'easeOut' | 'easeInOut';
 
 // ---------------------------------------------------------------------------
 // Core transition types
@@ -82,7 +82,6 @@ const SPRING_DEFAULT_AMPLITUDE = 1.0;
 const SPRING_DEFAULT_FREQUENCY = 3.0;
 const ELASTIC_DEFAULT_AMPLITUDE = 0.75;
 const ELASTIC_DEFAULT_FREQUENCY = 10.0;
-const BOUNCE_COEFFICIENTS = [1 / 2.75, 1 / 1.5625, 1 / 2.1775, 1 / 2.9275];
 
 // ---------------------------------------------------------------------------
 // Curve math (deterministic, zero-dependency)
@@ -90,19 +89,6 @@ const BOUNCE_COEFFICIENTS = [1 / 2.75, 1 / 1.5625, 1 / 2.1775, 1 / 2.9275];
 
 function clamp01(v: number): number {
   return v <= 0 ? 0 : v >= 1 ? 1 : v;
-}
-
-function applyVariant(t: number, variant: EaseVariant): number {
-  switch (variant) {
-    case "easeIn":
-      return t * t;
-    case "easeOut":
-      return t * (2 - t);
-    case "easeInOut":
-      return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-    default:
-      return t;
-  }
 }
 
 function easeBase(t: number): number {
@@ -122,7 +108,9 @@ function elasticBase(t: number, amplitude: number, frequency: number): number {
   const p = 0.3 / (2 * Math.PI);
   const a = amplitude;
   const s = p / 4;
-  return -a * Math.pow(2, 10 * (t - 1)) * Math.sin(((t - 1 - s) * (2 * Math.PI)) / p) * frequency * 0.1;
+  return (
+    -a * Math.pow(2, 10 * (t - 1)) * Math.sin(((t - 1 - s) * (2 * Math.PI)) / p) * frequency * 0.1
+  );
 }
 
 function bounceOutBase(t: number): number {
@@ -159,46 +147,49 @@ function applyCurve(
   overshoot?: OvershootConfig,
 ): number {
   let shaped: number;
-  const amp = overshoot?.amplitude ?? (curve === "elastic" ? ELASTIC_DEFAULT_AMPLITUDE : SPRING_DEFAULT_AMPLITUDE);
-  const freq = overshoot?.frequency ?? (curve === "elastic" ? ELASTIC_DEFAULT_FREQUENCY : SPRING_DEFAULT_FREQUENCY);
+  const amp =
+    overshoot?.amplitude ??
+    (curve === 'elastic' ? ELASTIC_DEFAULT_AMPLITUDE : SPRING_DEFAULT_AMPLITUDE);
+  const freq =
+    overshoot?.frequency ??
+    (curve === 'elastic' ? ELASTIC_DEFAULT_FREQUENCY : SPRING_DEFAULT_FREQUENCY);
 
   switch (curve) {
-    case "ease":
+    case 'ease':
       shaped = easeBase(t);
       break;
-    case "biological":
+    case 'biological':
       shaped = biologicalBase(t);
       break;
-    case "spring":
+    case 'spring':
       shaped = springBase(t, amp, freq);
       break;
-    case "step":
+    case 'step':
       shaped = t >= STEP_THRESHOLD ? 1 : 0;
       break;
-    case "elastic":
+    case 'elastic':
       shaped = 1 + elasticBase(t, amp, freq);
       break;
-    case "bounce":
-      shaped = t < 0.5
-        ? (1 - bounceOutBase(1 - 2 * t)) * 0.5
-        : 0.5 + bounceOutBase(2 * t - 1) * 0.5;
+    case 'bounce':
+      shaped =
+        t < 0.5 ? (1 - bounceOutBase(1 - 2 * t)) * 0.5 : 0.5 + bounceOutBase(2 * t - 1) * 0.5;
       break;
-    case "sine":
+    case 'sine':
       shaped = sineBase(t);
       break;
-    case "cubic":
+    case 'cubic':
       shaped = cubicBase(t);
       break;
-    case "exponential":
+    case 'exponential':
       shaped = exponentialBase(t);
       break;
-    case "linear":
+    case 'linear':
     default:
       shaped = t;
       break;
   }
 
-  if (variant !== "easeInOut" && curve !== "step") {
+  if (variant !== 'easeInOut' && curve !== 'step') {
     shaped = applyVariantRaw(shaped, variant, curve);
   }
 
@@ -206,13 +197,13 @@ function applyCurve(
 }
 
 function applyVariantRaw(shaped: number, variant: EaseVariant, curve: TransitionCurve): number {
-  if (curve === "spring" || curve === "elastic" || curve === "bounce") return shaped;
+  if (curve === 'spring' || curve === 'elastic' || curve === 'bounce') return shaped;
   switch (variant) {
-    case "easeIn":
+    case 'easeIn':
       return shaped * shaped;
-    case "easeOut":
+    case 'easeOut':
       return 1 - (1 - shaped) * (1 - shaped);
-    case "easeInOut":
+    case 'easeInOut':
       return shaped < 0.5 ? 2 * shaped * shaped : -1 + (4 - 2 * shaped) * shaped;
     default:
       return shaped;
@@ -238,8 +229,8 @@ export function createParameterTransition(
     targetValue: spec.targetValue,
     startTime: now,
     duration: spec.duration,
-    curve: spec.curve ?? "linear",
-    easeVariant: spec.easeVariant ?? "easeInOut",
+    curve: spec.curve ?? 'linear',
+    easeVariant: spec.easeVariant ?? 'easeInOut',
     overshoot: spec.overshoot,
   };
 }
@@ -278,7 +269,7 @@ export class TransitionTimeline {
 
   add(transition: ParameterTransition): void {
     if (transition.duration < 0) {
-      this._failed.push({ transition, reason: "Negative duration" });
+      this._failed.push({ transition, reason: 'Negative duration' });
       return;
     }
     this._active.push(transition);

@@ -1,23 +1,23 @@
-import { describe, it, expect } from "vitest";
-import { createDefaultRegistry } from "../../core/schema/descriptors";
-import { HumanDefinition } from "../../core/schema/human-definition";
-import { CanonicalHuman } from "../../geometry/canonical/canonical-human";
-import { SparseMorphSet } from "../../geometry/morph/sparse-morph";
-import { MorphDriver } from "../../geometry/morph/morph-driver";
-import { MorphKernel } from "../../gpu/kernels/morph-kernel";
-import { packSparseMorphs, setMorphWeights, PackedMorphBuffers } from "./gpu-morph-buffers";
-import { MORPH_COMPUTE_WGSL } from "../../render/wgsl/morph-wgsl";
+import { describe, it, expect } from 'vitest';
+import { createDefaultRegistry } from '../../core/schema/descriptors';
+import { HumanDefinition } from '../../core/schema/human-definition';
+import { CanonicalHuman } from '../../geometry/canonical/canonical-human';
+import { SparseMorphSet } from '../../geometry/morph/sparse-morph';
+import { MorphDriver } from '../../geometry/morph/morph-driver';
+import { MorphKernel } from '../../gpu/kernels/morph-kernel';
+import { packSparseMorphs, setMorphWeights, PackedMorphBuffers } from './gpu-morph-buffers';
+import { MORPH_COMPUTE_WGSL } from '../../render/wgsl/morph-wgsl';
 
-const BONES = ["root", "pelvis", "spine_01", "spine_02", "chest", "neck", "head"];
+const BONES = ['root', 'pelvis', 'spine_01', 'spine_02', 'chest', 'neck', 'head'];
 
 function makeCharacter() {
   const canonical = new CanonicalHuman(BONES);
   const registry = createDefaultRegistry();
   const definition = new HumanDefinition(registry);
   const morphs = new SparseMorphSet(canonical);
-  morphs.add("noseWidth", "nose", (vx) => ({ dx: Math.sign(vx) * 0.03, dy: 0, dz: 0 }));
-  morphs.add("jawWidth", "jaw", (vx) => ({ dx: Math.sign(vx) * 0.05, dy: 0, dz: 0 }));
-  morphs.add("muscularity", "torso", (_vx, vy) => {
+  morphs.add('noseWidth', 'nose', (vx) => ({ dx: Math.sign(vx) * 0.03, dy: 0, dz: 0 }));
+  morphs.add('jawWidth', 'jaw', (vx) => ({ dx: Math.sign(vx) * 0.05, dy: 0, dz: 0 }));
+  morphs.add('muscularity', 'torso', (_vx, vy) => {
     const up = 1 + (vy - 1.5) * 0.5;
     return { dx: 0, dy: 0, dz: up * 0.05 * Math.sign(_vx) };
   });
@@ -46,16 +46,23 @@ function simulateGpuKernel(base: Float32Array, packed: PackedMorphBuffers): Floa
     let sumX = out[v * 3 + 0];
     let sumY = out[v * 3 + 1];
     let sumZ = out[v * 3 + 2];
-    const sumBaseX = sumX, sumBaseY = sumY, sumBaseZ = sumZ; // deltas only
-    void sumBaseX; void sumBaseY; void sumBaseZ;
-    let dx = 0, dy = 0, dz = 0;
+    const sumBaseX = sumX,
+      sumBaseY = sumY,
+      sumBaseZ = sumZ; // deltas only
+    void sumBaseX;
+    void sumBaseY;
+    void sumBaseZ;
+    let dx = 0,
+      dy = 0,
+      dz = 0;
     for (let m = 0; m < packed.morphOrder.length; m++) {
       const meta = packed.morphStruct[m * 4];
       const weight = bitsToFloat(meta);
       const count = packed.morphStruct[m * 4 + 1];
       const start = packed.morphStruct[m * 4 + 2];
       if (count === 0) continue;
-      let lo = 0, hi = count;
+      let lo = 0,
+        hi = count;
       while (lo < hi) {
         const mid = lo + ((hi - lo) >> 1);
         const idx = packed.deltaPacked[(start + mid) * 4 + 0];
@@ -82,8 +89,8 @@ function bitsToFloat(bits: number): number {
   return f[0];
 }
 
-describe("packSparseMorphs", () => {
-  it("sorts deltas by vertex within each morph", () => {
+describe('packSparseMorphs', () => {
+  it('sorts deltas by vertex within each morph', () => {
     const { morphs } = makeCharacter();
     const packed = packSparseMorphs([...morphs.byName.values()]);
     const nose = packed.ranges[0];
@@ -92,7 +99,7 @@ describe("packSparseMorphs", () => {
     }
   });
 
-  it("records per-morph ranges and total delta count", () => {
+  it('records per-morph ranges and total delta count', () => {
     const { morphs } = makeCharacter();
     const packed = packSparseMorphs([...morphs.byName.values()]);
     let total = 0;
@@ -101,7 +108,7 @@ describe("packSparseMorphs", () => {
     expect(total).toBeGreaterThan(0);
   });
 
-  it("setMorphWeights writes bit-cast weights into the weight slot", () => {
+  it('setMorphWeights writes bit-cast weights into the weight slot', () => {
     const { morphs, driver, definition } = makeCharacter();
     const packed = packSparseMorphs([...morphs.byName.values()]);
     const struct = new Uint32Array(packed.morphStruct);
@@ -115,10 +122,10 @@ describe("packSparseMorphs", () => {
   });
 });
 
-describe("GPU/CPU morph parity", () => {
-  it("simulated WGSL kernel output equals CPU MorphKernel.accumulate", () => {
+describe('GPU/CPU morph parity', () => {
+  it('simulated WGSL kernel output equals CPU MorphKernel.accumulate', () => {
     const { canonical, morphs, driver, definition, positions } = makeCharacter();
-    definition.set("face.nose.width", 0.7);
+    definition.set('face.nose.width', 0.7);
 
     const packed = packSparseMorphs([...morphs.byName.values()]);
     const struct = new Uint32Array(packed.morphStruct);
@@ -144,10 +151,10 @@ describe("GPU/CPU morph parity", () => {
   });
 });
 
-describe("WGSL kernel spans expected bindings", () => {
-  it("contains the five storage bindings used by the dispatch", () => {
-    expect(MORPH_COMPUTE_WGSL).toContain("@group(0) @binding(0)");
-    expect(MORPH_COMPUTE_WGSL).toContain("@group(0) @binding(4)");
+describe('WGSL kernel spans expected bindings', () => {
+  it('contains the five storage bindings used by the dispatch', () => {
+    expect(MORPH_COMPUTE_WGSL).toContain('@group(0) @binding(0)');
+    expect(MORPH_COMPUTE_WGSL).toContain('@group(0) @binding(4)');
     expect(MORPH_COMPUTE_WGSL).toMatch(/workgroup_size\(64\)/);
   });
 });

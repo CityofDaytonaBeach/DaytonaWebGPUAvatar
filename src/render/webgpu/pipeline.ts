@@ -1,16 +1,20 @@
-import { WebGPURenderer, RenderPart } from "./renderer";
-import { CharacterGpuState } from "../../gpu/buffers/character-gpu-state";
-import { GpuMorphDeform } from "../../gpu/kernels/gpu-morph-deform";
-import { SkinningKernel } from "../../gpu/kernels/skinning-kernel";
-import { buildInfluences } from "../../gpu/kernels/skin-mesh";
-import { combinedSkinMatrices } from "../../anatomy/skeleton/bone-matrix";
-import { BoneDef } from "../../anatomy/skeleton/skeleton";
-import { packSparseMorphs, setMorphWeights, PackedMorphBuffers } from "../../gpu/morph/gpu-morph-buffers";
-import { CanonicalHuman } from "../../geometry/canonical/canonical-human";
-import { SparseMorphSet } from "../../geometry/morph/sparse-morph";
-import { MorphDriver } from "../../geometry/morph/morph-driver";
-import { HumanDefinition } from "../../core/schema/human-definition";
-import { BonePose } from "../../animation/skeleton/skeletal-animation";
+import { WebGPURenderer, RenderPart } from './renderer';
+import { CharacterGpuState } from '../../gpu/buffers/character-gpu-state';
+import { GpuMorphDeform } from '../../gpu/kernels/gpu-morph-deform';
+import { SkinningKernel } from '../../gpu/kernels/skinning-kernel';
+import { buildInfluences } from '../../gpu/kernels/skin-mesh';
+import { combinedSkinMatrices } from '../../anatomy/skeleton/bone-matrix';
+import { BoneDef } from '../../anatomy/skeleton/skeleton';
+import {
+  packSparseMorphs,
+  setMorphWeights,
+  PackedMorphBuffers,
+} from '../../gpu/morph/gpu-morph-buffers';
+import { CanonicalHuman } from '../../geometry/canonical/canonical-human';
+import { SparseMorphSet } from '../../geometry/morph/sparse-morph';
+import { MorphDriver } from '../../geometry/morph/morph-driver';
+import { HumanDefinition } from '../../core/schema/human-definition';
+import { BonePose } from '../../animation/skeleton/skeletal-animation';
 
 export interface WebGpuHumanPipelineOptions {
   device: GPUDevice;
@@ -46,7 +50,7 @@ export class WebGpuHumanPipeline {
     private readonly canonical: CanonicalHuman,
     private readonly morphs: SparseMorphSet,
     private readonly morphDriver: MorphDriver,
-    opts: WebGpuHumanPipelineOptions
+    opts: WebGpuHumanPipelineOptions,
   ) {
     const { positions, normals, uvs } = extractGeometry(canonical);
     this.state = new CharacterGpuState(
@@ -55,7 +59,7 @@ export class WebGpuHumanPipeline {
       normals,
       uvs,
       canonical.indices,
-      opts.paramByteSize
+      opts.paramByteSize,
     );
     this.packed = packSparseMorphs([...morphs.byName.values()]);
     this.morphNames = this.packed.morphOrder;
@@ -64,7 +68,7 @@ export class WebGpuHumanPipeline {
       canonical.vertexCount,
       positions,
       this.packed.deltaPacked,
-      this.packed.morphStruct
+      this.packed.morphStruct,
     );
     const skeleton = opts.skeleton ?? [];
     this.skeleton = skeleton;
@@ -76,9 +80,9 @@ export class WebGpuHumanPipeline {
       influences,
       combinedSkinMatrices(skeleton),
       skeleton.length,
-      this.state.normalBuffer
+      this.state.normalBuffer,
     );
-    this.renderer = new WebGPURenderer(opts.device, opts.format ?? "bgra8unorm");
+    this.renderer = new WebGPURenderer(opts.device, opts.format ?? 'bgra8unorm');
     const renderParts = buildRenderParts(opts.device, canonical);
     this.renderer.setParts(renderParts, this.state.paramBuffer);
     this.renderer.setSharedNormalsAndUvs(this.state.normalBuffer, this.state.uvBuffer);
@@ -112,15 +116,17 @@ export class WebGpuHumanPipeline {
    * Dispatch morph + skinning compute and draw the skinned mesh into `view`.
    * Call `upload()` first (or call `renderAndUpload`).
    */
-  render(
-    encoder: GPUCommandEncoder,
-    view: GPUTextureView,
-    width: number,
-    height: number
-  ): void {
+  render(encoder: GPUCommandEncoder, view: GPUTextureView, width: number, height: number): void {
     this.deform.dispatch(encoder);
     this.skin.dispatch(encoder);
-    this.renderer.draw(encoder, view, width, height, this.skin.outputBuffer, this.skin.outputNormalsBuffer);
+    this.renderer.draw(
+      encoder,
+      view,
+      width,
+      height,
+      this.skin.outputBuffer,
+      this.skin.outputNormalsBuffer,
+    );
   }
 
   /** Convenience: upload params/weights, deform, and draw. */
@@ -129,7 +135,7 @@ export class WebGpuHumanPipeline {
     view: GPUTextureView,
     width: number,
     height: number,
-    definition: HumanDefinition
+    definition: HumanDefinition,
   ): void {
     this.upload(definition);
     this.render(encoder, view, width, height);
@@ -167,19 +173,24 @@ function extractGeometry(canonical: CanonicalHuman): {
 function buildRenderParts(device: GPUDevice, canonical: CanonicalHuman): RenderPart[] {
   const parts: RenderPart[] = [];
 
-  const bodyEnd = canonical.parts.length > 0 ? canonical.parts[0].indexStart : canonical.indices.length;
+  const bodyEnd =
+    canonical.parts.length > 0 ? canonical.parts[0].indexStart : canonical.indices.length;
   const mkIndexBuffer = (start: number, count: number): GPUBuffer => {
     const buf = device.createBuffer({
       size: count * 4,
       usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
     });
-    device.queue.writeBuffer(buf, 0, canonical.indices.subarray(start, start + count) as unknown as ArrayBuffer);
+    device.queue.writeBuffer(
+      buf,
+      0,
+      canonical.indices.subarray(start, start + count) as unknown as ArrayBuffer,
+    );
     return buf;
   };
 
   // Body (skin) + every detail part in canonical order.
   parts.push({
-    name: "body",
+    name: 'body',
     color: [0.72, 0.56, 0.45],
     opaque: true,
     indexBuffer: mkIndexBuffer(0, bodyEnd),
@@ -198,19 +209,16 @@ function buildRenderParts(device: GPUDevice, canonical: CanonicalHuman): RenderP
   return parts;
 }
 
-function partColor(
-  name: string,
-  kind: string
-): { rgb: [number, number, number]; opaque: boolean } {
-  if (kind === "sclera") return { rgb: [0.95, 0.95, 0.95], opaque: true };
-  if (kind === "iris") {
+function partColor(name: string, kind: string): { rgb: [number, number, number]; opaque: boolean } {
+  if (kind === 'sclera') return { rgb: [0.95, 0.95, 0.95], opaque: true };
+  if (kind === 'iris') {
     // Pupils darker than the iris ring.
-    return name.startsWith("pupil")
+    return name.startsWith('pupil')
       ? { rgb: [0.12, 0.1, 0.12], opaque: true }
       : { rgb: [0.35, 0.52, 0.38], opaque: true };
   }
-  if (kind === "teeth") return { rgb: [0.93, 0.91, 0.84], opaque: true };
-  if (kind === "tongue") return { rgb: [0.82, 0.5, 0.48], opaque: true };
-  if (kind === "mouth_cavity") return { rgb: [0.22, 0.10, 0.11], opaque: true };
+  if (kind === 'teeth') return { rgb: [0.93, 0.91, 0.84], opaque: true };
+  if (kind === 'tongue') return { rgb: [0.82, 0.5, 0.48], opaque: true };
+  if (kind === 'mouth_cavity') return { rgb: [0.22, 0.1, 0.11], opaque: true };
   return { rgb: [0.72, 0.56, 0.45], opaque: true };
 }

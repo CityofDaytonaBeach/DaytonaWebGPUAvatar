@@ -1,4 +1,4 @@
-export type DeviceProfile = "CINEMATIC" | "HIGH" | "MEDIUM" | "LOW" | "COMPATIBILITY";
+export type DeviceProfile = 'CINEMATIC' | 'HIGH' | 'MEDIUM' | 'LOW' | 'COMPATIBILITY';
 
 export interface DeviceCapabilities {
   adapter: GPUAdapter;
@@ -16,22 +16,22 @@ export interface DeviceCapabilities {
  * actual limits and exploratory checks, never purely from device name.
  */
 export async function createDeviceAndProfile(
-  desiredFeatures: GPUFeatureName[] = []
+  desiredFeatures: GPUFeatureName[] = [],
 ): Promise<DeviceCapabilities> {
   const gpu = navigator.gpu;
   if (!gpu) {
-    throw new Error("WebGPU is not available in this browser.");
+    throw new Error('WebGPU is not available in this browser.');
   }
   const adapter = await gpu.requestAdapter();
   if (!adapter) {
-    throw new Error("No suitable WebGPU adapter found.");
+    throw new Error('No suitable WebGPU adapter found.');
   }
 
   const features: GPUFeatureName[] = [];
   for (const f of desiredFeatures) {
     if (adapter.features.has(f)) {
       features.push(f);
-    } else if (f === "timestamp-query") {
+    } else if (f === 'timestamp-query') {
       // optional
     } else {
       throw new Error(`Required GPU feature missing: ${f}`);
@@ -44,8 +44,8 @@ export async function createDeviceAndProfile(
   });
 
   const limits = device.limits;
-  const timestampQuerySupport = adapter.features.has("timestamp-query");
-  const subgroupSupport = adapter.features.has("subgroups");
+  const timestampQuerySupport = adapter.features.has('timestamp-query');
+  const subgroupSupport = adapter.features.has('subgroups');
 
   const profile: DeviceProfile = scoreProfile(adapter, limits);
 
@@ -72,11 +72,15 @@ function scoreProfile(adapter: GPUAdapter, limits: GPUSupportedLimits): DevicePr
   else score += 1;
   if (maxVertices >= 16) score += 2;
   else if (maxVertices >= 8) score += 1;
-  if (adapter.info.vendor.toLowerCase().includes("nvidia") || adapter.info.vendor.toLowerCase().includes("amd")) score += 2;
+  if (
+    adapter.info.vendor.toLowerCase().includes('nvidia') ||
+    adapter.info.vendor.toLowerCase().includes('amd')
+  )
+    score += 2;
 
-  if (score >= 7) return "CINEMATIC";
-  if (score >= 5) return "HIGH";
-  if (score >= 4) return "MEDIUM";
-  if (score >= 3) return "LOW";
-  return "COMPATIBILITY";
+  if (score >= 7) return 'CINEMATIC';
+  if (score >= 5) return 'HIGH';
+  if (score >= 4) return 'MEDIUM';
+  if (score >= 3) return 'LOW';
+  return 'COMPATIBILITY';
 }

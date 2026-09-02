@@ -1,5 +1,5 @@
-import { CanonicalHuman } from "../../geometry/canonical/canonical-human";
-import { BoneDef } from "../../anatomy/skeleton/skeleton";
+import { CanonicalHuman } from '../../geometry/canonical/canonical-human';
+import { BoneDef } from '../../anatomy/skeleton/skeleton';
 
 /** Maximum number of bone influences per vertex (GPU kernel matches this). */
 export const MAX_INFLUENCES = 4;
@@ -17,10 +17,7 @@ export interface SkinInfluences {
  * normalized to 1. Bones are indexed by position in `bones` (skeleton order),
  * which matches `combinedSkinMatrices`.
  */
-export function buildInfluences(
-  canonical: CanonicalHuman,
-  bones: BoneDef[]
-): SkinInfluences {
+export function buildInfluences(canonical: CanonicalHuman, bones: BoneDef[]): SkinInfluences {
   const indexByName = new Map<string, number>();
   bones.forEach((b, i) => indexByName.set(b.name, i));
   const n = canonical.vertexCount;
@@ -65,7 +62,7 @@ export function buildInfluences(
 export function skinMeshCPU(
   basePositions: Float32Array,
   influences: SkinInfluences,
-  boneMatrices: Float32Array
+  boneMatrices: Float32Array,
 ): Float32Array {
   const n = basePositions.length / 3;
   const out = new Float32Array(n * 3);
@@ -73,7 +70,9 @@ export function skinMeshCPU(
     const px = basePositions[v * 3 + 0];
     const py = basePositions[v * 3 + 1];
     const pz = basePositions[v * 3 + 2];
-    let x = 0, y = 0, z = 0;
+    let x = 0,
+      y = 0,
+      z = 0;
     for (let k = 0; k < MAX_INFLUENCES; k++) {
       const w = influences.weights[v * MAX_INFLUENCES + k];
       if (w === 0) continue;
@@ -103,7 +102,7 @@ export function skinMeshCPU(
 export function skinNormalsCPU(
   baseNormals: Float32Array,
   influences: SkinInfluences,
-  boneMatrices: Float32Array
+  boneMatrices: Float32Array,
 ): Float32Array {
   const n = baseNormals.length / 3;
   const out = new Float32Array(n * 3);
@@ -111,7 +110,9 @@ export function skinNormalsCPU(
     const nx = baseNormals[v * 3 + 0];
     const ny = baseNormals[v * 3 + 1];
     const nz = baseNormals[v * 3 + 2];
-    let x = 0, y = 0, z = 0;
+    let x = 0,
+      y = 0,
+      z = 0;
     for (let k = 0; k < MAX_INFLUENCES; k++) {
       const w = influences.weights[v * MAX_INFLUENCES + k];
       if (w === 0) continue;
@@ -120,7 +121,9 @@ export function skinNormalsCPU(
       const sx = m[bi + 0] * nx + m[bi + 4] * ny + m[bi + 8] * nz;
       const sy = m[bi + 1] * nx + m[bi + 5] * ny + m[bi + 9] * nz;
       const sz = m[bi + 2] * nx + m[bi + 6] * ny + m[bi + 10] * nz;
-      x += w * sx; y += w * sy; z += w * sz;
+      x += w * sx;
+      y += w * sy;
+      z += w * sz;
     }
     const len = Math.hypot(x, y, z) || 1;
     out[v * 3 + 0] = x / len;

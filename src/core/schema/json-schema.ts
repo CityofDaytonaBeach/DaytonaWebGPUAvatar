@@ -1,8 +1,8 @@
-import { PropertyMeta, PropertyType } from "./property";
-import { PropertyRegistry } from "./registry";
+import { PropertyMeta, PropertyType } from './property';
+import { PropertyRegistry } from './registry';
 
 export interface JsonSchemaProperty {
-  type: "number" | "integer" | "boolean";
+  type: 'number' | 'integer' | 'boolean';
   minimum?: number;
   maximum?: number;
   default: number | boolean;
@@ -22,10 +22,10 @@ export interface JsonSchemaProperty {
 }
 
 export interface HumanDefinitionJsonSchema {
-  $schema: "https://json-schema.org/draft/2020-12/schema";
+  $schema: 'https://json-schema.org/draft/2020-12/schema';
   $id: string;
   title: string;
-  type: "object";
+  type: 'object';
   additionalProperties: false;
   properties: Record<string, JsonSchemaProperty>;
   required: string[];
@@ -41,7 +41,10 @@ export interface SchemaValidationResult {
   issues: SchemaValidationIssue[];
 }
 
-export function generateHumanDefinitionJsonSchema(registry: PropertyRegistry, id = "daytona.hdl.flat.v1"): HumanDefinitionJsonSchema {
+export function generateHumanDefinitionJsonSchema(
+  registry: PropertyRegistry,
+  id = 'daytona.hdl.flat.v1',
+): HumanDefinitionJsonSchema {
   const properties: Record<string, JsonSchemaProperty> = {};
   const required: string[] = [];
   for (const meta of registry.all()) {
@@ -49,23 +52,26 @@ export function generateHumanDefinitionJsonSchema(registry: PropertyRegistry, id
     required.push(meta.path);
   }
   return {
-    $schema: "https://json-schema.org/draft/2020-12/schema",
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
     $id: id,
-    title: "Daytona Human Definition Language flat property map",
-    type: "object",
+    title: 'Daytona Human Definition Language flat property map',
+    type: 'object',
     additionalProperties: false,
     properties,
     required,
   };
 }
 
-export function validateHumanDefinitionRecord(registry: PropertyRegistry, record: Record<string, unknown>): SchemaValidationResult {
+export function validateHumanDefinitionRecord(
+  registry: PropertyRegistry,
+  record: Record<string, unknown>,
+): SchemaValidationResult {
   const issues: SchemaValidationIssue[] = [];
   const known = new Set(registry.all().map((meta) => meta.path));
 
   for (const path of Object.keys(record)) {
     if (!known.has(path)) {
-      issues.push({ path, message: "unknown property" });
+      issues.push({ path, message: 'unknown property' });
     }
   }
 
@@ -81,7 +87,7 @@ export function validateHumanDefinitionRecord(registry: PropertyRegistry, record
 function jsonSchemaProperty(meta: PropertyMeta): JsonSchemaProperty {
   const out: JsonSchemaProperty = {
     type: jsonType(meta.type),
-    default: meta.type === "bool" ? meta.default !== 0 : meta.default,
+    default: meta.type === 'bool' ? meta.default !== 0 : meta.default,
     description: meta.path,
     metadata: {
       id: meta.id,
@@ -102,21 +108,21 @@ function jsonSchemaProperty(meta: PropertyMeta): JsonSchemaProperty {
 }
 
 function validateValue(meta: PropertyMeta, value: unknown, issues: SchemaValidationIssue[]): void {
-  if (meta.type === "bool") {
-    if (typeof value !== "boolean" && value !== 0 && value !== 1) {
-      issues.push({ path: meta.path, message: "expected boolean or 0/1" });
+  if (meta.type === 'bool') {
+    if (typeof value !== 'boolean' && value !== 0 && value !== 1) {
+      issues.push({ path: meta.path, message: 'expected boolean or 0/1' });
     }
     return;
   }
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    issues.push({ path: meta.path, message: "expected finite number" });
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    issues.push({ path: meta.path, message: 'expected finite number' });
     return;
   }
-  if ((meta.type === "i32" || meta.type === "u32") && !Number.isInteger(value)) {
-    issues.push({ path: meta.path, message: "expected integer" });
+  if ((meta.type === 'i32' || meta.type === 'u32') && !Number.isInteger(value)) {
+    issues.push({ path: meta.path, message: 'expected integer' });
   }
-  if (meta.type === "u32" && value < 0) {
-    issues.push({ path: meta.path, message: "expected unsigned integer" });
+  if (meta.type === 'u32' && value < 0) {
+    issues.push({ path: meta.path, message: 'expected unsigned integer' });
   }
   if (meta.min !== undefined && value < meta.min) {
     issues.push({ path: meta.path, message: `below minimum ${meta.min}` });
@@ -126,8 +132,8 @@ function validateValue(meta: PropertyMeta, value: unknown, issues: SchemaValidat
   }
 }
 
-function jsonType(type: PropertyType): JsonSchemaProperty["type"] {
-  if (type === "bool") return "boolean";
-  if (type === "i32" || type === "u32") return "integer";
-  return "number";
+function jsonType(type: PropertyType): JsonSchemaProperty['type'] {
+  if (type === 'bool') return 'boolean';
+  if (type === 'i32' || type === 'u32') return 'integer';
+  return 'number';
 }

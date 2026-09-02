@@ -1,7 +1,6 @@
-import { MORPH_COMPUTE_WGSL } from "../../render/wgsl/morph-wgsl";
+import { MORPH_COMPUTE_WGSL } from '../../render/wgsl/morph-wgsl';
 
 const BYTES_PER_META = 16; // vec4f morph meta entry
-const BYTES_PER_DELTA = 16; // vec4f delta quad
 
 /**
  * Dispatches the sparse morph GPU-decompress compute. Owns the buffers and
@@ -31,7 +30,7 @@ export class GpuMorphDeform {
     vertexCount: number,
     basePositions: Float32Array,
     deltaPacked: Uint32Array,
-    morphStruct: Uint32Array
+    morphStruct: Uint32Array,
   ) {
     this.device = device;
     this.vertexCount = vertexCount;
@@ -43,12 +42,20 @@ export class GpuMorphDeform {
 
     this.deltaBuffer = makeStorage(device, deltaBytes, deltaPacked);
     this.morphBuffer = makeStorage(device, morphBytes, morphStruct);
-    this.paramsBuffer = makeStorage(device, 16, makeParams(vertexCount, morphStruct.byteLength / BYTES_PER_META));
-    this.basePositionBuffer = makeStorage(device, baseBytes, new Uint8Array(basePositions.buffer, basePositions.byteOffset, baseBytes));
+    this.paramsBuffer = makeStorage(
+      device,
+      16,
+      makeParams(vertexCount, morphStruct.byteLength / BYTES_PER_META),
+    );
+    this.basePositionBuffer = makeStorage(
+      device,
+      baseBytes,
+      new Uint8Array(basePositions.buffer, basePositions.byteOffset, baseBytes),
+    );
     this.outPositionBuffer = makeStorage(device, outBytes);
 
     this.pipeline = device.createComputePipeline({
-      layout: "auto",
+      layout: 'auto',
       compute: { module: device.createShaderModule({ code: MORPH_COMPUTE_WGSL }) },
     });
     this.bindGroup = device.createBindGroup({
@@ -93,7 +100,11 @@ export class GpuMorphDeform {
   }
 }
 
-function makeStorage(device: GPUDevice, size: number, data?: ArrayBufferView | ArrayBuffer): GPUBuffer {
+function makeStorage(
+  device: GPUDevice,
+  size: number,
+  data?: ArrayBufferView | ArrayBuffer,
+): GPUBuffer {
   const usage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC;
   const buf = device.createBuffer({ size, usage });
   if (data) device.queue.writeBuffer(buf, 0, data as GPUAllowSharedBufferSource);

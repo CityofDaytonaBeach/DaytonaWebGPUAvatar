@@ -1,13 +1,13 @@
-import { BoneDef } from "../skeleton/skeleton";
-import { AnatomyDimensions } from "../parametric/parametric-anatomy";
-import { Vec3, vec3 } from "../../core/math/vec";
+import { BoneDef } from '../skeleton/skeleton';
+import { AnatomyDimensions } from '../parametric/parametric-anatomy';
+import { Vec3, vec3 } from '../../core/math/vec';
 
 // ---------------------------------------------------------------------------
 // Types – existing
 // ---------------------------------------------------------------------------
 
-export type InternalAnatomyMode = "normal" | "skeleton" | "muscle" | "anatomy" | "transparentSkin";
-export type InternalAnatomyPrimitiveKind = "joint" | "bone" | "muscle";
+export type InternalAnatomyMode = 'normal' | 'skeleton' | 'muscle' | 'anatomy' | 'transparentSkin';
+export type InternalAnatomyPrimitiveKind = 'joint' | 'bone' | 'muscle';
 
 export interface InternalAnatomyPrimitive {
   kind: InternalAnatomyPrimitiveKind;
@@ -29,11 +29,7 @@ export interface InternalAnatomyView {
 // Types – new: organ system modes
 // ---------------------------------------------------------------------------
 
-export type OrganSystemMode =
-  | "skeletal"
-  | "muscular"
-  | "circulatory"
-  | "nervous";
+export type OrganSystemMode = 'skeletal' | 'muscular' | 'circulatory' | 'nervous';
 
 export const ORGAN_SYSTEM_COLORS: Record<OrganSystemMode, [number, number, number]> = {
   skeletal: [0.9, 0.86, 0.72],
@@ -67,7 +63,7 @@ export interface PrimitiveVolume {
 // Types – joint visualization
 // ---------------------------------------------------------------------------
 
-export type JointMarkerShape = "sphere" | "cone";
+export type JointMarkerShape = 'sphere' | 'cone';
 
 export interface JointVisualization {
   name: string;
@@ -126,9 +122,6 @@ const SKELETON_COLOR: [number, number, number] = [0.9, 0.86, 0.72];
 const JOINT_COLOR: [number, number, number] = [0.95, 0.9, 0.78];
 const MUSCLE_COLOR: [number, number, number] = [0.78, 0.12, 0.1];
 
-const CIRCULATORY_COLOR: [number, number, number] = [0.6, 0.05, 0.05];
-const NERVOUS_COLOR: [number, number, number] = [0.85, 0.85, 0.2];
-
 const VOLUME_CYLINDER_FACTOR = Math.PI;
 const VOLUME_SPHERE_FACTOR = (4 / 3) * Math.PI;
 
@@ -146,22 +139,17 @@ const HEATMAP_DEFAULT_COLORS: [number, number, number][] = [
 function worldJoints(skeleton: BoneDef[]): Map<string, Vec3> {
   const out = new Map<string, Vec3>();
   for (const bone of skeleton) {
-    const parent = bone.parent ? out.get(bone.parent) ?? vec3() : vec3();
-    out.set(bone.name, offset(parent, bone.localPosition.x, bone.localPosition.y, bone.localPosition.z));
+    const parent = bone.parent ? (out.get(bone.parent) ?? vec3()) : vec3();
+    out.set(
+      bone.name,
+      offset(parent, bone.localPosition.x, bone.localPosition.y, bone.localPosition.z),
+    );
   }
   return out;
 }
 
 function offset(v: Vec3, x: number, y: number, z: number): Vec3 {
   return vec3(v.x + x, v.y + y, v.z + z);
-}
-
-function lerpVec3(a: Vec3, b: Vec3, t: number): Vec3 {
-  return vec3(
-    a.x + (b.x - a.x) * t,
-    a.y + (b.y - a.y) * t,
-    a.z + (b.z - a.z) * t,
-  );
 }
 
 function distance3(a: Vec3, b: Vec3): number {
@@ -183,26 +171,39 @@ function distance3(a: Vec3, b: Vec3): number {
 export function buildInternalAnatomyView(
   dims: AnatomyDimensions,
   skeleton: BoneDef[],
-  mode: InternalAnatomyMode = "anatomy",
+  mode: InternalAnatomyMode = 'anatomy',
 ): InternalAnatomyView {
-  if (mode === "normal") {
+  if (mode === 'normal') {
     return { mode, showSkin: true, skinOpacity: 1, primitives: [] };
   }
 
   const joints = worldJoints(skeleton);
   const primitives: InternalAnatomyPrimitive[] = [];
-  const includeSkeleton = mode === "skeleton" || mode === "anatomy" || mode === "transparentSkin";
-  const includeMuscle = mode === "muscle" || mode === "anatomy";
+  const includeSkeleton = mode === 'skeleton' || mode === 'anatomy' || mode === 'transparentSkin';
+  const includeMuscle = mode === 'muscle' || mode === 'anatomy';
 
   if (includeSkeleton) {
     for (const bone of skeleton) {
       const a = joints.get(bone.name);
       if (!a) continue;
-      primitives.push({ kind: "joint", name: `${bone.name}.joint`, a, radius: dims.height * 0.012, color: JOINT_COLOR });
+      primitives.push({
+        kind: 'joint',
+        name: `${bone.name}.joint`,
+        a,
+        radius: dims.height * 0.012,
+        color: JOINT_COLOR,
+      });
       if (!bone.parent) continue;
       const parent = joints.get(bone.parent);
       if (!parent) continue;
-      primitives.push({ kind: "bone", name: `${bone.parent}->${bone.name}`, a: parent, b: a, radius: dims.height * 0.008, color: SKELETON_COLOR });
+      primitives.push({
+        kind: 'bone',
+        name: `${bone.parent}->${bone.name}`,
+        a: parent,
+        b: a,
+        radius: dims.height * 0.008,
+        color: SKELETON_COLOR,
+      });
     }
   }
 
@@ -212,30 +213,44 @@ export function buildInternalAnatomyView(
 
   return {
     mode,
-    showSkin: mode === "transparentSkin",
-    skinOpacity: mode === "transparentSkin" ? 0.28 : 0,
+    showSkin: mode === 'transparentSkin',
+    skinOpacity: mode === 'transparentSkin' ? 0.28 : 0,
     primitives,
   };
 }
 
-function addMuscles(primitives: InternalAnatomyPrimitive[], dims: AnatomyDimensions, joints: Map<string, Vec3>): void {
+function addMuscles(
+  primitives: InternalAnatomyPrimitive[],
+  dims: AnatomyDimensions,
+  joints: Map<string, Vec3>,
+): void {
   const joint = (name: string) => joints.get(name) ?? vec3();
   const muscle = (name: string, a: Vec3, b: Vec3, radius: number) => {
-    primitives.push({ kind: "muscle", name, a, b, radius, color: MUSCLE_COLOR });
+    primitives.push({ kind: 'muscle', name, a, b, radius, color: MUSCLE_COLOR });
   };
 
   const armRadius = dims.height * (0.022 + dims.chestHalfWidth * 0.025);
   const legRadius = dims.height * (0.03 + dims.hipHalfWidth * 0.02);
-  muscle("pectoralis_l", offset(joint("chest"), -dims.chestHalfWidth * 0.35, 0, 0.02), joint("upperarm_l"), dims.height * 0.035);
-  muscle("pectoralis_r", offset(joint("chest"), dims.chestHalfWidth * 0.35, 0, 0.02), joint("upperarm_r"), dims.height * 0.035);
-  muscle("biceps_l", joint("upperarm_l"), joint("forearm_l"), armRadius);
-  muscle("biceps_r", joint("upperarm_r"), joint("forearm_r"), armRadius);
-  muscle("forearm_flexors_l", joint("forearm_l"), joint("hand_l"), armRadius * 0.78);
-  muscle("forearm_flexors_r", joint("forearm_r"), joint("hand_r"), armRadius * 0.78);
-  muscle("quadriceps_l", joint("thigh_l"), joint("shin_l"), legRadius);
-  muscle("quadriceps_r", joint("thigh_r"), joint("shin_r"), legRadius);
-  muscle("calf_l", joint("shin_l"), joint("foot_l"), legRadius * 0.72);
-  muscle("calf_r", joint("shin_r"), joint("foot_r"), legRadius * 0.72);
+  muscle(
+    'pectoralis_l',
+    offset(joint('chest'), -dims.chestHalfWidth * 0.35, 0, 0.02),
+    joint('upperarm_l'),
+    dims.height * 0.035,
+  );
+  muscle(
+    'pectoralis_r',
+    offset(joint('chest'), dims.chestHalfWidth * 0.35, 0, 0.02),
+    joint('upperarm_r'),
+    dims.height * 0.035,
+  );
+  muscle('biceps_l', joint('upperarm_l'), joint('forearm_l'), armRadius);
+  muscle('biceps_r', joint('upperarm_r'), joint('forearm_r'), armRadius);
+  muscle('forearm_flexors_l', joint('forearm_l'), joint('hand_l'), armRadius * 0.78);
+  muscle('forearm_flexors_r', joint('forearm_r'), joint('hand_r'), armRadius * 0.78);
+  muscle('quadriceps_l', joint('thigh_l'), joint('shin_l'), legRadius);
+  muscle('quadriceps_r', joint('thigh_r'), joint('shin_r'), legRadius);
+  muscle('calf_l', joint('shin_l'), joint('foot_l'), legRadius * 0.72);
+  muscle('calf_r', joint('shin_r'), joint('foot_r'), legRadius * 0.72);
 }
 
 // ---------------------------------------------------------------------------
@@ -251,27 +266,40 @@ export function buildOrganSystemView(
   const primitives: InternalAnatomyPrimitive[] = [];
   const color = ORGAN_SYSTEM_COLORS[system];
 
-  if (system === "skeletal") {
+  if (system === 'skeletal') {
     for (const bone of skeleton) {
       const a = joints.get(bone.name);
       if (!a) continue;
-      primitives.push({ kind: "joint", name: `${bone.name}.joint`, a, radius: dims.height * 0.012, color });
+      primitives.push({
+        kind: 'joint',
+        name: `${bone.name}.joint`,
+        a,
+        radius: dims.height * 0.012,
+        color,
+      });
       if (!bone.parent) continue;
       const parent = joints.get(bone.parent);
       if (!parent) continue;
-      primitives.push({ kind: "bone", name: `${bone.parent}->${bone.name}`, a: parent, b: a, radius: dims.height * 0.008, color });
+      primitives.push({
+        kind: 'bone',
+        name: `${bone.parent}->${bone.name}`,
+        a: parent,
+        b: a,
+        radius: dims.height * 0.008,
+        color,
+      });
     }
-  } else if (system === "muscular") {
+  } else if (system === 'muscular') {
     addMuscles(primitives, dims, joints);
     for (const p of primitives) p.color = color;
-  } else if (system === "circulatory") {
+  } else if (system === 'circulatory') {
     addCirculatory(primitives, dims, joints, color);
-  } else if (system === "nervous") {
+  } else if (system === 'nervous') {
     addNervous(primitives, dims, joints, color);
   }
 
   return {
-    mode: "anatomy",
+    mode: 'anatomy',
     showSkin: false,
     skinOpacity: 0,
     primitives,
@@ -285,15 +313,56 @@ function addCirculatory(
   color: [number, number, number],
 ): void {
   const joint = (name: string) => joints.get(name) ?? vec3();
-  const heartPos = offset(joint("chest"), 0, dims.height * 0.04, dims.torsoHalfDepth * 0.3);
-  primitives.push({ kind: "joint", name: "heart", a: heartPos, radius: dims.height * 0.028, color });
+  const heartPos = offset(joint('chest'), 0, dims.height * 0.04, dims.torsoHalfDepth * 0.3);
+  primitives.push({
+    kind: 'joint',
+    name: 'heart',
+    a: heartPos,
+    radius: dims.height * 0.028,
+    color,
+  });
 
   const vesselR = dims.height * 0.004;
-  primitives.push({ kind: "bone", name: "aorta", a: heartPos, b: offset(heartPos, 0, -dims.height * 0.15, 0), radius: vesselR, color });
-  primitives.push({ kind: "bone", name: "carotid_l", a: heartPos, b: offset(joint("neck"), -0.02, dims.height * 0.06, 0), radius: vesselR * 0.6, color });
-  primitives.push({ kind: "bone", name: "carotid_r", a: heartPos, b: offset(joint("neck"), 0.02, dims.height * 0.06, 0), radius: vesselR * 0.6, color });
-  primitives.push({ kind: "bone", name: "femoral_l", a: joint("thigh_l"), b: joint("shin_l"), radius: vesselR * 0.8, color });
-  primitives.push({ kind: "bone", name: "femoral_r", a: joint("thigh_r"), b: joint("shin_r"), radius: vesselR * 0.8, color });
+  primitives.push({
+    kind: 'bone',
+    name: 'aorta',
+    a: heartPos,
+    b: offset(heartPos, 0, -dims.height * 0.15, 0),
+    radius: vesselR,
+    color,
+  });
+  primitives.push({
+    kind: 'bone',
+    name: 'carotid_l',
+    a: heartPos,
+    b: offset(joint('neck'), -0.02, dims.height * 0.06, 0),
+    radius: vesselR * 0.6,
+    color,
+  });
+  primitives.push({
+    kind: 'bone',
+    name: 'carotid_r',
+    a: heartPos,
+    b: offset(joint('neck'), 0.02, dims.height * 0.06, 0),
+    radius: vesselR * 0.6,
+    color,
+  });
+  primitives.push({
+    kind: 'bone',
+    name: 'femoral_l',
+    a: joint('thigh_l'),
+    b: joint('shin_l'),
+    radius: vesselR * 0.8,
+    color,
+  });
+  primitives.push({
+    kind: 'bone',
+    name: 'femoral_r',
+    a: joint('thigh_r'),
+    b: joint('shin_r'),
+    radius: vesselR * 0.8,
+    color,
+  });
 }
 
 function addNervous(
@@ -303,16 +372,45 @@ function addNervous(
   color: [number, number, number],
 ): void {
   const joint = (name: string) => joints.get(name) ?? vec3();
-  const brainPos = offset(joint("head"), 0, dims.height * 0.04, 0);
-  primitives.push({ kind: "joint", name: "brain", a: brainPos, radius: dims.height * 0.035, color });
+  const brainPos = offset(joint('head'), 0, dims.height * 0.04, 0);
+  primitives.push({
+    kind: 'joint',
+    name: 'brain',
+    a: brainPos,
+    radius: dims.height * 0.035,
+    color,
+  });
 
   const nerveR = dims.height * 0.003;
-  const spineTop = joint("chest");
-  primitives.push({ kind: "bone", name: "spinal_cord", a: brainPos, b: spineTop, radius: nerveR, color });
-  for (const limb of ["upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"]) {
+  const spineTop = joint('chest');
+  primitives.push({
+    kind: 'bone',
+    name: 'spinal_cord',
+    a: brainPos,
+    b: spineTop,
+    radius: nerveR,
+    color,
+  });
+  for (const limb of [
+    'upperarm_l',
+    'upperarm_r',
+    'forearm_l',
+    'forearm_r',
+    'thigh_l',
+    'thigh_r',
+    'shin_l',
+    'shin_r',
+  ]) {
     const target = joints.get(limb);
     if (target) {
-      primitives.push({ kind: "bone", name: `nerve_${limb}`, a: spineTop, b: target, radius: nerveR * 0.5, color });
+      primitives.push({
+        kind: 'bone',
+        name: `nerve_${limb}`,
+        a: spineTop,
+        b: target,
+        radius: nerveR * 0.5,
+        color,
+      });
     }
   }
 }
@@ -383,7 +481,7 @@ export function totalVolume(volumes: PrimitiveVolume[]): number {
 export function buildJointVisualizations(
   skeleton: BoneDef[],
   dims: AnatomyDimensions,
-  markerShape: JointMarkerShape = "sphere",
+  markerShape: JointMarkerShape = 'sphere',
 ): JointVisualization[] {
   const joints = worldJoints(skeleton);
   const result: JointVisualization[] = [];
@@ -394,7 +492,7 @@ export function buildJointVisualizations(
       name: bone.name,
       position: pos,
       shape: markerShape,
-      radius: markerShape === "sphere" ? dims.height * 0.012 : dims.height * 0.018,
+      radius: markerShape === 'sphere' ? dims.height * 0.012 : dims.height * 0.018,
       color: JOINT_COLOR,
     });
   }
@@ -411,9 +509,14 @@ export function visualizeFracture(
   dims: AnatomyDimensions,
 ): FractureVisualization {
   const FRACTURE_COLOR: [number, number, number] = [0.95, 0.3, 0.1];
-  const displaced = offset(fracture.fracturePoint, fracture.displacement.x, fracture.displacement.y, fracture.displacement.z);
+  const displaced = offset(
+    fracture.fracturePoint,
+    fracture.displacement.x,
+    fracture.displacement.y,
+    fracture.displacement.z,
+  );
   const visual: InternalAnatomyPrimitive = {
-    kind: "joint",
+    kind: 'joint',
     name: `fracture_${fracture.boneName}`,
     a: fracture.fracturePoint,
     b: displaced,
@@ -435,7 +538,7 @@ export function applyMuscleActivation(
   for (const a of activations) actMap.set(a.muscleName, a.activation);
 
   return primitives.map((p) => {
-    if (p.kind !== "muscle") return p;
+    if (p.kind !== 'muscle') return p;
     const act = actMap.get(p.name) ?? 0;
     const clampedAct = act <= 0 ? 0 : act >= 1 ? 1 : act;
     const scale = 1 + clampedAct * 0.6;
@@ -454,7 +557,12 @@ export function applyMuscleActivation(
 // New: heatmap overlay
 // ---------------------------------------------------------------------------
 
-function mapValueToColor(value: number, min: number, max: number, colors: [number, number, number][]): [number, number, number] {
+function mapValueToColor(
+  value: number,
+  min: number,
+  max: number,
+  colors: [number, number, number][],
+): [number, number, number] {
   if (max === min) return colors[0];
   const t = clamp01((value - min) / (max - min));
   const segment = t * (colors.length - 1);
@@ -512,11 +620,15 @@ export function buildAnatomyRenderPipeline(
   system: OrganSystemMode,
   activations?: MuscleActivation[],
   heatmap?: HeatmapOverlay,
-): { view: InternalAnatomyView; renderData: InternalAnatomyRenderData; volumes: PrimitiveVolume[] } {
+): {
+  view: InternalAnatomyView;
+  renderData: InternalAnatomyRenderData;
+  volumes: PrimitiveVolume[];
+} {
   const view = buildOrganSystemView(dims, skeleton, system);
   let primitives = view.primitives;
 
-  if (activations && system === "muscular") {
+  if (activations && system === 'muscular') {
     primitives = applyMuscleActivation(primitives, activations);
   }
   if (heatmap) {

@@ -1,18 +1,22 @@
-import { AnatomyConstraint, AnatomyDimensions, validateAnatomy } from "../anatomy/parametric/parametric-anatomy";
-import { CharacterEvent, createEvent } from "../core/events/character-event";
-import { HumanDefinition } from "../core/schema/human-definition";
-import { CanonicalHuman } from "../geometry/canonical/canonical-human";
+import {
+  AnatomyConstraint,
+  AnatomyDimensions,
+  validateAnatomy,
+} from '../anatomy/parametric/parametric-anatomy';
+import { CharacterEvent, createEvent } from '../core/events/character-event';
+import { HumanDefinition } from '../core/schema/human-definition';
+import { CanonicalHuman } from '../geometry/canonical/canonical-human';
 
 export type PerceptualIssueKind =
-  | "anatomy.proportion"
-  | "eye.alignment"
-  | "mouth.intersection"
-  | "expression.range"
-  | "skin.tone"
-  | "proportion.ratio"
-  | "symmetry";
+  | 'anatomy.proportion'
+  | 'eye.alignment'
+  | 'mouth.intersection'
+  | 'expression.range'
+  | 'skin.tone'
+  | 'proportion.ratio'
+  | 'symmetry';
 
-export type ValidationSeverity = "info" | "warning" | "error";
+export type ValidationSeverity = 'info' | 'warning' | 'error';
 
 export interface PerceptualIssue {
   kind: PerceptualIssueKind;
@@ -149,7 +153,7 @@ export class CorrectiveBatch {
    * Deterministically merge all corrective "set" requests into a single
    * atomic event. Later requests win on property conflicts.
    */
-  toAtomicEvent(source: "developer" = "developer"): CharacterEvent | null {
+  toAtomicEvent(source: 'developer' = 'developer'): CharacterEvent | null {
     if (this.requests.length === 0) return null;
     const changes: Record<string, number> = {};
     for (const ev of this.requests) {
@@ -162,7 +166,7 @@ export class CorrectiveBatch {
       }
     }
     if (Object.keys(changes).length === 0) return null;
-    return createEvent("set", source, { changes, meta: { perceptual: true, atomic: true } });
+    return createEvent('set', source, { changes, meta: { perceptual: true, atomic: true } });
   }
 }
 
@@ -180,7 +184,8 @@ export class ValidationCache {
    */
   snapshotChanged(definition: HumanDefinition): boolean {
     const next: Record<string, number> = definition.serialize();
-    let changed = !this.validKinds.add("__init" as PerceptualIssueKind) || this.validKinds.size === 0;
+    let changed =
+      !this.validKinds.add('__init' as PerceptualIssueKind) || this.validKinds.size === 0;
     let any = false;
     for (const [k, v] of Object.entries(next)) {
       if (this.fingerprint[k] !== v) any = true;
@@ -235,7 +240,10 @@ export class PerceptualValidator {
   }
 
   /** Batch + run a validator function; returns (issues, correctiveBatch). */
-  private run(validate: (issues: PerceptualIssue[]) => void): { issues: PerceptualIssue[]; batch: CorrectiveBatch } {
+  private run(validate: (issues: PerceptualIssue[]) => void): {
+    issues: PerceptualIssue[];
+    batch: CorrectiveBatch;
+  } {
     const issues: PerceptualIssue[] = [];
     validate(issues);
     const batch = new CorrectiveBatch();
@@ -249,7 +257,7 @@ export class PerceptualValidator {
   validate(
     definition: HumanDefinition,
     canonical: CanonicalHuman,
-    dims: AnatomyDimensions
+    dims: AnatomyDimensions,
   ): PerceptualValidationReport {
     const { issues, batch } = this.run((issues) => {
       this.validateAnatomy(issues, dims);
@@ -263,9 +271,8 @@ export class PerceptualValidator {
     });
 
     const correctiveRequests = batch.toEvents();
-    const score = issues.length === 0
-      ? 1
-      : issues.reduce((sum, issue) => sum + issue.score, 0) / issues.length;
+    const score =
+      issues.length === 0 ? 1 : issues.reduce((sum, issue) => sum + issue.score, 0) / issues.length;
     const severityCounts = countSeverities(issues);
 
     return {
@@ -282,110 +289,145 @@ export class PerceptualValidator {
   }
 
   private validateAnatomy(issues: PerceptualIssue[], dims: AnatomyDimensions): void {
-    if (this.cache.isValid("anatomy.proportion")) return;
+    if (this.cache.isValid('anatomy.proportion')) return;
     for (const c of validateAnatomy(dims)) {
       if (this.anatomyOk(c)) continue;
       const changes: Record<string, number> = {};
-      if (c.message.includes("waist")) changes["body.waist"] = 1.0;
-      if (c.message.includes("hips")) changes["body.hips"] = 1.0;
+      if (c.message.includes('waist')) changes['body.waist'] = 1.0;
+      if (c.message.includes('hips')) changes['body.hips'] = 1.0;
       issues.push({
-        kind: "anatomy.proportion",
-        severity: c.satisfaction < 0.5 ? "error" : "warning",
+        kind: 'anatomy.proportion',
+        severity: c.satisfaction < 0.5 ? 'error' : 'warning',
         message: c.message,
         score: c.satisfaction,
-        correctiveRequest: Object.keys(changes).length > 0 ? createEvent("set", "developer", { changes, meta: { perceptual: true } }) : undefined,
+        correctiveRequest:
+          Object.keys(changes).length > 0
+            ? createEvent('set', 'developer', { changes, meta: { perceptual: true } })
+            : undefined,
       });
     }
-    this.cache.markValid("anatomy.proportion");
+    this.cache.markValid('anatomy.proportion');
   }
 
-  private validateEye(issues: PerceptualIssue[], definition: HumanDefinition, canonical: CanonicalHuman): void {
-    if (this.cache.isValid("eye.alignment")) return;
-    const eyeSpacing = definition.get("face.eyeSpacing");
-    const eyeVertices = canonical.vertices.filter((v) => v.region === "eyes");
+  private validateEye(
+    issues: PerceptualIssue[],
+    definition: HumanDefinition,
+    canonical: CanonicalHuman,
+  ): void {
+    if (this.cache.isValid('eye.alignment')) return;
+    const eyeSpacing = definition.get('face.eyeSpacing');
+    const eyeVertices = canonical.vertices.filter((v) => v.region === 'eyes');
     const left = eyeVertices.filter((v) => v.position.x < 0);
     const right = eyeVertices.filter((v) => v.position.x > 0);
-    if (left.length === 0 || right.length === 0) { this.cache.markValid("eye.alignment"); return; }
+    if (left.length === 0 || right.length === 0) {
+      this.cache.markValid('eye.alignment');
+      return;
+    }
     const ly = left.reduce((sum, v) => sum + v.position.y, 0) / left.length;
     const ry = right.reduce((sum, v) => sum + v.position.y, 0) / right.length;
     const yError = Math.abs(ly - ry);
-    if (eyeSpacing < this.config.minEyeSpacing || eyeSpacing > this.config.maxEyeSpacing || yError > this.config.eyeYErrorWarning) {
+    if (
+      eyeSpacing < this.config.minEyeSpacing ||
+      eyeSpacing > this.config.maxEyeSpacing ||
+      yError > this.config.eyeYErrorWarning
+    ) {
       issues.push({
-        kind: "eye.alignment",
-        severity: eyeSpacing < this.config.eyeSpacingErrorMin || eyeSpacing > this.config.eyeSpacingErrorMax || yError > this.config.eyeYErrorError ? "error" : "warning",
+        kind: 'eye.alignment',
+        severity:
+          eyeSpacing < this.config.eyeSpacingErrorMin ||
+          eyeSpacing > this.config.eyeSpacingErrorMax ||
+          yError > this.config.eyeYErrorError
+            ? 'error'
+            : 'warning',
         message: `eye alignment/spacing outside perceptual target (spacing=${eyeSpacing.toFixed(2)}, yError=${yError.toFixed(3)})`,
         score: Math.max(0, 1 - Math.abs(eyeSpacing - 1) * 2 - yError * 12),
-        correctiveRequest: createEvent("set", "developer", { changes: { "face.eyeSpacing": 1.0 }, meta: { perceptual: true } }),
-      });
-    }
-    this.cache.markValid("eye.alignment");
-  }
-
-  private validateMouth(issues: PerceptualIssue[], definition: HumanDefinition): void {
-    if (this.cache.isValid("mouth.intersection")) return;
-    const jawOpen = definition.get("expression.jawOpen");
-    const tongueOut = definition.get("expression.tongueOut");
-    if (tongueOut > 0.7 && jawOpen < 0.2) {
-      issues.push({
-        kind: "mouth.intersection",
-        severity: "warning",
-        message: "tongue-out expression likely intersects closed mouth",
-        score: 0.55,
-        correctiveRequest: createEvent("set", "developer", { changes: { "expression.jawOpen": 0.35 }, meta: { perceptual: true } }),
-      });
-    }
-    this.cache.markValid("mouth.intersection");
-  }
-
-  private validateExpression(issues: PerceptualIssue[], definition: HumanDefinition): void {
-    if (this.cache.isValid("expression.range")) return;
-    const smile = definition.get("expression.mouthSmileLeft") + definition.get("expression.mouthSmileRight");
-    const frown = definition.get("expression.mouthFrownLeft") + definition.get("expression.mouthFrownRight");
-    if (smile > 1.2 && frown > 1.2) {
-      issues.push({
-        kind: "expression.range",
-        severity: "warning",
-        message: "strong smile and frown are active together",
-        score: 0.6,
-        correctiveRequest: createEvent("set", "developer", {
-          changes: { "expression.mouthFrownLeft": 0, "expression.mouthFrownRight": 0 },
+        correctiveRequest: createEvent('set', 'developer', {
+          changes: { 'face.eyeSpacing': 1.0 },
           meta: { perceptual: true },
         }),
       });
     }
-    this.cache.markValid("expression.range");
+    this.cache.markValid('eye.alignment');
+  }
+
+  private validateMouth(issues: PerceptualIssue[], definition: HumanDefinition): void {
+    if (this.cache.isValid('mouth.intersection')) return;
+    const jawOpen = definition.get('expression.jawOpen');
+    const tongueOut = definition.get('expression.tongueOut');
+    if (tongueOut > 0.7 && jawOpen < 0.2) {
+      issues.push({
+        kind: 'mouth.intersection',
+        severity: 'warning',
+        message: 'tongue-out expression likely intersects closed mouth',
+        score: 0.55,
+        correctiveRequest: createEvent('set', 'developer', {
+          changes: { 'expression.jawOpen': 0.35 },
+          meta: { perceptual: true },
+        }),
+      });
+    }
+    this.cache.markValid('mouth.intersection');
+  }
+
+  private validateExpression(issues: PerceptualIssue[], definition: HumanDefinition): void {
+    if (this.cache.isValid('expression.range')) return;
+    const smile =
+      definition.get('expression.mouthSmileLeft') + definition.get('expression.mouthSmileRight');
+    const frown =
+      definition.get('expression.mouthFrownLeft') + definition.get('expression.mouthFrownRight');
+    if (smile > 1.2 && frown > 1.2) {
+      issues.push({
+        kind: 'expression.range',
+        severity: 'warning',
+        message: 'strong smile and frown are active together',
+        score: 0.6,
+        correctiveRequest: createEvent('set', 'developer', {
+          changes: { 'expression.mouthFrownLeft': 0, 'expression.mouthFrownRight': 0 },
+          meta: { perceptual: true },
+        }),
+      });
+    }
+    this.cache.markValid('expression.range');
   }
 
   private validateSkinTone(issues: PerceptualIssue[], definition: HumanDefinition): void {
-    if (this.cache.isValid("skin.tone")) return;
-    const r = definition.get("skin.baseColorR");
-    const g = definition.get("skin.baseColorG");
-    const b = definition.get("skin.baseColorB");
-    const pigmentation = definition.get("skin.pigmentation");
+    if (this.cache.isValid('skin.tone')) return;
+    const r = definition.get('skin.baseColorR');
+    const g = definition.get('skin.baseColorG');
+    const b = definition.get('skin.baseColorB');
+    const pigmentation = definition.get('skin.pigmentation');
     if ([r, g, b, pigmentation].every((v) => Number.isFinite(v))) {
       // Skin tone should read as a plausible fleshtone: red dominates green,
       // green dominates blue, and channels spread within a perceptual range.
       const spread = Math.abs(r - b);
       const rDominatesG = r >= g - 0.02;
       const gDominatesB = g > b;
-      const plausible = rDominatesG && gDominatesB && spread <= this.config.skinLuminanceSpreadMax * 2;
+      const plausible =
+        rDominatesG && gDominatesB && spread <= this.config.skinLuminanceSpreadMax * 2;
       if (!plausible) {
-        const severity: ValidationSeverity = spread > this.config.skinLuminanceSpreadMax * 3 ? "warning" : "info";
+        const severity: ValidationSeverity =
+          spread > this.config.skinLuminanceSpreadMax * 3 ? 'warning' : 'info';
         issues.push({
-          kind: "skin.tone",
+          kind: 'skin.tone',
           severity,
           message: `skin tone channels diverge beyond perceptual target (r=${r.toFixed(2)}, g=${g.toFixed(2)}, b=${b.toFixed(2)})`,
           score: Math.max(0, 1 - Math.max(0, r - b) / 0.5),
-          correctiveRequest: createEvent("set", "developer",
-            { changes: { "skin.pigmentation": pigmentation }, meta: { perceptual: true } }),
+          correctiveRequest: createEvent('set', 'developer', {
+            changes: { 'skin.pigmentation': pigmentation },
+            meta: { perceptual: true },
+          }),
         });
       }
     }
-    this.cache.markValid("skin.tone");
+    this.cache.markValid('skin.tone');
   }
 
-  private validateProportionRatios(issues: PerceptualIssue[], definition: HumanDefinition, dims: AnatomyDimensions): void {
-    if (this.cache.isValid("proportion.ratio")) return;
+  private validateProportionRatios(
+    issues: PerceptualIssue[],
+    definition: HumanDefinition,
+    dims: AnatomyDimensions,
+  ): void {
+    if (this.cache.isValid('proportion.ratio')) return;
 
     // Structural reference: for this canonical model the neutral limb lengths
     // yield a fixed arm-span-to-height ratio when all limb factors are 1.0.
@@ -397,46 +439,57 @@ export class PerceptualValidator {
       const ratio = armSpan / height;
       const err = Math.abs(ratio - NEUTRAL_ARM_SPAN_RATIO);
       if (err > this.config.armSpanRatioTolerance) {
-        const severity: ValidationSeverity = err > this.config.armSpanRatioTolerance * 2 ? "warning" : "info";
+        const severity: ValidationSeverity =
+          err > this.config.armSpanRatioTolerance * 2 ? 'warning' : 'info';
         issues.push({
-          kind: "proportion.ratio",
+          kind: 'proportion.ratio',
           severity,
           message: `arm span / height ratio ${ratio.toFixed(2)} deviates from neutral ${NEUTRAL_ARM_SPAN_RATIO.toFixed(2)} beyond tolerance`,
           score: Math.max(0, 1 - err / 0.5),
-          correctiveRequest: createEvent("set", "developer",
-            { changes: { "skeleton.armLength": 1.0 }, meta: { perceptual: true } }),
+          correctiveRequest: createEvent('set', 'developer', {
+            changes: { 'skeleton.armLength': 1.0 },
+            meta: { perceptual: true },
+          }),
         });
       }
     }
 
     // Head vs body: `identity.headProportion` is a scale factor around 1.0
     // (neutral head). Flag if it leaves the plausible human band.
-    const headScale = definition.get("identity.headProportion");
+    const headScale = definition.get('identity.headProportion');
     if (Number.isFinite(headScale)) {
-      if (headScale < this.config.headHeightRatioMin || headScale > this.config.headHeightRatioMax) {
+      if (
+        headScale < this.config.headHeightRatioMin ||
+        headScale > this.config.headHeightRatioMax
+      ) {
         const severity: ValidationSeverity =
-          headScale < this.config.headHeightRatioMin * 0.9 || headScale > this.config.headHeightRatioMax * 1.1 ? "warning" : "info";
+          headScale < this.config.headHeightRatioMin * 0.9 ||
+          headScale > this.config.headHeightRatioMax * 1.1
+            ? 'warning'
+            : 'info';
         issues.push({
-          kind: "proportion.ratio",
+          kind: 'proportion.ratio',
           severity,
           message: `head / body proportion ${headScale.toFixed(2)} outside plausible human range`,
           score: Math.max(0, 1 - Math.abs(headScale - 1) * 4),
-          correctiveRequest: createEvent("set", "developer",
-            { changes: { "identity.headProportion": 1.0 }, meta: { perceptual: true } }),
+          correctiveRequest: createEvent('set', 'developer', {
+            changes: { 'identity.headProportion': 1.0 },
+            meta: { perceptual: true },
+          }),
         });
       }
     }
-    this.cache.markValid("proportion.ratio");
+    this.cache.markValid('proportion.ratio');
   }
 
   private validateSymmetry(issues: PerceptualIssue[], canonical: CanonicalHuman): void {
-    if (this.cache.isValid("symmetry")) return;
+    if (this.cache.isValid('symmetry')) return;
     const pairs: Array<[string, string]> = [
-      ["upperarm_l", "upperarm_r"],
-      ["forearm_l", "forearm_r"],
-      ["hand_l", "hand_r"],
-      ["thigh_l", "thigh_r"],
-      ["shin_l", "shin_r"],
+      ['upperarm_l', 'upperarm_r'],
+      ['forearm_l', 'forearm_r'],
+      ['hand_l', 'hand_r'],
+      ['thigh_l', 'thigh_r'],
+      ['shin_l', 'shin_r'],
     ];
     for (const [l, r] of pairs) {
       const lv = canonical.vertices.filter((v) => v.region === l);
@@ -449,8 +502,8 @@ export class PerceptualValidator {
         const offset = diff / Math.max(lCount, rCount);
         if (offset > this.config.symmetryOffsetTolerance) {
           issues.push({
-            kind: "symmetry",
-            severity: offset > this.config.symmetryOffsetTolerance * 1.8 ? "warning" : "info",
+            kind: 'symmetry',
+            severity: offset > this.config.symmetryOffsetTolerance * 1.8 ? 'warning' : 'info',
             message: `left/right ${l} vertex count asymmetry (${lCount} vs ${rCount})`,
             score: Math.max(0, 1 - offset / 0.5),
           });
@@ -458,21 +511,21 @@ export class PerceptualValidator {
       }
     }
     // Mirror the pose-space check across the sagittal plane.
-    const faceL = canonical.vertices.filter((v) => v.region === "face" && v.position.x < 0);
-    const faceR = canonical.vertices.filter((v) => v.region === "face" && v.position.x > 0);
+    const faceL = canonical.vertices.filter((v) => v.region === 'face' && v.position.x < 0);
+    const faceR = canonical.vertices.filter((v) => v.region === 'face' && v.position.x > 0);
     if (faceL.length > 0 && faceR.length > 0) {
       const spreadL = vertexSpread(faceL);
       const spreadR = vertexSpread(faceR);
       if (Math.abs(spreadL - spreadR) > this.config.symmetryOffsetTolerance * 4) {
         issues.push({
-          kind: "symmetry",
-          severity: "info",
-          message: "face asymmetry across sagittal plane",
+          kind: 'symmetry',
+          severity: 'info',
+          message: 'face asymmetry across sagittal plane',
           score: 0.8,
         });
       }
     }
-    this.cache.markValid("symmetry");
+    this.cache.markValid('symmetry');
   }
 
   private validateRender(issues: PerceptualIssue[]): void {
@@ -486,8 +539,8 @@ export class PerceptualValidator {
         const spread = max - min;
         if (spread > this.config.skinLuminanceSpreadMax) {
           issues.push({
-            kind: "skin.tone",
-            severity: "info",
+            kind: 'skin.tone',
+            severity: 'info',
             message: `rendered skin tone gradient exceeds perceptual target (${spread.toFixed(3)})`,
             score: Math.max(0, 1 - spread / 0.4),
           });
@@ -497,15 +550,22 @@ export class PerceptualValidator {
   }
 
   /** Export the current report as a portable JSON object. */
-  exportJSON(definition: HumanDefinition, canonical: CanonicalHuman, dims: AnatomyDimensions): PerceptualValidationReportJSON {
+  exportJSON(
+    definition: HumanDefinition,
+    canonical: CanonicalHuman,
+    dims: AnatomyDimensions,
+  ): PerceptualValidationReportJSON {
     return this.validate(definition, canonical, dims).json;
   }
 }
 
 function vertexSpread(verts: Array<{ position: { x: number; y: number; z: number } }>): number {
-  let minX = Infinity, maxX = -Infinity;
-  let minY = Infinity, maxY = -Infinity;
-  let minZ = Infinity, maxZ = -Infinity;
+  let minX = Infinity,
+    maxX = -Infinity;
+  let minY = Infinity,
+    maxY = -Infinity;
+  let minZ = Infinity,
+    maxZ = -Infinity;
   for (const v of verts) {
     if (v.position.x < minX) minX = v.position.x;
     if (v.position.x > maxX) maxX = v.position.x;
@@ -514,23 +574,34 @@ function vertexSpread(verts: Array<{ position: { x: number; y: number; z: number
     if (v.position.z < minZ) minZ = v.position.z;
     if (v.position.z > maxZ) maxZ = v.position.z;
   }
-  return (maxX - minX) + (maxY - minY) + (maxZ - minZ);
+  return maxX - minX + (maxY - minY) + (maxZ - minZ);
 }
 
 function countSeverities(issues: PerceptualIssue[]): Record<ValidationSeverity, number> {
-  let info = 0, warning = 0, error = 0;
+  let info = 0,
+    warning = 0,
+    error = 0;
   for (const i of issues) {
-    if (i.severity === "info") info += 1;
-    else if (i.severity === "warning") warning += 1;
+    if (i.severity === 'info') info += 1;
+    else if (i.severity === 'warning') warning += 1;
     else error += 1;
   }
   return { info, warning, error };
 }
 
-function toJSON(score: number, issues: PerceptualIssue[], severityCounts: Record<ValidationSeverity, number>): PerceptualValidationReportJSON {
+function toJSON(
+  score: number,
+  issues: PerceptualIssue[],
+  severityCounts: Record<ValidationSeverity, number>,
+): PerceptualValidationReportJSON {
   return {
     score,
-    issues: issues.map((i) => ({ kind: i.kind, severity: i.severity, message: i.message, score: i.score })),
+    issues: issues.map((i) => ({
+      kind: i.kind,
+      severity: i.severity,
+      message: i.message,
+      score: i.score,
+    })),
     severityCounts,
   };
 }
@@ -542,7 +613,7 @@ function toJSON(score: number, issues: PerceptualIssue[], severityCounts: Record
 export function validatePerceptualHuman(
   definition: HumanDefinition,
   canonical: CanonicalHuman,
-  dims: AnatomyDimensions
+  dims: AnatomyDimensions,
 ): PerceptualValidationReport {
   return new PerceptualValidator().validate(definition, canonical, dims);
 }

@@ -1,4 +1,4 @@
-import { Quat, Vec3, IDENTITY_QUAT } from "../../core/math/vec";
+import { Quat, Vec3, IDENTITY_QUAT } from '../../core/math/vec';
 
 export interface BonePose {
   name: string;
@@ -66,9 +66,15 @@ export function sampleChannel(channel: AnimationChannel, t: number): Quat {
 
 export function nlerp(a: Quat, b: Quat, t: number): Quat {
   // Flip sign to take shortest path.
-  let dx = b.x, dy = b.y, dz = b.z, dw = b.w;
+  let dx = b.x,
+    dy = b.y,
+    dz = b.z,
+    dw = b.w;
   if (a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w < 0) {
-    dx = -dx; dy = -dy; dz = -dz; dw = -dw;
+    dx = -dx;
+    dy = -dy;
+    dz = -dz;
+    dw = -dw;
   }
   const k = 1 - t;
   return normalizeQuat({
@@ -89,9 +95,12 @@ export function quatFromEulerDeg(xDeg: number, yDeg: number, zDeg: number): Quat
   const x = (xDeg * Math.PI) / 180;
   const y = (yDeg * Math.PI) / 180;
   const z = (zDeg * Math.PI) / 180;
-  const cx = Math.cos(x / 2), sx = Math.sin(x / 2);
-  const cy = Math.cos(y / 2), sy = Math.sin(y / 2);
-  const cz = Math.cos(z / 2), sz = Math.sin(z / 2);
+  const cx = Math.cos(x / 2),
+    sx = Math.sin(x / 2);
+  const cy = Math.cos(y / 2),
+    sy = Math.sin(y / 2);
+  const cz = Math.cos(z / 2),
+    sz = Math.sin(z / 2);
   return {
     x: sx * cy * cz - cx * sy * sz,
     y: cx * sy * cz + sx * cy * sz,

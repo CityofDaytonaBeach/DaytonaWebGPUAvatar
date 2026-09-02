@@ -1,8 +1,8 @@
-import { PropertyCategory } from "../../core/schema/property";
-import { PROPERTY_CATEGORIES } from "../../core/schema/property";
-import { PropertyRegistry } from "../../core/schema/registry";
+import { PropertyCategory } from '../../core/schema/property';
+import { PROPERTY_CATEGORIES } from '../../core/schema/property';
+import { PropertyRegistry } from '../../core/schema/registry';
 
-export type DirtyGranularity = "character" | "system" | "region" | "vertex";
+export type DirtyGranularity = 'character' | 'system' | 'region' | 'vertex';
 
 /**
  * Multiple-level invalidation model. Regions form a hierarchy from whole

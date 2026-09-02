@@ -1,4 +1,4 @@
-import { HumanDefinition } from "../../core/schema/human-definition";
+import { HumanDefinition } from '../../core/schema/human-definition';
 
 /**
  * Concrete, measured body dimensions resolved from the semantic Human
@@ -49,18 +49,18 @@ export const NEUTRAL_US_MALE_HEIGHT = 1.78;
  * deform that geometry to match these resolved values.
  */
 export function resolveAnatomy(def: HumanDefinition): AnatomyDimensions {
-  const height = def.get("global.height");
-  const scale = def.get("global.scale");
-  const muscularity = def.get("body.muscularity"); // 0..1
-  const bodyFat = def.get("body.bodyFat"); // 0.02..0.6
-  const chestF = def.get("body.chest");
-  const waistF = def.get("body.waist");
-  const hipsF = def.get("body.hips");
-  const neckF = def.get("skeleton.neckLength");
-  const spineF = def.get("skeleton.spineLength");
-  const shF = def.get("skeleton.shoulderWidth");
-  const armF = def.get("skeleton.armLength");
-  const legF = def.get("skeleton.legLength");
+  const height = def.get('global.height');
+  const scale = def.get('global.scale');
+  const muscularity = def.get('body.muscularity'); // 0..1
+  const bodyFat = def.get('body.bodyFat'); // 0.02..0.6
+  const chestF = def.get('body.chest');
+  const waistF = def.get('body.waist');
+  const hipsF = def.get('body.hips');
+  const neckF = def.get('skeleton.neckLength');
+  const spineF = def.get('skeleton.spineLength');
+  const shF = def.get('skeleton.shoulderWidth');
+  const armF = def.get('skeleton.armLength');
+  const legF = def.get('skeleton.legLength');
 
   const hipHeight = height * 0.53;
   const spineHeight = height * 0.16 * spineF;
@@ -93,7 +93,7 @@ export function resolveAnatomy(def: HumanDefinition): AnatomyDimensions {
     thighLength: height * 0.14 * legF,
     shinLength: height * 0.135 * legF,
     footOffsetY: height * 0.035,
-    headScale: def.get("identity.headProportion"),
+    headScale: def.get('identity.headProportion'),
   };
 }
 
@@ -106,20 +106,23 @@ export function validateAnatomy(d: AnatomyDimensions): AnatomyConstraint[] {
   const out: AnatomyConstraint[] = [];
   if (d.waistHalfWidth > d.chestHalfWidth) {
     out.push({
-      message: "waist exceeds chest",
+      message: 'waist exceeds chest',
       satisfaction: Math.max(0.2, 1 - (d.waistHalfWidth / d.chestHalfWidth - 1) * 4),
     });
   } else {
-    out.push({ message: "waist < chest", satisfaction: 1 });
+    out.push({ message: 'waist < chest', satisfaction: 1 });
   }
   if (d.hipHalfWidth < d.chestHalfWidth * 0.7) {
-    out.push({ message: "hips too narrow for trunk", satisfaction: 0.6 });
+    out.push({ message: 'hips too narrow for trunk', satisfaction: 0.6 });
   } else {
-    out.push({ message: "hips proportional", satisfaction: 1 });
+    out.push({ message: 'hips proportional', satisfaction: 1 });
   }
   const torsoDepthOk = d.torsoHalfDepth > 0 && d.torsoHalfDepth < d.chestHalfWidth * 0.9;
-  out.push({ message: torsoDepthOk ? "torso depth proportional" : "torso depth implausible", satisfaction: torsoDepthOk ? 1 : 0.4 });
-  out.push({ message: "resolve successful", satisfaction: 1 });
+  out.push({
+    message: torsoDepthOk ? 'torso depth proportional' : 'torso depth implausible',
+    satisfaction: torsoDepthOk ? 1 : 0.4,
+  });
+  out.push({ message: 'resolve successful', satisfaction: 1 });
   return out;
 }
 

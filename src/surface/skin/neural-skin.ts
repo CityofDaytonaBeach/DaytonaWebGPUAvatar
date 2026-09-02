@@ -1,5 +1,5 @@
-import { HumanDefinition } from "../../core/schema/human-definition";
-import { CanonicalHuman, RegionName } from "../../geometry/canonical/canonical-human";
+import { HumanDefinition } from '../../core/schema/human-definition';
+import { CanonicalHuman, RegionName } from '../../geometry/canonical/canonical-human';
 
 // ─── Existing types (unchanged) ──────────────────────────────────────────────
 
@@ -24,14 +24,14 @@ export interface SkinResidualField {
 // ─── New enums & types ───────────────────────────────────────────────────────
 
 export enum SkinPreset {
-  Porcelain = "porcelain",
-  Fair = "fair",
-  LightOlive = "light_olive",
-  Olive = "olive",
-  Tan = "tan",
-  Brown = "brown",
-  DarkBrown = "dark_brown",
-  Deep = "deep",
+  Porcelain = 'porcelain',
+  Fair = 'fair',
+  LightOlive = 'light_olive',
+  Olive = 'olive',
+  Tan = 'tan',
+  Brown = 'brown',
+  DarkBrown = 'dark_brown',
+  Deep = 'deep',
 }
 
 export interface SkinPresetProfile {
@@ -48,7 +48,7 @@ export interface SkinPresetProfile {
   freckleDensity: number;
 }
 
-const SKIN_PRESETS: Record<SkinPreset, SkinPresetProfile> = {
+export const SKIN_PRESETS: Record<SkinPreset, SkinPresetProfile> = {
   [SkinPreset.Porcelain]: {
     baseColor: [0.96, 0.87, 0.82],
     melanin: 0.05,
@@ -63,26 +63,26 @@ const SKIN_PRESETS: Record<SkinPreset, SkinPresetProfile> = {
     freckleDensity: 0.02,
   },
   [SkinPreset.Fair]: {
-    baseColor: [0.91, 0.78, 0.70],
+    baseColor: [0.91, 0.78, 0.7],
     melanin: 0.12,
-    hemoglobin: 0.30,
+    hemoglobin: 0.3,
     carotene: 0.18,
-    roughness: 0.40,
-    specular: 0.40,
-    sssColor: [0.90, 0.58, 0.48],
-    sssIntensity: 0.40,
+    roughness: 0.4,
+    specular: 0.4,
+    sssColor: [0.9, 0.58, 0.48],
+    sssIntensity: 0.4,
     poreScale: 0.4,
     wrinkleDepth: 0.15,
     freckleDensity: 0.08,
   },
   [SkinPreset.LightOlive]: {
-    baseColor: [0.82, 0.70, 0.58],
+    baseColor: [0.82, 0.7, 0.58],
     melanin: 0.25,
     hemoglobin: 0.22,
-    carotene: 0.20,
+    carotene: 0.2,
     roughness: 0.42,
     specular: 0.38,
-    sssColor: [0.85, 0.50, 0.40],
+    sssColor: [0.85, 0.5, 0.4],
     sssIntensity: 0.35,
     poreScale: 0.5,
     wrinkleDepth: 0.2,
@@ -96,7 +96,7 @@ const SKIN_PRESETS: Record<SkinPreset, SkinPresetProfile> = {
     roughness: 0.44,
     specular: 0.36,
     sssColor: [0.78, 0.42, 0.34],
-    sssIntensity: 0.30,
+    sssIntensity: 0.3,
     poreScale: 0.55,
     wrinkleDepth: 0.25,
     freckleDensity: 0.04,
@@ -108,7 +108,7 @@ const SKIN_PRESETS: Record<SkinPreset, SkinPresetProfile> = {
     carotene: 0.18,
     roughness: 0.46,
     specular: 0.34,
-    sssColor: [0.70, 0.38, 0.30],
+    sssColor: [0.7, 0.38, 0.3],
     sssIntensity: 0.28,
     poreScale: 0.6,
     wrinkleDepth: 0.28,
@@ -116,12 +116,12 @@ const SKIN_PRESETS: Record<SkinPreset, SkinPresetProfile> = {
   },
   [SkinPreset.Brown]: {
     baseColor: [0.52, 0.38, 0.28],
-    melanin: 0.60,
+    melanin: 0.6,
     hemoglobin: 0.14,
     carotene: 0.14,
     roughness: 0.48,
     specular: 0.32,
-    sssColor: [0.60, 0.32, 0.24],
+    sssColor: [0.6, 0.32, 0.24],
     sssIntensity: 0.25,
     poreScale: 0.65,
     wrinkleDepth: 0.3,
@@ -131,23 +131,23 @@ const SKIN_PRESETS: Record<SkinPreset, SkinPresetProfile> = {
     baseColor: [0.38, 0.26, 0.18],
     melanin: 0.75,
     hemoglobin: 0.12,
-    carotene: 0.10,
-    roughness: 0.50,
-    specular: 0.30,
-    sssColor: [0.48, 0.26, 0.20],
+    carotene: 0.1,
+    roughness: 0.5,
+    specular: 0.3,
+    sssColor: [0.48, 0.26, 0.2],
     sssIntensity: 0.22,
     poreScale: 0.7,
     wrinkleDepth: 0.35,
     freckleDensity: 0.01,
   },
   [SkinPreset.Deep]: {
-    baseColor: [0.24, 0.16, 0.10],
-    melanin: 0.90,
-    hemoglobin: 0.10,
+    baseColor: [0.24, 0.16, 0.1],
+    melanin: 0.9,
+    hemoglobin: 0.1,
     carotene: 0.06,
     roughness: 0.52,
     specular: 0.28,
-    sssColor: [0.36, 0.20, 0.15],
+    sssColor: [0.36, 0.2, 0.15],
     sssIntensity: 0.18,
     poreScale: 0.75,
     wrinkleDepth: 0.38,
@@ -166,23 +166,135 @@ export interface RegionSkinMaterial {
   oiliness: number;
 }
 
-const REGION_MATERIALS: Record<string, RegionSkinMaterial> = {
-  face: { roughness: 0.35, specular: 0.45, sssIntensity: 0.40, poreScale: 1.2, wrinkleSusceptibility: 1.0, oiliness: 0.8 },
-  nose: { roughness: 0.30, specular: 0.50, sssIntensity: 0.35, poreScale: 1.5, wrinkleSusceptibility: 0.3, oiliness: 1.0 },
-  jaw: { roughness: 0.38, specular: 0.42, sssIntensity: 0.38, poreScale: 1.1, wrinkleSusceptibility: 0.6, oiliness: 0.7 },
-  head: { roughness: 0.40, specular: 0.40, sssIntensity: 0.35, poreScale: 0.8, wrinkleSusceptibility: 0.4, oiliness: 0.5 },
-  neck: { roughness: 0.42, specular: 0.38, sssIntensity: 0.42, poreScale: 0.6, wrinkleSusceptibility: 0.7, oiliness: 0.4 },
-  torso: { roughness: 0.50, specular: 0.30, sssIntensity: 0.30, poreScale: 0.5, wrinkleSusceptibility: 0.2, oiliness: 0.3 },
-  upperarm_l: { roughness: 0.48, specular: 0.32, sssIntensity: 0.32, poreScale: 0.5, wrinkleSusceptibility: 0.3, oiliness: 0.3 },
-  upperarm_r: { roughness: 0.48, specular: 0.32, sssIntensity: 0.32, poreScale: 0.5, wrinkleSusceptibility: 0.3, oiliness: 0.3 },
-  forearm_l: { roughness: 0.46, specular: 0.34, sssIntensity: 0.30, poreScale: 0.55, wrinkleSusceptibility: 0.4, oiliness: 0.35 },
-  forearm_r: { roughness: 0.46, specular: 0.34, sssIntensity: 0.30, poreScale: 0.55, wrinkleSusceptibility: 0.4, oiliness: 0.35 },
-  hand_l: { roughness: 0.55, specular: 0.28, sssIntensity: 0.25, poreScale: 0.9, wrinkleSusceptibility: 0.8, oiliness: 0.2 },
-  hand_r: { roughness: 0.55, specular: 0.28, sssIntensity: 0.25, poreScale: 0.9, wrinkleSusceptibility: 0.8, oiliness: 0.2 },
-  thigh_l: { roughness: 0.52, specular: 0.28, sssIntensity: 0.28, poreScale: 0.45, wrinkleSusceptibility: 0.2, oiliness: 0.25 },
-  thigh_r: { roughness: 0.52, specular: 0.28, sssIntensity: 0.28, poreScale: 0.45, wrinkleSusceptibility: 0.2, oiliness: 0.25 },
-  shin_l: { roughness: 0.54, specular: 0.26, sssIntensity: 0.26, poreScale: 0.4, wrinkleSusceptibility: 0.25, oiliness: 0.2 },
-  shin_r: { roughness: 0.54, specular: 0.26, sssIntensity: 0.26, poreScale: 0.4, wrinkleSusceptibility: 0.25, oiliness: 0.2 },
+export const REGION_MATERIALS: Record<string, RegionSkinMaterial> = {
+  face: {
+    roughness: 0.35,
+    specular: 0.45,
+    sssIntensity: 0.4,
+    poreScale: 1.2,
+    wrinkleSusceptibility: 1.0,
+    oiliness: 0.8,
+  },
+  nose: {
+    roughness: 0.3,
+    specular: 0.5,
+    sssIntensity: 0.35,
+    poreScale: 1.5,
+    wrinkleSusceptibility: 0.3,
+    oiliness: 1.0,
+  },
+  jaw: {
+    roughness: 0.38,
+    specular: 0.42,
+    sssIntensity: 0.38,
+    poreScale: 1.1,
+    wrinkleSusceptibility: 0.6,
+    oiliness: 0.7,
+  },
+  head: {
+    roughness: 0.4,
+    specular: 0.4,
+    sssIntensity: 0.35,
+    poreScale: 0.8,
+    wrinkleSusceptibility: 0.4,
+    oiliness: 0.5,
+  },
+  neck: {
+    roughness: 0.42,
+    specular: 0.38,
+    sssIntensity: 0.42,
+    poreScale: 0.6,
+    wrinkleSusceptibility: 0.7,
+    oiliness: 0.4,
+  },
+  torso: {
+    roughness: 0.5,
+    specular: 0.3,
+    sssIntensity: 0.3,
+    poreScale: 0.5,
+    wrinkleSusceptibility: 0.2,
+    oiliness: 0.3,
+  },
+  upperarm_l: {
+    roughness: 0.48,
+    specular: 0.32,
+    sssIntensity: 0.32,
+    poreScale: 0.5,
+    wrinkleSusceptibility: 0.3,
+    oiliness: 0.3,
+  },
+  upperarm_r: {
+    roughness: 0.48,
+    specular: 0.32,
+    sssIntensity: 0.32,
+    poreScale: 0.5,
+    wrinkleSusceptibility: 0.3,
+    oiliness: 0.3,
+  },
+  forearm_l: {
+    roughness: 0.46,
+    specular: 0.34,
+    sssIntensity: 0.3,
+    poreScale: 0.55,
+    wrinkleSusceptibility: 0.4,
+    oiliness: 0.35,
+  },
+  forearm_r: {
+    roughness: 0.46,
+    specular: 0.34,
+    sssIntensity: 0.3,
+    poreScale: 0.55,
+    wrinkleSusceptibility: 0.4,
+    oiliness: 0.35,
+  },
+  hand_l: {
+    roughness: 0.55,
+    specular: 0.28,
+    sssIntensity: 0.25,
+    poreScale: 0.9,
+    wrinkleSusceptibility: 0.8,
+    oiliness: 0.2,
+  },
+  hand_r: {
+    roughness: 0.55,
+    specular: 0.28,
+    sssIntensity: 0.25,
+    poreScale: 0.9,
+    wrinkleSusceptibility: 0.8,
+    oiliness: 0.2,
+  },
+  thigh_l: {
+    roughness: 0.52,
+    specular: 0.28,
+    sssIntensity: 0.28,
+    poreScale: 0.45,
+    wrinkleSusceptibility: 0.2,
+    oiliness: 0.25,
+  },
+  thigh_r: {
+    roughness: 0.52,
+    specular: 0.28,
+    sssIntensity: 0.28,
+    poreScale: 0.45,
+    wrinkleSusceptibility: 0.2,
+    oiliness: 0.25,
+  },
+  shin_l: {
+    roughness: 0.54,
+    specular: 0.26,
+    sssIntensity: 0.26,
+    poreScale: 0.4,
+    wrinkleSusceptibility: 0.25,
+    oiliness: 0.2,
+  },
+  shin_r: {
+    roughness: 0.54,
+    specular: 0.26,
+    sssIntensity: 0.26,
+    poreScale: 0.4,
+    wrinkleSusceptibility: 0.25,
+    oiliness: 0.2,
+  },
 };
 
 // ─── Wrinkle & blemish types ─────────────────────────────────────────────────
@@ -200,7 +312,7 @@ export interface WrinkleOptions {
 }
 
 export interface BlemishDescriptor {
-  kind: "mole" | "freckle" | "scar" | "liver_spot";
+  kind: 'mole' | 'freckle' | 'scar' | 'liver_spot';
   vertexId: number;
   region: RegionName;
   uv: { u: number; v: number };
@@ -275,11 +387,6 @@ function noise1D(seed: number, x: number): number {
 
 function noise2D(seed: number, x: number, y: number): number {
   const v = Math.sin(seed * 12.9898 + x * 78.233 + y * 37.719) * 43758.5453;
-  return v - Math.floor(v);
-}
-
-function noise3D(seed: number, x: number, y: number, z: number): number {
-  const v = Math.sin(seed * 6.17 + x * 21.34 + y * 45.67 + z * 78.91) * 43758.5453;
   return v - Math.floor(v);
 }
 
@@ -359,11 +466,11 @@ function clampDelta(v: number): number {
 
 function isSkinRegion(region: RegionName): boolean {
   return (
-    region !== "eye_sclera" &&
-    region !== "eye_iris" &&
-    region !== "teeth" &&
-    region !== "tongue" &&
-    region !== "mouth_cavity"
+    region !== 'eye_sclera' &&
+    region !== 'eye_iris' &&
+    region !== 'teeth' &&
+    region !== 'tongue' &&
+    region !== 'mouth_cavity'
   );
 }
 
@@ -371,12 +478,12 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
-function lerpColor(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
+function lerpColor(
+  a: [number, number, number],
+  b: [number, number, number],
+  t: number,
+): [number, number, number] {
   return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
-}
-
-function mixRegion(base: RegionSkinMaterial, overrides: Partial<RegionSkinMaterial>): RegionSkinMaterial {
-  return { ...base, ...overrides };
 }
 
 // ─── Skin aging model ────────────────────────────────────────────────────────
@@ -390,9 +497,9 @@ export function computeAgingState(
   definition: HumanDefinition,
   overrides?: Partial<AgingState>,
 ): AgingState {
-  const age = clamp(definition.get("skin.age") / 100, 0, 1);
-  const uvExposure = clamp(definition.get("skin.roughness") ?? 0.3, 0, 1);
-  const moisture = clamp(1 - (definition.get("skin.wetness") ?? 0.5), 0, 1);
+  const age = clamp(definition.get('skin.age') / 100, 0, 1);
+  const uvExposure = clamp(definition.get('skin.roughness') ?? 0.3, 0, 1);
+  const moisture = clamp(1 - (definition.get('skin.wetness') ?? 0.5), 0, 1);
 
   // Non-linear aging: accelerates after 0.5 and with UV/moisture stress
   const ageCurve = age * age * (3 - 2 * age); // smoothstep
@@ -461,7 +568,14 @@ export function generatePoreDetail(
 
   const combined = clamp(coarse * 0.4 + medium * 0.35 + fine * 0.25, 0, 1);
 
-  return { vertexId, region, coarse: clamp(coarse, 0, 1), medium: clamp(medium, 0, 1), fine: clamp(fine, 0, 1), combined };
+  return {
+    vertexId,
+    region,
+    coarse: clamp(coarse, 0, 1),
+    medium: clamp(medium, 0, 1),
+    fine: clamp(fine, 0, 1),
+    combined,
+  };
 }
 
 // ─── Wrinkle/fold map generation ─────────────────────────────────────────────
@@ -501,8 +615,12 @@ export function generateWrinkleMap(
 
       // Direction via finite-difference gradient of wrinkle field
       const eps = 0.001;
-      const dx = fbm2D(v.id * 7, v.uv.u + eps, v.uv.v, 3, 2.0, 0.5) - fbm2D(v.id * 7, v.uv.u - eps, v.uv.v, 3, 2.0, 0.5);
-      const dy = fbm2D(v.id * 7, v.uv.u, v.uv.v + eps, 3, 2.0, 0.5) - fbm2D(v.id * 7, v.uv.u, v.uv.v - eps, 3, 2.0, 0.5);
+      const dx =
+        fbm2D(v.id * 7, v.uv.u + eps, v.uv.v, 3, 2.0, 0.5) -
+        fbm2D(v.id * 7, v.uv.u - eps, v.uv.v, 3, 2.0, 0.5);
+      const dy =
+        fbm2D(v.id * 7, v.uv.u, v.uv.v + eps, 3, 2.0, 0.5) -
+        fbm2D(v.id * 7, v.uv.u, v.uv.v - eps, 3, 2.0, 0.5);
       const len = Math.sqrt(dx * dx + dy * dy) || 1;
 
       return {
@@ -528,8 +646,8 @@ export function generateBlemishes(
   const density = clamp(options.density ?? 0.5, 0, 1);
   const seed = options.seed ?? 42;
   const allowScars = options.allowScars ?? true;
-  const pigmentation = definition.get("skin.pigmentation");
-  const age = definition.get("skin.age") / 100;
+  const pigmentation = definition.get('skin.pigmentation');
+  const age = definition.get('skin.age') / 100;
   const rng = seededRandom(seed);
 
   const blemishes: BlemishDescriptor[] = [];
@@ -540,11 +658,15 @@ export function generateBlemishes(
     const r = rng();
 
     // Freckles: probabilistic per-vertex, denser on face/nose
-    const freckleChance = density * 0.02 * (v.region === "face" || v.region === "nose" ? 3.0 : 1.0) * (0.5 + pigmentation * 0.5);
+    const freckleChance =
+      density *
+      0.02 *
+      (v.region === 'face' || v.region === 'nose' ? 3.0 : 1.0) *
+      (0.5 + pigmentation * 0.5);
     if (r < freckleChance) {
       const intensity = 0.1 + rng() * 0.3;
       blemishes.push({
-        kind: "freckle",
+        kind: 'freckle',
         vertexId: v.id,
         region: v.region,
         uv: v.uv,
@@ -563,7 +685,7 @@ export function generateBlemishes(
     const moleChance = density * 0.005 * (0.5 + age * 0.5);
     if (r < freckleChance + moleChance) {
       blemishes.push({
-        kind: "mole",
+        kind: 'mole',
         vertexId: v.id,
         region: v.region,
         uv: v.uv,
@@ -571,7 +693,7 @@ export function generateBlemishes(
         intensity: 0.3 + rng() * 0.4,
         colorShift: [
           clamp(0.04 + rng() * 0.06, 0, 0.15),
-          clamp(0.02 + rng() * 0.03, 0, 0.10),
+          clamp(0.02 + rng() * 0.03, 0, 0.1),
           clamp(-0.02 + rng() * 0.01, -0.04, 0.01),
         ],
       });
@@ -582,14 +704,14 @@ export function generateBlemishes(
     const liverChance = density * 0.003 * Math.max(0, age - 0.4) * 2;
     if (r < freckleChance + moleChance + liverChance) {
       blemishes.push({
-        kind: "liver_spot",
+        kind: 'liver_spot',
         vertexId: v.id,
         region: v.region,
         uv: v.uv,
         size: 0.005 + rng() * 0.015,
         intensity: 0.15 + rng() * 0.25,
         colorShift: [
-          clamp(pigmentation * 0.04 + rng() * 0.03, 0, 0.10),
+          clamp(pigmentation * 0.04 + rng() * 0.03, 0, 0.1),
           clamp(pigmentation * 0.02 + rng() * 0.015, 0, 0.06),
           clamp(-0.005, -0.02, 0.005),
         ],
@@ -602,7 +724,7 @@ export function generateBlemishes(
       const scarChance = density * 0.001;
       if (r < freckleChance + moleChance + liverChance + scarChance) {
         blemishes.push({
-          kind: "scar",
+          kind: 'scar',
           vertexId: v.id,
           region: v.region,
           uv: v.uv,
@@ -645,18 +767,10 @@ export function computeSSSApproximation(
   const scatterG = preset.sssColor[1] * (0.8 + aging.age * 0.15);
   const scatterB = preset.sssColor[2] * (0.7 + aging.moisture * 0.2);
 
-  const depth = clamp(
-    preset.sssIntensity * thicknessFactor * (1 - aging.collagenLoss * 0.2),
-    0,
-    1,
-  );
+  const depth = clamp(preset.sssIntensity * thicknessFactor * (1 - aging.collagenLoss * 0.2), 0, 1);
 
   return {
-    color: [
-      clamp(scatterR, 0, 1),
-      clamp(scatterG, 0, 1),
-      clamp(scatterB, 0, 1),
-    ],
+    color: [clamp(scatterR, 0, 1), clamp(scatterG, 0, 1), clamp(scatterB, 0, 1)],
     depth,
   };
 }
@@ -707,7 +821,7 @@ export function exportSkinMaterial(
   const wrinkleDepth = new Float32Array(n);
   const blemishMask = new Float32Array(n);
 
-  const pigmentation = definition.get("skin.pigmentation");
+  const pigmentation = definition.get('skin.pigmentation');
 
   for (const v of canonical.vertices) {
     if (!isSkinRegion(v.region)) {
@@ -719,11 +833,19 @@ export function exportSkinMaterial(
 
     // Base color: preset base mixed with pigmentation
     const colorBlend = clamp(pigmentation, 0, 1);
-    const baseCol = lerpColor(presetProfile.baseColor, [presetProfile.baseColor[0] * 0.7, presetProfile.baseColor[1] * 0.65, presetProfile.baseColor[2] * 0.6], colorBlend);
+    const baseCol = lerpColor(
+      presetProfile.baseColor,
+      [
+        presetProfile.baseColor[0] * 0.7,
+        presetProfile.baseColor[1] * 0.65,
+        presetProfile.baseColor[2] * 0.6,
+      ],
+      colorBlend,
+    );
 
     // Apply residual-style age + pigment offsets
     const age = aging.age;
-    const ageTerm = (age - 0.3) * 0.035 * (v.region === "face" || v.region === "nose" ? 1.25 : 0.7);
+    const ageTerm = (age - 0.3) * 0.035 * (v.region === 'face' || v.region === 'nose' ? 1.25 : 0.7);
     const pigmentTerm = (pigmentation - 0.5) * 0.025;
 
     baseColor[idx3 + 0] = clamp(baseCol[0] + ageTerm + pigmentTerm, 0, 1);
@@ -742,7 +864,7 @@ export function exportSkinMaterial(
     }
 
     // Roughness: preset + region + age + wetness
-    const wetness = definition.get("skin.wetness");
+    const wetness = definition.get('skin.wetness');
     roughness[v.id] = clamp(
       lerp(presetProfile.roughness, regionMat.roughness, 0.4) +
         aging.age * 0.04 * regionMat.wrinkleSusceptibility -
@@ -752,11 +874,7 @@ export function exportSkinMaterial(
     );
 
     // Specular: preset + region
-    specular[v.id] = clamp(
-      lerp(presetProfile.specular, regionMat.specular, 0.5),
-      0.1,
-      0.8,
-    );
+    specular[v.id] = clamp(lerp(presetProfile.specular, regionMat.specular, 0.5), 0.1, 0.8);
 
     // SSS
     const sss = computeSSSApproximation(v.id, v.region, aging, presetProfile);
@@ -766,9 +884,9 @@ export function exportSkinMaterial(
     sssDepth[v.id] = sss.depth;
 
     // Normal intensity
-    const roughness = definition.get("skin.roughness");
+    const skinRoughness = definition.get('skin.roughness');
     normalIntensity[v.id] = clamp(
-      0.15 + aging.age * 0.5 + roughness * 0.25 + poreDetails.get(v.id)!.combined * 0.1,
+      0.15 + aging.age * 0.5 + skinRoughness * 0.25 + poreDetails.get(v.id)!.combined * 0.1,
       0,
       1,
     );
@@ -821,10 +939,10 @@ export function generateSkinResiduals(
 ): SkinResidualField {
   const strength = clamp(options.strength ?? 1, 0, 1);
   const maxSamples = Math.max(0, Math.floor(options.maxSamples ?? canonical.vertexCount));
-  const age = definition.get("skin.age") / 100;
-  const pigmentation = definition.get("skin.pigmentation");
-  const wetness = definition.get("skin.wetness");
-  const roughness = definition.get("skin.roughness");
+  const age = definition.get('skin.age') / 100;
+  const pigmentation = definition.get('skin.pigmentation');
+  const wetness = definition.get('skin.wetness');
+  const roughness = definition.get('skin.roughness');
   const samples: SkinResidualSample[] = [];
 
   for (const v of canonical.vertices) {
@@ -832,7 +950,7 @@ export function generateSkinResiduals(
     if (!isSkinRegion(v.region)) continue;
     const pores = noise(v.id, v.uv.u, v.uv.v);
     const freckles = noise(v.id * 17 + 3, v.position.x, v.position.y);
-    const regionScale = v.region === "face" || v.region === "nose" ? 1.25 : 0.7;
+    const regionScale = v.region === 'face' || v.region === 'nose' ? 1.25 : 0.7;
     const ageTerm = (age - 0.3) * 0.035 * regionScale;
     const pigmentTerm = (pigmentation - 0.5) * 0.025;
     const poreTerm = (pores - 0.5) * 0.018 * regionScale;

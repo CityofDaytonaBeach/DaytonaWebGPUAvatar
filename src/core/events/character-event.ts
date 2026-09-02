@@ -1,18 +1,19 @@
-import { HumanDefinition, PrimitiveValue } from "../schema/human-definition";
+import { HumanDefinition, PrimitiveValue } from '../schema/human-definition';
 
-export type EventSource = "ai" | "ui" | "automation" | "simulation" | "external" | "api" | "developer";
+export type EventSource =
+  'ai' | 'ui' | 'automation' | 'simulation' | 'external' | 'api' | 'developer';
 
 export type CharacterEventType =
-  | "set"
-  | "adjust"
-  | "expression"
-  | "pose"
-  | "speak"
-  | "wear"
-  | "addTattoo"
-  | "removeAttachment"
-  | "transition"
-  | "advanceTime";
+  | 'set'
+  | 'adjust'
+  | 'expression'
+  | 'pose'
+  | 'speak'
+  | 'wear'
+  | 'addTattoo'
+  | 'removeAttachment'
+  | 'transition'
+  | 'advanceTime';
 
 /**
  * Central transactional event used by EVERY mutation path (AI, UI,
@@ -40,7 +41,7 @@ let eventCounter = 0;
 export function createEvent(
   type: CharacterEventType,
   source: EventSource,
-  partial: Partial<CharacterEvent> = {}
+  partial: Partial<CharacterEvent> = {},
 ): CharacterEvent {
   eventCounter += 1;
   return {
@@ -59,15 +60,15 @@ export function createEvent(
  */
 export function applyEventToDefinition(
   definition: HumanDefinition,
-  event: CharacterEvent
+  event: CharacterEvent,
 ): number[] | null {
   switch (event.type) {
-    case "set":
-    case "adjust": {
+    case 'set':
+    case 'adjust': {
       const changed: number[] = [];
       if (event.changes) {
         for (const [path, value] of Object.entries(event.changes)) {
-          if (event.type === "adjust") {
+          if (event.type === 'adjust') {
             definition.adjust(path, value);
           } else {
             definition.set(path, value);
@@ -77,7 +78,7 @@ export function applyEventToDefinition(
         return changed;
       }
       if (event.path !== undefined) {
-        if (event.type === "adjust") {
+        if (event.type === 'adjust') {
           if (event.factor !== undefined) definition.adjust(event.path, event.factor);
         } else if (event.value !== undefined) {
           definition.set(event.path, event.value);
@@ -86,13 +87,13 @@ export function applyEventToDefinition(
       }
       return null;
     }
-    case "expression":
-    case "pose":
-    case "wear":
-    case "addTattoo":
-    case "removeAttachment":
-    case "transition":
-    case "advanceTime":
+    case 'expression':
+    case 'pose':
+    case 'wear':
+    case 'addTattoo':
+    case 'removeAttachment':
+    case 'transition':
+    case 'advanceTime':
       return null; // Timing/peripheral systems consume these separately.
     default:
       return null;

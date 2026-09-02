@@ -1,11 +1,8 @@
-export * from "./types";
+export * from './types';
 
-import {
-  ConstraintProfile,
-  ConstraintResult,
-} from "./types";
-import { PropertyRegistry } from "../schema/registry";
-import { HumanDefinition } from "../schema/human-definition";
+import { ConstraintProfile, ConstraintResult } from './types';
+import { PropertyRegistry } from '../schema/registry';
+import { HumanDefinition } from '../schema/human-definition';
 
 /**
  * Anatomical constraint solver. Prevents invalid humans by enforcing hard,
@@ -16,7 +13,7 @@ import { HumanDefinition } from "../schema/human-definition";
 export class ConstraintSolver {
   constructor(
     private registry: PropertyRegistry,
-    private profile: ConstraintProfile = "REALISTIC"
+    private profile: ConstraintProfile = 'REALISTIC',
   ) {}
 
   setProfile(profile: ConstraintProfile): void {
@@ -31,11 +28,11 @@ export class ConstraintSolver {
   private tolerance(path: string): number {
     void path;
     switch (this.profile) {
-      case "REALISTIC":
+      case 'REALISTIC':
         return 0.05;
-      case "STYLIZED":
+      case 'STYLIZED':
         return 0.25;
-      case "FANTASY":
+      case 'FANTASY':
         return 10.0;
     }
   }
@@ -56,16 +53,17 @@ export class ConstraintSolver {
     }
 
     // Soft: muscularity + bodyFat combination sanity.
-    const muscularity = definition.get("body.muscularity");
-    const bodyFat = definition.get("body.bodyFat");
+    const muscularity = definition.get('body.muscularity');
+    const bodyFat = definition.get('body.bodyFat');
     // Extremely high muscularity with extreme fat conflicts anatomically.
     if (muscularity > 0.9 && bodyFat > 0.5) {
       violations++;
-      messages.push("high muscularity conflicts with extreme body fat");
+      messages.push('high muscularity conflicts with extreme body fat');
     }
 
     return {
-      satisfaction: violations === 0 ? 1 : Math.max(0, 1 - violations * this.tolerance("body.muscularity")),
+      satisfaction:
+        violations === 0 ? 1 : Math.max(0, 1 - violations * this.tolerance('body.muscularity')),
       messages,
     };
   }
@@ -76,7 +74,7 @@ export class ConstraintSolver {
    */
   canSet(path: string, value: number): boolean {
     const meta = this.registry.require(path);
-    if (this.profile === "REALISTIC") {
+    if (this.profile === 'REALISTIC') {
       if (meta.min !== undefined && value < meta.min) return false;
       if (meta.max !== undefined && value > meta.max) return false;
     }

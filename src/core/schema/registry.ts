@@ -5,7 +5,7 @@ import {
   PersistenceType,
   IdentityImportance,
   PROPERTY_CATEGORIES,
-} from "./property";
+} from './property';
 
 /**
  * PropertyDescriptor declares a schema property. The registry assigns it a
@@ -104,7 +104,7 @@ export class PropertyRegistry {
     let offset = 0;
     const sorted = [...this.byId.values()].sort((a, b) => a.id - b.id);
     for (const meta of sorted) {
-      const size = meta.type === "f64" ? 8 : meta.type === "bool" ? 4 : 4;
+      const size = meta.type === 'f64' ? 8 : meta.type === 'bool' ? 4 : 4;
       const align = size;
       offset = alignUp(offset, align);
       const start = offset;
@@ -137,7 +137,7 @@ export class PropertyRegistry {
   get sizeBytes(): number {
     let offset = 0;
     for (const meta of this.byId.values()) {
-      const size = meta.type === "f64" ? 8 : 4;
+      const size = meta.type === 'f64' ? 8 : 4;
       offset = alignUp(offset, size) + size;
     }
     return alignUp(offset, 16);

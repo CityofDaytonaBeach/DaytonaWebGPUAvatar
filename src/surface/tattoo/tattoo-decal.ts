@@ -1,6 +1,11 @@
-import { HumanAttachment } from "../../attachments/attachment-system";
-import { Vec3, vec3 } from "../../core/math/vec";
-import { CanonicalHuman, MorphDelta, RegionName, Vertex } from "../../geometry/canonical/canonical-human";
+import { HumanAttachment } from '../../attachments/attachment-system';
+import { Vec3, vec3 } from '../../core/math/vec';
+import {
+  CanonicalHuman,
+  MorphDelta,
+  RegionName,
+  Vertex,
+} from '../../geometry/canonical/canonical-human';
 
 // ─── Existing types (unchanged) ──────────────────────────────────────────────
 
@@ -27,9 +32,9 @@ export interface TattooDecalOptions {
 
 // ─── New types ───────────────────────────────────────────────────────────────
 
-export type TattooBlendMode = "normal" | "multiply" | "overlay" | "screen";
+export type TattooBlendMode = 'normal' | 'multiply' | 'overlay' | 'screen';
 
-export type TattooFalloffCurve = "linear" | "smooth" | "smooth2" | "sharp" | "round";
+export type TattooFalloffCurve = 'linear' | 'smooth' | 'smooth2' | 'sharp' | 'round';
 
 export interface TattooDecalSampleExtended extends TattooDecalSample {
   /** Radial distance from decal center normalised to [0, 1]. */
@@ -102,9 +107,7 @@ function blendMultiply(base: number, decal: number, alpha: number): number {
 }
 
 function blendOverlay(base: number, decal: number, alpha: number): number {
-  const r = base < 0.5
-    ? 2 * base * decal
-    : 1 - 2 * (1 - base) * (1 - decal);
+  const r = base < 0.5 ? 2 * base * decal : 1 - 2 * (1 - base) * (1 - decal);
   return base + (r - base) * alpha;
 }
 
@@ -113,17 +116,16 @@ function blendScreen(base: number, decal: number, alpha: number): number {
   return base + (r - base) * alpha;
 }
 
-function applyBlend(
-  mode: TattooBlendMode,
-  base: number,
-  decal: number,
-  alpha: number,
-): number {
+function applyBlend(mode: TattooBlendMode, base: number, decal: number, alpha: number): number {
   switch (mode) {
-    case "multiply": return blendMultiply(base, decal, alpha);
-    case "overlay":  return blendOverlay(base, decal, alpha);
-    case "screen":   return blendScreen(base, decal, alpha);
-    default:         return blendNormal(base, decal, alpha);
+    case 'multiply':
+      return blendMultiply(base, decal, alpha);
+    case 'overlay':
+      return blendOverlay(base, decal, alpha);
+    case 'screen':
+      return blendScreen(base, decal, alpha);
+    default:
+      return blendNormal(base, decal, alpha);
   }
 }
 
@@ -133,11 +135,11 @@ function applyBlend(
 export function projectTattooDecal(
   attachment: HumanAttachment,
   canonical: CanonicalHuman,
-  options: TattooDecalOptions = {}
+  options: TattooDecalOptions = {},
 ): TattooDecal | null {
-  if (attachment.kind !== "tattoo") return null;
+  if (attachment.kind !== 'tattoo') return null;
   const region = attachment.anchor.region;
-  if (!region) throw new Error("Tattoo decals require a semantic region anchor");
+  if (!region) throw new Error('Tattoo decals require a semantic region anchor');
   const vertices = canonical.vertices.filter((v) => v.region === region);
   if (vertices.length === 0) throw new Error(`Unknown tattoo region: ${region}`);
 
@@ -162,7 +164,7 @@ export function projectTattooDecal(
 export function projectTattooDecals(
   attachments: HumanAttachment[],
   canonical: CanonicalHuman,
-  options: TattooDecalOptions = {}
+  options: TattooDecalOptions = {},
 ): TattooDecal[] {
   return attachments.flatMap((a) => {
     const decal = projectTattooDecal(a, canonical, options);
@@ -179,11 +181,11 @@ export function projectTattooDecals(
 export function projectUVDecal(
   attachment: HumanAttachment,
   canonical: CanonicalHuman,
-  options: TattooDecalOptions = {}
+  options: TattooDecalOptions = {},
 ): TattooDecal | null {
-  if (attachment.kind !== "tattoo") return null;
+  if (attachment.kind !== 'tattoo') return null;
   const region = attachment.anchor.region;
-  if (!region) throw new Error("Tattoo decals require a semantic region anchor");
+  if (!region) throw new Error('Tattoo decals require a semantic region anchor');
   const vertices = canonical.vertices.filter((v) => v.region === region);
   if (vertices.length === 0) throw new Error(`Unknown tattoo region: ${region}`);
 
@@ -219,14 +221,11 @@ export function projectUVDecal(
  * the sample's UV coordinates and radial distance and returns a scalar [0-1]
  * that replaces the original opacity.
  */
-export function applyOpacityMap(
-  decal: TattooDecal,
-  map: TattooOpacityMap,
-): TattooDecal {
+export function applyOpacityMap(decal: TattooDecal, map: TattooOpacityMap): TattooDecal {
   return {
     ...decal,
     samples: decal.samples.map((s) => {
-      const radialT = "radialT" in s ? (s as TattooDecalSampleExtended).radialT : 0;
+      const radialT = 'radialT' in s ? (s as TattooDecalSampleExtended).radialT : 0;
       return { ...s, opacity: clamp01(map(s.uv.u, s.uv.v, radialT)) };
     }),
   };
@@ -246,9 +245,9 @@ export function projectTattooDecalExtended(
     normalStrength?: number;
   } = {},
 ): TattooDecalExtended | null {
-  if (attachment.kind !== "tattoo") return null;
+  if (attachment.kind !== 'tattoo') return null;
   const region = attachment.anchor.region;
-  if (!region) throw new Error("Tattoo decals require a semantic region anchor");
+  if (!region) throw new Error('Tattoo decals require a semantic region anchor');
   const vertices = canonical.vertices.filter((v) => v.region === region);
   if (vertices.length === 0) throw new Error(`Unknown tattoo region: ${region}`);
 
@@ -257,7 +256,7 @@ export function projectTattooDecalExtended(
     : regionCentroid(vertices);
   const radius = numberData(attachment.data?.radius, options.defaultRadius ?? 0.12);
   const color = colorData(attachment.data?.color, options.defaultColor ?? [0.04, 0.035, 0.03]);
-  const falloff = FALLOFF_CURVES[options.falloff ?? "smooth"];
+  const falloff = FALLOFF_CURVES[options.falloff ?? 'smooth'];
   const samples: TattooDecalSampleExtended[] = [];
 
   for (const v of vertices) {
@@ -282,7 +281,7 @@ export function projectTattooDecalExtended(
     center,
     radius,
     samples,
-    blendMode: options.blendMode ?? "normal",
+    blendMode: options.blendMode ?? 'normal',
     opacity: clamp01(options.decalOpacity ?? 1),
     normalStrength: options.normalStrength ?? 0,
   };
@@ -365,7 +364,7 @@ export function bakeDecalVertexColors(
     const a = clamp01(sample.opacity * alpha);
     if (a <= 0) continue;
 
-    colors[idx]     = applyBlend(decal.blendMode, colors[idx],     sample.color[0], a);
+    colors[idx] = applyBlend(decal.blendMode, colors[idx], sample.color[0], a);
     colors[idx + 1] = applyBlend(decal.blendMode, colors[idx + 1], sample.color[1], a);
     colors[idx + 2] = applyBlend(decal.blendMode, colors[idx + 2], sample.color[2], a);
     m[sample.vertexId] = 1;
@@ -642,7 +641,7 @@ export class TattooDecalSystem {
     const decal = this.decals.find((d) => d.id === id);
     if (!decal) return false;
     decal.samples = decal.samples.map((s) => {
-      const radialT = "radialT" in s ? (s as TattooDecalSampleExtended).radialT : 0;
+      const radialT = 'radialT' in s ? (s as TattooDecalSampleExtended).radialT : 0;
       return { ...s, opacity: clamp01(map(s.uv.u, s.uv.v, radialT)) };
     }) as TattooDecalSampleExtended[];
     this.invalidate();
@@ -696,7 +695,9 @@ export class TattooDecalSystem {
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
 function regionCentroid(vertices: Vertex[]): Vec3 {
-  let x = 0, y = 0, z = 0;
+  let x = 0,
+    y = 0,
+    z = 0;
   for (const v of vertices) {
     x += v.position.x;
     y += v.position.y;
@@ -711,11 +712,11 @@ function smoothFalloff(t: number): number {
 }
 
 function numberData(value: unknown, fallback: number): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 function colorData(value: unknown, fallback: [number, number, number]): [number, number, number] {
-  if (Array.isArray(value) && value.length === 3 && value.every((n) => typeof n === "number")) {
+  if (Array.isArray(value) && value.length === 3 && value.every((n) => typeof n === 'number')) {
     return [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
   }
   return fallback;

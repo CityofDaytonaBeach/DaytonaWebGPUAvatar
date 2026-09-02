@@ -1,4 +1,4 @@
-import { HumanDefinition } from "../../core/schema/human-definition";
+import { HumanDefinition } from '../../core/schema/human-definition';
 
 /** Deterministic JSON package for persisted HDL state. */
 
@@ -20,21 +20,27 @@ export interface HumanPackageMigration {
   migrate: (definition: Record<string, number>) => Record<string, number>;
 }
 
-export const PACKAGE_MAGIC = "DHAV";
-export const PACKAGE_VERSION = "0.2.0";
-export const DEFAULT_TOPOLOGY_REF = "canonical-block-human-v0.2";
-export const DEFAULT_SCHEMA_VERSION = "1.0";
+export const PACKAGE_MAGIC = 'DHAV';
+export const PACKAGE_VERSION = '0.2.0';
+export const DEFAULT_TOPOLOGY_REF = 'canonical-block-human-v0.2';
+export const DEFAULT_SCHEMA_VERSION = '1.0';
 
 export const DEFAULT_PACKAGE_MIGRATIONS: HumanPackageMigration[] = [
-  { from: "0.1", to: DEFAULT_SCHEMA_VERSION, migrate: renameLegacyDefinitionKeys },
+  { from: '0.1', to: DEFAULT_SCHEMA_VERSION, migrate: renameLegacyDefinitionKeys },
 ];
 
 /** Serialize a HumanDefinition into a JSON document (lossless, deterministic). */
-export function serializeDefinition(definition: HumanDefinition, topologyRef = DEFAULT_TOPOLOGY_REF): string {
+export function serializeDefinition(
+  definition: HumanDefinition,
+  topologyRef = DEFAULT_TOPOLOGY_REF,
+): string {
   return JSON.stringify(createHumanPackageDocument(definition, topologyRef));
 }
 
-export function createHumanPackageDocument(definition: HumanDefinition, topologyRef = DEFAULT_TOPOLOGY_REF): HumanPackageDocument {
+export function createHumanPackageDocument(
+  definition: HumanDefinition,
+  topologyRef = DEFAULT_TOPOLOGY_REF,
+): HumanPackageDocument {
   return {
     header: {
       magic: PACKAGE_MAGIC,
@@ -49,7 +55,7 @@ export function createHumanPackageDocument(definition: HumanDefinition, topology
 export function migrateHumanPackageDocument(
   document: HumanPackageDocument,
   targetSchemaVersion: string,
-  migrations: readonly HumanPackageMigration[] = DEFAULT_PACKAGE_MIGRATIONS
+  migrations: readonly HumanPackageMigration[] = DEFAULT_PACKAGE_MIGRATIONS,
 ): HumanPackageDocument {
   let current = document.header.schemaVersion;
   let values = sortRecord(document.definition);
@@ -74,17 +80,19 @@ export function migrateHumanPackageDocument(
 /** Deserialize a JSON document back into values for a HumanDefinition. */
 export function deserializeDocument(
   text: string,
-  definition: HumanDefinition
+  definition: HumanDefinition,
 ): { version: string; identity: Record<string, number> } {
-  const parsed = normalizePackageDocument(JSON.parse(text) as Partial<HumanPackageDocument> & LegacyPackageDocument);
+  const parsed = normalizePackageDocument(
+    JSON.parse(text) as Partial<HumanPackageDocument> & LegacyPackageDocument,
+  );
   if (parsed.header.magic !== PACKAGE_MAGIC) {
-    throw new Error("Unrecognized human package");
+    throw new Error('Unrecognized human package');
   }
   const migrated = migrateHumanPackageDocument(parsed, definition.version);
   definition.patch(migrated.definition);
   const identity: Record<string, number> = {};
   for (const [path, value] of Object.entries(migrated.definition)) {
-    if (path.startsWith("identity.")) identity[path] = value;
+    if (path.startsWith('identity.')) identity[path] = value;
   }
   return { version: migrated.header.schemaVersion, identity };
 }
@@ -95,11 +103,13 @@ interface LegacyPackageDocument {
   definition?: Record<string, number>;
 }
 
-function normalizePackageDocument(parsed: Partial<HumanPackageDocument> & LegacyPackageDocument): HumanPackageDocument {
+function normalizePackageDocument(
+  parsed: Partial<HumanPackageDocument> & LegacyPackageDocument,
+): HumanPackageDocument {
   if (parsed.header) {
     return {
       header: {
-        magic: parsed.header.magic ?? "",
+        magic: parsed.header.magic ?? '',
         version: parsed.header.version ?? PACKAGE_VERSION,
         schemaVersion: parsed.header.schemaVersion ?? DEFAULT_SCHEMA_VERSION,
         topologyRef: parsed.header.topologyRef ?? DEFAULT_TOPOLOGY_REF,
@@ -109,9 +119,9 @@ function normalizePackageDocument(parsed: Partial<HumanPackageDocument> & Legacy
   }
   return {
     header: {
-      magic: parsed.magic ?? "",
-      version: "0.1.0",
-      schemaVersion: parsed.schema ?? "1.0",
+      magic: parsed.magic ?? '',
+      version: '0.1.0',
+      schemaVersion: parsed.schema ?? '1.0',
       topologyRef: DEFAULT_TOPOLOGY_REF,
     },
     definition: parsed.definition ?? {},
@@ -127,12 +137,12 @@ function renameLegacyDefinitionKeys(input: Record<string, number>): Record<strin
 }
 
 const LEGACY_PROPERTY_RENAMES: Record<string, string> = {
-  "anatomy.height": "global.height",
-  "anatomy.muscularity": "body.muscularity",
-  "anatomy.bodyFat": "body.bodyFat",
-  "anatomy.face.nose.width": "face.nose.width",
-  "anatomy.face.nose.length": "face.nose.length",
-  "anatomy.face.jaw.width": "face.jaw.width",
+  'anatomy.height': 'global.height',
+  'anatomy.muscularity': 'body.muscularity',
+  'anatomy.bodyFat': 'body.bodyFat',
+  'anatomy.face.nose.width': 'face.nose.width',
+  'anatomy.face.nose.length': 'face.nose.length',
+  'anatomy.face.jaw.width': 'face.jaw.width',
 };
 
 function sortRecord(input: Record<string, number>): Record<string, number> {

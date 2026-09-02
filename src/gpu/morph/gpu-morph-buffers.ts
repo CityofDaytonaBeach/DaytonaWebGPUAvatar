@@ -1,4 +1,4 @@
-import { SparseMorph } from "../../geometry/canonical/canonical-human";
+import { SparseMorph } from '../../geometry/canonical/canonical-human';
 
 export interface GpuMorphLayout {
   /** Total number of (index,dx,dy,dz) entries across all morphs. */
@@ -75,7 +75,7 @@ export function packSparseMorphs(morphs: SparseMorphList): PackedMorphBuffers {
 export function setMorphWeights(
   morphStruct: Uint32Array,
   morphOrder: string[],
-  weights: Map<string, number>
+  weights: Map<string, number>,
 ): void {
   for (let i = 0; i < morphOrder.length; i++) {
     const w = weights.get(morphOrder[i]) ?? 0;

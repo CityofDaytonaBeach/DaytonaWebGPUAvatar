@@ -1,5 +1,5 @@
-import { CanonicalHuman } from "../../geometry/canonical/canonical-human";
-import { buildCameraMatrices } from "../webgpu/renderer";
+import { CanonicalHuman } from '../../geometry/canonical/canonical-human';
+import { buildCameraMatrices } from '../webgpu/renderer';
 
 export interface WebGL2RenderPart {
   name: string;
@@ -55,9 +55,12 @@ export class WebGL2HumanRenderer {
   private readonly normalLoc: WebGLUniformLocation;
   private readonly colorLoc: WebGLUniformLocation;
 
-  constructor(canvas: HTMLCanvasElement, private readonly canonical: CanonicalHuman) {
-    const gl = canvas.getContext("webgl2");
-    if (!gl) throw new Error("WebGL2 unavailable");
+  constructor(
+    canvas: HTMLCanvasElement,
+    private readonly canonical: CanonicalHuman,
+  ) {
+    const gl = canvas.getContext('webgl2');
+    if (!gl) throw new Error('WebGL2 unavailable');
     this.gl = gl;
     this.program = createProgram(gl, VS, FS);
     this.posBuffer = requireBuffer(gl.createBuffer());
@@ -66,10 +69,10 @@ export class WebGL2HumanRenderer {
     this.indexBuffer = requireBuffer(gl.createBuffer());
     this.parts = buildWebGL2RenderParts(canonical);
 
-    const mvpLoc = gl.getUniformLocation(this.program, "mvp");
-    const normalLoc = gl.getUniformLocation(this.program, "normalMat");
-    const colorLoc = gl.getUniformLocation(this.program, "baseColor");
-    if (!mvpLoc || !normalLoc || !colorLoc) throw new Error("WebGL2 shader uniform missing");
+    const mvpLoc = gl.getUniformLocation(this.program, 'mvp');
+    const normalLoc = gl.getUniformLocation(this.program, 'normalMat');
+    const colorLoc = gl.getUniformLocation(this.program, 'baseColor');
+    if (!mvpLoc || !normalLoc || !colorLoc) throw new Error('WebGL2 shader uniform missing');
     this.mvpLoc = mvpLoc;
     this.normalLoc = normalLoc;
     this.colorLoc = colorLoc;
@@ -123,22 +126,28 @@ export class WebGL2HumanRenderer {
 }
 
 export function buildWebGL2RenderParts(canonical: CanonicalHuman): WebGL2RenderPart[] {
-  const bodyEnd = canonical.parts.length > 0 ? canonical.parts[0].indexStart : canonical.indices.length;
+  const bodyEnd =
+    canonical.parts.length > 0 ? canonical.parts[0].indexStart : canonical.indices.length;
   const parts: WebGL2RenderPart[] = [
-    { name: "body", color: [0.72, 0.56, 0.45], indexStart: 0, indexCount: bodyEnd },
+    { name: 'body', color: [0.72, 0.56, 0.45], indexStart: 0, indexCount: bodyEnd },
   ];
   for (const p of canonical.parts) {
-    parts.push({ name: p.name, color: webglPartColor(p.name, p.kind), indexStart: p.indexStart, indexCount: p.indexCount });
+    parts.push({
+      name: p.name,
+      color: webglPartColor(p.name, p.kind),
+      indexStart: p.indexStart,
+      indexCount: p.indexCount,
+    });
   }
   return parts;
 }
 
 export function webglPartColor(name: string, kind: string): [number, number, number] {
-  if (kind === "sclera") return [0.95, 0.95, 0.95];
-  if (kind === "iris") return name.startsWith("pupil") ? [0.12, 0.1, 0.12] : [0.35, 0.52, 0.38];
-  if (kind === "teeth") return [0.93, 0.91, 0.84];
-  if (kind === "tongue") return [0.82, 0.5, 0.48];
-  if (kind === "mouth_cavity") return [0.22, 0.1, 0.11];
+  if (kind === 'sclera') return [0.95, 0.95, 0.95];
+  if (kind === 'iris') return name.startsWith('pupil') ? [0.12, 0.1, 0.12] : [0.35, 0.52, 0.38];
+  if (kind === 'teeth') return [0.93, 0.91, 0.84];
+  if (kind === 'tongue') return [0.82, 0.5, 0.48];
+  if (kind === 'mouth_cavity') return [0.22, 0.1, 0.11];
   return [0.72, 0.56, 0.45];
 }
 
@@ -151,7 +160,11 @@ function extractUvs(canonical: CanonicalHuman): Float32Array {
   return out;
 }
 
-function createProgram(gl: WebGL2RenderingContext, vsSource: string, fsSource: string): WebGLProgram {
+function createProgram(
+  gl: WebGL2RenderingContext,
+  vsSource: string,
+  fsSource: string,
+): WebGLProgram {
   const vs = compileShader(gl, gl.VERTEX_SHADER, vsSource);
   const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
   const program = requireProgram(gl.createProgram());
@@ -159,7 +172,9 @@ function createProgram(gl: WebGL2RenderingContext, vsSource: string, fsSource: s
   gl.attachShader(program, fs);
   gl.linkProgram(program);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(`WebGL2 program link failed: ${gl.getProgramInfoLog(program) ?? "unknown error"}`);
+    throw new Error(
+      `WebGL2 program link failed: ${gl.getProgramInfoLog(program) ?? 'unknown error'}`,
+    );
   }
   gl.deleteShader(vs);
   gl.deleteShader(fs);
@@ -171,22 +186,24 @@ function compileShader(gl: WebGL2RenderingContext, type: number, source: string)
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(`WebGL2 shader compile failed: ${gl.getShaderInfoLog(shader) ?? "unknown error"}`);
+    throw new Error(
+      `WebGL2 shader compile failed: ${gl.getShaderInfoLog(shader) ?? 'unknown error'}`,
+    );
   }
   return shader;
 }
 
 function requireBuffer(buffer: WebGLBuffer | null): WebGLBuffer {
-  if (!buffer) throw new Error("WebGL2 buffer allocation failed");
+  if (!buffer) throw new Error('WebGL2 buffer allocation failed');
   return buffer;
 }
 
 function requireProgram(program: WebGLProgram | null): WebGLProgram {
-  if (!program) throw new Error("WebGL2 program allocation failed");
+  if (!program) throw new Error('WebGL2 program allocation failed');
   return program;
 }
 
 function requireShader(shader: WebGLShader | null): WebGLShader {
-  if (!shader) throw new Error("WebGL2 shader allocation failed");
+  if (!shader) throw new Error('WebGL2 shader allocation failed');
   return shader;
 }

@@ -1,40 +1,84 @@
-import { PropertyRegistry } from "./core/schema/registry";
-import { createDefaultRegistry } from "./core/schema/descriptors";
-import { HumanDefinition } from "./core/schema/human-definition";
-import { CharacterEvent, createEvent, applyEventToDefinition, EventSource } from "./core/events/character-event";
-import { CharacterTimeline, Snapshot } from "./core/timeline/character-timeline";
-import { ConstraintSolver, ConstraintProfile } from "./core/constraints/solver";
-import { DependencyGraph } from "./compiler/dependency/dependency-graph";
-import { DeltaCompiler, KernelWork } from "./compiler/delta/delta-compiler";
-import { AffectedSystem, affectedSystemsForChange } from "./compiler/dependency/affected-systems";
-import { DirtyRegionTracker } from "./compiler/delta/dirty-regions";
-import { IdentitySolver } from "./identity/solver/identity-solver";
-import { CanonicalHuman, RegionName } from "./geometry/canonical/canonical-human";
-import { SparseMorphSet } from "./geometry/morph/sparse-morph";
-import { MorphDriver } from "./geometry/morph/morph-driver";
-import { MorphKernel } from "./gpu/kernels/morph-kernel";
-import { HumanProfiler, countDirtyVertices } from "./gpu/profiler/profiler";
-import { FacialExpressionSystem, SemanticExpression } from "./animation/facial/facial-expression";
-import { SpeechSolver, simpleTTS } from "./animation/speech/speech-solver";
-import { SemanticLOD, PerceptualLOD } from "./lod";
-import { DeterministicPromptInterpreter, Intent, intentToEvent } from "./ai/prompt/interpreter";
-import { WebGpuHumanPipeline } from "./render/webgpu/pipeline";
-import { resolveAnatomy, AnatomyDimensions, validateAnatomy, anatomySatisfaction } from "./anatomy/parametric/parametric-anatomy";
-import { placeSkeletonFromDefinition, BoneDef } from "./anatomy/skeleton/skeleton";
-import { combinedSkinMatrices } from "./anatomy/skeleton/bone-matrix";
-import { SkeletalAnimation, AnimationChannel, BonePose } from "./animation/skeleton/skeletal-animation";
-import { buildInfluences, skinMeshCPU, skinNormalsCPU } from "./gpu/kernels/skin-mesh";
-import { AttachmentSystem, HumanAttachment, AttachmentKind, AttachmentAnchor } from "./attachments/attachment-system";
-import { generateStrandHair, StrandHairGeometry, StrandHairOptions } from "./surface/hair/strand-hair";
-import { buildHumanSdfField, HumanSdfField } from "./physics/sdf/human-sdf";
-import { ClothMesh, ClothStepOptions, createTorsoCloth, simulateCloth } from "./physics/cloth/cloth-sim";
-import { generateSkinResiduals, SkinResidualField, SkinResidualOptions } from "./surface/skin/neural-skin";
-import { MotionCompiler, MotionPlan } from "./animation/motion/motion-compiler";
-import { PerceptualValidationReport, validatePerceptualHuman } from "./validation/perceptual-validator";
-import { projectTattooDecals, TattooDecal } from "./surface/tattoo/tattoo-decal";
-import { generateGarments, GarmentMesh } from "./surface/clothing/garment";
-import { buildInternalAnatomyView, InternalAnatomyMode, InternalAnatomyView } from "./anatomy/internal/internal-anatomy";
-import { createParameterTransition, ParameterTransition, sampleTransition, transitionComplete, TransitionCurve } from "./core/transitions/parameter-transition";
+import { PropertyRegistry } from './core/schema/registry';
+import { createDefaultRegistry } from './core/schema/descriptors';
+import { HumanDefinition } from './core/schema/human-definition';
+import {
+  CharacterEvent,
+  createEvent,
+  applyEventToDefinition,
+  EventSource,
+} from './core/events/character-event';
+import { CharacterTimeline, Snapshot } from './core/timeline/character-timeline';
+import { ConstraintSolver, ConstraintProfile } from './core/constraints/solver';
+import { DependencyGraph } from './compiler/dependency/dependency-graph';
+import { DeltaCompiler, KernelWork } from './compiler/delta/delta-compiler';
+import { AffectedSystem, affectedSystemsForChange } from './compiler/dependency/affected-systems';
+import { DirtyRegionTracker } from './compiler/delta/dirty-regions';
+import { IdentitySolver } from './identity/solver/identity-solver';
+import { CanonicalHuman, RegionName } from './geometry/canonical/canonical-human';
+import { SparseMorphSet } from './geometry/morph/sparse-morph';
+import { MorphDriver } from './geometry/morph/morph-driver';
+import { MorphKernel } from './gpu/kernels/morph-kernel';
+import { HumanProfiler, countDirtyVertices } from './gpu/profiler/profiler';
+import { FacialExpressionSystem, SemanticExpression } from './animation/facial/facial-expression';
+import { SpeechSolver, simpleTTS } from './animation/speech/speech-solver';
+import { SemanticLOD, PerceptualLOD } from './lod';
+import { DeterministicPromptInterpreter, Intent, intentToEvent } from './ai/prompt/interpreter';
+import { WebGpuHumanPipeline } from './render/webgpu/pipeline';
+import {
+  resolveAnatomy,
+  AnatomyDimensions,
+  validateAnatomy,
+  anatomySatisfaction,
+} from './anatomy/parametric/parametric-anatomy';
+import { placeSkeletonFromDefinition, BoneDef } from './anatomy/skeleton/skeleton';
+import { combinedSkinMatrices } from './anatomy/skeleton/bone-matrix';
+import {
+  SkeletalAnimation,
+  AnimationChannel,
+  BonePose,
+} from './animation/skeleton/skeletal-animation';
+import { buildInfluences, skinMeshCPU, skinNormalsCPU } from './gpu/kernels/skin-mesh';
+import {
+  AttachmentSystem,
+  HumanAttachment,
+  AttachmentAnchor,
+} from './attachments/attachment-system';
+import {
+  generateStrandHair,
+  StrandHairGeometry,
+  StrandHairOptions,
+} from './surface/hair/strand-hair';
+import { buildHumanSdfField, HumanSdfField } from './physics/sdf/human-sdf';
+import {
+  ClothMesh,
+  ClothStepOptions,
+  createTorsoCloth,
+  simulateCloth,
+} from './physics/cloth/cloth-sim';
+import {
+  generateSkinResiduals,
+  SkinResidualField,
+  SkinResidualOptions,
+} from './surface/skin/neural-skin';
+import { MotionCompiler, MotionPlan } from './animation/motion/motion-compiler';
+import {
+  PerceptualValidationReport,
+  validatePerceptualHuman,
+} from './validation/perceptual-validator';
+import { projectTattooDecals, TattooDecal } from './surface/tattoo/tattoo-decal';
+import { generateGarments, GarmentMesh } from './surface/clothing/garment';
+import {
+  buildInternalAnatomyView,
+  InternalAnatomyMode,
+  InternalAnatomyView,
+} from './anatomy/internal/internal-anatomy';
+import {
+  createParameterTransition,
+  ParameterTransition,
+  sampleTransition,
+  transitionComplete,
+  TransitionCurve,
+} from './core/transitions/parameter-transition';
 
 export interface HumanCreateOptions {
   registry?: PropertyRegistry;
@@ -52,16 +96,33 @@ export interface HumanModifyResult {
 }
 
 const DEFAULT_BONE_NAMES = [
-  "root", "pelvis", "spine_01", "spine_02", "chest", "neck", "head",
-  "clavicle_l", "clavicle_r",
-  "upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "hand_l", "hand_r",
-  "thigh_l", "thigh_r", "shin_l", "shin_r", "foot_l", "foot_r",
+  'root',
+  'pelvis',
+  'spine_01',
+  'spine_02',
+  'chest',
+  'neck',
+  'head',
+  'clavicle_l',
+  'clavicle_r',
+  'upperarm_l',
+  'upperarm_r',
+  'forearm_l',
+  'forearm_r',
+  'hand_l',
+  'hand_r',
+  'thigh_l',
+  'thigh_r',
+  'shin_l',
+  'shin_r',
+  'foot_l',
+  'foot_r',
 ];
 
 function cap(s: string): string {
-  const [main, side] = s.split("_");
+  const [main, side] = s.split('_');
   const cased = main.charAt(0).toUpperCase() + main.slice(1);
-  return side === "l" || side === "r" ? cased + side.toUpperCase() : cased;
+  return side === 'l' || side === 'r' ? cased + side.toUpperCase() : cased;
 }
 
 /**
@@ -129,32 +190,36 @@ export class Human {
 
   private registerCanonicalMorphs(): void {
     // Nose width: push nose vertices outward along X (region-localized to nose).
-    this.morphs.add("noseWidth", "nose", (vx) => {
+    this.morphs.add('noseWidth', 'nose', (vx) => {
       return { dx: Math.sign(vx) * 0.03, dy: 0, dz: 0 };
     });
     // Jaw width: widen jaw region laterally (region-localized to jaw).
-    this.morphs.add("jawWidth", "jaw", (vx) => {
+    this.morphs.add('jawWidth', 'jaw', (vx) => {
       return { dx: Math.sign(vx) * 0.05, dy: 0, dz: 0 };
     });
     // Eye spacing: separate the body eye boxes laterally.
-    this.morphs.add("eyeSpacing", "eyes", (vx) => {
+    this.morphs.add('eyeSpacing', 'eyes', (vx) => {
       return { dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 };
     });
     // Same semantic spread to the detailed eyeball parts (sclera + iris/pupil).
-    this.morphs.add("eyeSpacingSclera", "eye_sclera", (vx) => {
+    this.morphs.add('eyeSpacingSclera', 'eye_sclera', (vx) => {
       return { dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 };
     });
-    this.morphs.add("eyeSpacingIris", "eye_iris", (vx) => {
+    this.morphs.add('eyeSpacingIris', 'eye_iris', (vx) => {
       return { dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 };
     });
-    this.morphs.add("muscularity", "torso", (_vx, vy) => {
+    this.morphs.add('muscularity', 'torso', (_vx, vy) => {
       const up = 1 + (vy - 1.5) * 0.5;
       return { dx: 0, dy: 0, dz: up * 0.05 * Math.sign(_vx) };
     });
-    this.morphs.add("mouthWidth", "mouth", (vx) => ({ dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 }));
+    this.morphs.add('mouthWidth', 'mouth', (vx) => ({ dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 }));
     // Jaw open: lower the tongue and widen the mouth cavity (part-localized).
-    this.morphs.add("jawOpen", "tongue", (_vx, vy) => ({ dx: 0, dy: -0.02 * (vy < 1.79 ? 1 : 0.4), dz: 0 }));
-    this.morphs.add("jawOpenCavity", "mouth_cavity", (_vx, vy, vz) => ({
+    this.morphs.add('jawOpen', 'tongue', (_vx, vy) => ({
+      dx: 0,
+      dy: -0.02 * (vy < 1.79 ? 1 : 0.4),
+      dz: 0,
+    }));
+    this.morphs.add('jawOpenCavity', 'mouth_cavity', (_vx, vy, vz) => ({
       dx: 0,
       dy: -0.015 * (vz > 0.18 ? 1 : 0.3),
       dz: 0,
@@ -162,20 +227,29 @@ export class Human {
 
     // ---- Parametric anatomy corrective morphs (identity body properties).
     // Height: vertical scale of the axial + limb regions about the ground.
-    this.morphs.add("heightTorso", "torso", (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
-    this.morphs.add("heightNeck", "neck", (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
-    this.morphs.add("heightHead", "head", (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
-    for (const b of ["upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "thigh_l", "thigh_r", "shin_l", "shin_r"] as RegionName[]) {
+    this.morphs.add('heightTorso', 'torso', (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
+    this.morphs.add('heightNeck', 'neck', (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
+    this.morphs.add('heightHead', 'head', (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
+    for (const b of [
+      'upperarm_l',
+      'upperarm_r',
+      'forearm_l',
+      'forearm_r',
+      'thigh_l',
+      'thigh_r',
+      'shin_l',
+      'shin_r',
+    ] as RegionName[]) {
       this.morphs.add(`height${cap(b)}`, b, (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
     }
     // Shoulder width: lateral scale of the torso (shoulders) about x=0.
-    this.morphs.add("shoulderWidth", "torso", (vx) => ({ dx: vx * 0.75, dy: 0, dz: 0 }));
+    this.morphs.add('shoulderWidth', 'torso', (vx) => ({ dx: vx * 0.75, dy: 0, dz: 0 }));
     // Waist / body fat: torso girth (rounding) about the spine axis.
-    this.morphs.add("waist", "torso", (vx, _v, vz) => ({ dx: vx * 0.5, dy: 0, dz: vz * 0.5 }));
-    this.morphs.add("bodyFat", "torso", (vx, _v, vz) => ({ dx: vx * 0.3, dy: 0, dz: vz * 0.3 }));
+    this.morphs.add('waist', 'torso', (vx, _v, vz) => ({ dx: vx * 0.5, dy: 0, dz: vz * 0.5 }));
+    this.morphs.add('bodyFat', 'torso', (vx, _v, vz) => ({ dx: vx * 0.3, dy: 0, dz: vz * 0.3 }));
     // Spine / neck length scaling about the trunk origin region.
-    this.morphs.add("spine", "torso", (_x, vy) => ({ dx: 0, dy: (vy - 1.5) * 0.5, dz: 0 }));
-    this.morphs.add("neckScale", "neck", (_x, vy) => ({ dx: 0, dy: (vy - 1.8), dz: 0 }));
+    this.morphs.add('spine', 'torso', (_x, vy) => ({ dx: 0, dy: (vy - 1.5) * 0.5, dz: 0 }));
+    this.morphs.add('neckScale', 'neck', (_x, vy) => ({ dx: 0, dy: vy - 1.8, dz: 0 }));
   }
 
   // ---------------------------------------------------------------- getters
@@ -280,12 +354,20 @@ export class Human {
     return this.motion.compile(command, this.parametricSkeleton());
   }
 
-  perform(command: string, source: EventSource = "ui"): HumanModifyResult {
+  perform(command: string, source: EventSource = 'ui'): HumanModifyResult {
     const plan = this.compileMotion(command);
-    if (plan.kind === "unknown") {
-      return { cancelled: true, reason: plan.reason, affectedKernelWork: [], affectedSystems: [], dirtyRegions: [] };
+    if (plan.kind === 'unknown') {
+      return {
+        cancelled: true,
+        reason: plan.reason,
+        affectedKernelWork: [],
+        affectedSystems: [],
+        dirtyRegions: [],
+      };
     }
-    return this.applyEvent(createEvent("pose", source, { payload: { command, plan, poses: plan.poses } }));
+    return this.applyEvent(
+      createEvent('pose', source, { payload: { command, plan, poses: plan.poses } }),
+    );
   }
 
   /**
@@ -319,21 +401,29 @@ export class Human {
     return this.attachments.list();
   }
 
-  addAttachment(attachment: HumanAttachment, source: EventSource = "api"): HumanModifyResult {
-    const eventType = attachment.kind === "tattoo" ? "addTattoo" : "wear";
+  addAttachment(attachment: HumanAttachment, source: EventSource = 'api'): HumanModifyResult {
+    const eventType = attachment.kind === 'tattoo' ? 'addTattoo' : 'wear';
     return this.applyEvent(createEvent(eventType, source, { payload: { attachment } }));
   }
 
-  addTattoo(id: string, anchor: AttachmentAnchor, data: Record<string, unknown> = {}): HumanModifyResult {
-    return this.addAttachment({ id, kind: "tattoo", anchor, data }, "api");
+  addTattoo(
+    id: string,
+    anchor: AttachmentAnchor,
+    data: Record<string, unknown> = {},
+  ): HumanModifyResult {
+    return this.addAttachment({ id, kind: 'tattoo', anchor, data }, 'api');
   }
 
-  wear(id: string, anchor: AttachmentAnchor, data: Record<string, unknown> = {}): HumanModifyResult {
-    return this.addAttachment({ id, kind: "wearable", anchor, data }, "api");
+  wear(
+    id: string,
+    anchor: AttachmentAnchor,
+    data: Record<string, unknown> = {},
+  ): HumanModifyResult {
+    return this.addAttachment({ id, kind: 'wearable', anchor, data }, 'api');
   }
 
-  removeAttachment(id: string, source: EventSource = "api"): HumanModifyResult {
-    return this.applyEvent(createEvent("removeAttachment", source, { payload: { id } }));
+  removeAttachment(id: string, source: EventSource = 'api'): HumanModifyResult {
+    return this.applyEvent(createEvent('removeAttachment', source, { payload: { id } }));
   }
 
   attachmentPosition(id: string) {
@@ -344,7 +434,7 @@ export class Human {
       this.canonical,
       this.parametricSkeleton(),
       this.currentPose,
-      this.computeMorphDelta()
+      this.computeMorphDelta(),
     );
   }
 
@@ -394,7 +484,7 @@ export class Human {
   }
 
   /** Lazily derive modular internal-anatomy display data from persistent state. */
-  internalAnatomy(mode: InternalAnatomyMode = "anatomy"): InternalAnatomyView {
+  internalAnatomy(mode: InternalAnatomyMode = 'anatomy'): InternalAnatomyView {
     return buildInternalAnatomyView(this.solveAnatomy(), this.parametricSkeleton(), mode);
   }
 
@@ -432,18 +522,26 @@ export class Human {
   }
   private device: GPUDevice | null = null;
 
-
   // -------------------------------------------------------------- mutation
 
   /**
    * Apply any CharacterEvent through the single event architecture. This is the
    * ONLY mutation path (AI, UI, automation, simulation, external all use it).
    */
-  applyEvent(event: CharacterEvent, opts: { identityBudget?: { amount: number; allowedDimensions?: string[] } } = {}): HumanModifyResult {
+  applyEvent(
+    event: CharacterEvent,
+    opts: { identityBudget?: { amount: number; allowedDimensions?: string[] } } = {},
+  ): HumanModifyResult {
     // 1. Identity preservation gate.
     const gate = this.identity.gate(event, this.definition, opts.identityBudget);
     if (!gate.allowed) {
-      return { cancelled: true, reason: gate.reason, affectedKernelWork: [], affectedSystems: [], dirtyRegions: [] };
+      return {
+        cancelled: true,
+        reason: gate.reason,
+        affectedKernelWork: [],
+        affectedSystems: [],
+        dirtyRegions: [],
+      };
     }
 
     // 2. Functional application plus event-specific state changes.
@@ -453,10 +551,10 @@ export class Human {
     // 3. Timeline records it (event sourcing + undo/redo).
     this.timeline.push(event);
     this.attachments.applyEvent(event);
-    if (event.type === "expression") this.applyExpressionEvent(event);
-    if (event.type === "pose") this.applyPoseEvent(event);
-    if (event.type === "transition") this.registerTransitionEvent(event);
-    if (event.type === "advanceTime") propChanges.push(...this.applyAdvanceTimeEvent(event));
+    if (event.type === 'expression') this.applyExpressionEvent(event);
+    if (event.type === 'pose') this.applyPoseEvent(event);
+    if (event.type === 'transition') this.registerTransitionEvent(event);
+    if (event.type === 'advanceTime') propChanges.push(...this.applyAdvanceTimeEvent(event));
     for (const id of this.changedIdsBetween(beforeDefinition, this.definition.serialize())) {
       if (!propChanges.includes(id)) propChanges.push(id);
     }
@@ -464,18 +562,31 @@ export class Human {
     // 4. Constraint validation of resulting definition.
     const constraint = this.constraints.validate(this.definition);
     if (constraint.satisfaction < 0.2) {
-      return { cancelled: true, reason: "constraint violation: " + constraint.messages.join("; "), affectedKernelWork: [], affectedSystems: [], dirtyRegions: [] };
+      return {
+        cancelled: true,
+        reason: 'constraint violation: ' + constraint.messages.join('; '),
+        affectedKernelWork: [],
+        affectedSystems: [],
+        dirtyRegions: [],
+      };
     }
 
     // 5. Mark dirty + compile minimal GPU work.
     const kernelWork = [...this.compileForChange(propChanges), ...this.kernelWorkForEvent(event)];
-    const affectedSystems = [...affectedSystemsForChange(this.registry, this.deps, propChanges), ...this.affectedSystemsForEvent(event)];
+    const affectedSystems = [
+      ...affectedSystemsForChange(this.registry, this.deps, propChanges),
+      ...this.affectedSystemsForEvent(event),
+    ];
 
     // 6. Run morph compute (CPU reference path).
     const delta = new Float32Array(this.canonical.vertexCount * 3);
     this.morphKernel.accumulate(this.definition, delta);
 
-    const dirtyRegionNames = isAttachmentEvent(event) ? ["Attachment"] : event.type === "pose" ? ["Animation"] : this.dirty.describe();
+    const dirtyRegionNames = isAttachmentEvent(event)
+      ? ['Attachment']
+      : event.type === 'pose'
+        ? ['Animation']
+        : this.dirty.describe();
     const verticesModified = countDirtyVertices(this.canonical, dirtyRegionNames as never[]);
     this.profiler.record({
       computePasses: kernelWork.length,
@@ -485,7 +596,12 @@ export class Human {
       cpuTimeMs: 0,
     });
 
-    return { cancelled: false, affectedKernelWork: kernelWork, affectedSystems, dirtyRegions: dirtyRegionNames };
+    return {
+      cancelled: false,
+      affectedKernelWork: kernelWork,
+      affectedSystems,
+      dirtyRegions: dirtyRegionNames,
+    };
   }
 
   private compileForChange(changedIds: number[]): KernelWork[] {
@@ -494,37 +610,47 @@ export class Human {
   }
 
   /** Central modifier: single change. */
-  modify(changes: Record<string, number>, source: EventSource = "ui"): HumanModifyResult {
-    return this.applyEvent(createEvent("set", source, { changes }));
+  modify(changes: Record<string, number>, source: EventSource = 'ui'): HumanModifyResult {
+    return this.applyEvent(createEvent('set', source, { changes }));
   }
 
   /** Non-destructive adjust (multiply). */
-  adjust(path: string, factor: number, source: EventSource = "ui"): HumanModifyResult {
-    return this.applyEvent(createEvent("adjust", source, { path, factor }));
+  adjust(path: string, factor: number, source: EventSource = 'ui'): HumanModifyResult {
+    return this.applyEvent(createEvent('adjust', source, { path, factor }));
   }
 
   /** Schedule a deterministic time-based property transition through events. */
-  transition(path: string, targetValue: number, duration: number, curve: TransitionCurve = "linear", source: EventSource = "api"): HumanModifyResult {
-    return this.applyEvent(createEvent("transition", source, { payload: { path, targetValue, duration, curve } }));
+  transition(
+    path: string,
+    targetValue: number,
+    duration: number,
+    curve: TransitionCurve = 'linear',
+    source: EventSource = 'api',
+  ): HumanModifyResult {
+    return this.applyEvent(
+      createEvent('transition', source, { payload: { path, targetValue, duration, curve } }),
+    );
   }
 
   /** Advance event time so active parameter transitions update the definition. */
-  advanceTime(seconds: number, source: EventSource = "simulation"): HumanModifyResult {
-    return this.applyEvent(createEvent("advanceTime", source, { payload: { seconds } }));
+  advanceTime(seconds: number, source: EventSource = 'simulation'): HumanModifyResult {
+    return this.applyEvent(createEvent('advanceTime', source, { payload: { seconds } }));
   }
 
   setExpression(expr: SemanticExpression, intensity = 1): HumanModifyResult {
-    return this.applyEvent(createEvent("expression", "ui", { payload: { expression: expr, intensity } }));
+    return this.applyEvent(
+      createEvent('expression', 'ui', { payload: { expression: expr, intensity } }),
+    );
   }
 
   speak(text: string): HumanModifyResult {
     const track = simpleTTS(text);
-    return this.applyEvent(createEvent("speak", "ui", { payload: { text, track } }));
+    return this.applyEvent(createEvent('speak', 'ui', { payload: { text, track } }));
   }
 
   /** Advance speech/simulation time. */
   update(dt: number): void {
-    this.advanceTime(dt, "simulation");
+    this.advanceTime(dt, 'simulation');
     // Extract current speech track from timeline if a speak event exists.
     const track = this.currentSpeechTrack();
     if (track) {
@@ -534,28 +660,34 @@ export class Human {
 
   private currentSpeechTrack(): ReturnType<typeof simpleTTS> | null {
     const log = this.timeline.log();
-    const speak = [...log].reverse().find((e) => e.type === "speak");
-    if (speak && typeof speak.payload?.text === "string") {
+    const speak = [...log].reverse().find((e) => e.type === 'speak');
+    if (speak && typeof speak.payload?.text === 'string') {
       return simpleTTS(speak.payload.text);
     }
     return null;
   }
 
-  prompt(text: string, source: EventSource = "ai"): HumanModifyResult {
+  prompt(text: string, source: EventSource = 'ai'): HumanModifyResult {
     const intent: Intent = this.prompter.interpret(text);
-    if (intent.type === "expression") {
-      return this.setExpression((intent.expression as SemanticExpression) ?? "neutral", 1);
+    if (intent.type === 'expression') {
+      return this.setExpression((intent.expression as SemanticExpression) ?? 'neutral', 1);
     }
-    if (intent.type === "speak") {
-      return this.speak(intent.text ?? "");
+    if (intent.type === 'speak') {
+      return this.speak(intent.text ?? '');
     }
-    if (intent.type === "unknown") {
-      return { cancelled: true, reason: `uninterpretable prompt: "${text}"`, affectedKernelWork: [], affectedSystems: [], dirtyRegions: [] };
+    if (intent.type === 'unknown') {
+      return {
+        cancelled: true,
+        reason: `uninterpretable prompt: "${text}"`,
+        affectedKernelWork: [],
+        affectedSystems: [],
+        dirtyRegions: [],
+      };
     }
     return this.applyEvent(intentToEvent(intent, source));
   }
 
-  applyIntent(intent: Intent, source: EventSource = "ai"): HumanModifyResult {
+  applyIntent(intent: Intent, source: EventSource = 'ai'): HumanModifyResult {
     return this.applyEvent(intentToEvent(intent, source));
   }
 
@@ -616,7 +748,12 @@ export class Human {
   }
 
   private resultFromDefinition(): HumanModifyResult {
-    return { cancelled: false, affectedKernelWork: [], affectedSystems: [], dirtyRegions: this.dirty.describe() };
+    return {
+      cancelled: false,
+      affectedKernelWork: [],
+      affectedSystems: [],
+      dirtyRegions: this.dirty.describe(),
+    };
   }
 
   private resultFromChangedIds(changedIds: number[]): HumanModifyResult {
@@ -630,7 +767,10 @@ export class Human {
     };
   }
 
-  private changedIdsBetween(before: Record<string, number>, after: Record<string, number>): number[] {
+  private changedIdsBetween(
+    before: Record<string, number>,
+    after: Record<string, number>,
+  ): number[] {
     const changed: number[] = [];
     for (const meta of this.registry.all()) {
       if (before[meta.path] !== after[meta.path]) changed.push(meta.id);
@@ -643,7 +783,7 @@ export class Human {
   }
 
   private applyPoseEvent(event: CharacterEvent): void {
-    if (typeof event.payload?.command === "string" && !event.payload.poses) {
+    if (typeof event.payload?.command === 'string' && !event.payload.poses) {
       this.setPose(this.compileMotion(event.payload.command).poses);
       return;
     }
@@ -654,33 +794,53 @@ export class Human {
   private applyExpressionEvent(event: CharacterEvent): void {
     const expression = event.payload?.expression;
     const intensity = event.payload?.intensity;
-    if (typeof expression !== "string") return;
-    this.facial.apply(this.definition, expression as SemanticExpression, typeof intensity === "number" ? intensity : 1);
+    if (typeof expression !== 'string') return;
+    this.facial.apply(
+      this.definition,
+      expression as SemanticExpression,
+      typeof intensity === 'number' ? intensity : 1,
+    );
   }
 
   private kernelWorkForEvent(event: CharacterEvent): KernelWork[] {
-    if (event.type === "pose") {
-      return [{ kind: "Skinning", vertexRanges: [{ start: 0, count: this.canonical.vertexCount }], propertyIds: [], priority: 10 }];
+    if (event.type === 'pose') {
+      return [
+        {
+          kind: 'Skinning',
+          vertexRanges: [{ start: 0, count: this.canonical.vertexCount }],
+          propertyIds: [],
+          priority: 10,
+        },
+      ];
     }
     if (isAttachmentEvent(event)) {
-      return [{ kind: "Attachment", vertexRanges: [], propertyIds: [], priority: 4 }];
+      return [{ kind: 'Attachment', vertexRanges: [], propertyIds: [], priority: 4 }];
     }
     return [];
   }
 
   private affectedSystemsForEvent(event: CharacterEvent): AffectedSystem[] {
-    if (event.type === "pose") {
-      return [{ system: "Animation", directPropertyIds: [], dependentPropertyIds: [], propertyPaths: [] }];
+    if (event.type === 'pose') {
+      return [
+        { system: 'Animation', directPropertyIds: [], dependentPropertyIds: [], propertyPaths: [] },
+      ];
     }
     if (isAttachmentEvent(event)) {
-      return [{ system: "Attachment", directPropertyIds: [], dependentPropertyIds: [], propertyPaths: [] }];
+      return [
+        {
+          system: 'Attachment',
+          directPropertyIds: [],
+          dependentPropertyIds: [],
+          propertyPaths: [],
+        },
+      ];
     }
     return [];
   }
 
   private rebuildPoseFromTimeline(): void {
     const active = this.timeline.log().slice(0, this.timeline.index + 1);
-    const pose = [...active].reverse().find((e) => e.type === "pose");
+    const pose = [...active].reverse().find((e) => e.type === 'pose');
     if (pose) {
       this.applyPoseEvent(pose);
     } else {
@@ -694,25 +854,32 @@ export class Human {
     const targetDelta = event.payload?.targetDelta;
     const duration = event.payload?.duration;
     const curve = event.payload?.curve;
-    if (typeof path !== "string" || typeof duration !== "number") return;
-    const target = typeof targetValue === "number"
-      ? targetValue
-      : typeof targetDelta === "number"
-        ? this.definition.get(path) + targetDelta
-        : undefined;
+    if (typeof path !== 'string' || typeof duration !== 'number') return;
+    const target =
+      typeof targetValue === 'number'
+        ? targetValue
+        : typeof targetDelta === 'number'
+          ? this.definition.get(path) + targetDelta
+          : undefined;
     if (target === undefined) return;
     this.transitions = this.transitions.filter((t) => t.path !== path);
-    this.transitions.push(createParameterTransition(this.definition, {
-      id: event.id,
-      path,
-      targetValue: target,
-      duration,
-      curve: isTransitionCurve(curve) ? curve : "linear",
-    }, this.clock));
+    this.transitions.push(
+      createParameterTransition(
+        this.definition,
+        {
+          id: event.id,
+          path,
+          targetValue: target,
+          duration,
+          curve: isTransitionCurve(curve) ? curve : 'linear',
+        },
+        this.clock,
+      ),
+    );
   }
 
   private applyAdvanceTimeEvent(event: CharacterEvent): number[] {
-    const seconds = typeof event.payload?.seconds === "number" ? event.payload.seconds : 0;
+    const seconds = typeof event.payload?.seconds === 'number' ? event.payload.seconds : 0;
     this.clock = Math.max(0, this.clock + seconds);
     return this.applyActiveTransitions();
   }
@@ -738,17 +905,17 @@ export class Human {
     const active = this.timeline.log().slice(0, this.timeline.index + 1);
     for (const event of active) {
       applyEventToDefinition(this.definition, event);
-      if (event.type === "expression") this.applyExpressionEvent(event);
-      if (event.type === "transition") this.registerTransitionEvent(event);
-      if (event.type === "advanceTime") this.applyAdvanceTimeEvent(event);
+      if (event.type === 'expression') this.applyExpressionEvent(event);
+      if (event.type === 'transition') this.registerTransitionEvent(event);
+      if (event.type === 'advanceTime') this.applyAdvanceTimeEvent(event);
     }
   }
 }
 
 function isAttachmentEvent(event: CharacterEvent): boolean {
-  return event.type === "wear" || event.type === "addTattoo" || event.type === "removeAttachment";
+  return event.type === 'wear' || event.type === 'addTattoo' || event.type === 'removeAttachment';
 }
 
 function isTransitionCurve(value: unknown): value is TransitionCurve {
-  return value === "linear" || value === "ease" || value === "biological";
+  return value === 'linear' || value === 'ease' || value === 'biological';
 }

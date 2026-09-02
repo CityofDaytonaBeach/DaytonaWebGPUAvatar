@@ -1,9 +1,9 @@
-import { KernelKind } from "../compiler/delta/delta-compiler";
-import { PropertyCategory } from "../core/schema/property";
+import { KernelKind } from '../compiler/delta/delta-compiler';
+import { PropertyCategory } from '../core/schema/property';
 
-export type SubsystemQuality = "OFF" | "LOW" | "MED" | "HIGH" | "ULTRA";
+export type SubsystemQuality = 'OFF' | 'LOW' | 'MED' | 'HIGH' | 'ULTRA';
 
-export const QUALITY_LEVELS: SubsystemQuality[] = ["OFF", "LOW", "MED", "HIGH", "ULTRA"];
+export const QUALITY_LEVELS: SubsystemQuality[] = ['OFF', 'LOW', 'MED', 'HIGH', 'ULTRA'];
 
 export interface PerceptualScore {
   importance: number; // 0..1
@@ -11,7 +11,7 @@ export interface PerceptualScore {
 }
 
 /** A named quality budget profile. */
-export type LODPresetName = "closeup" | "medium" | "far" | "cinematic";
+export type LODPresetName = 'closeup' | 'medium' | 'far' | 'cinematic';
 
 /** Baseline quality per subsystem for a named preset. */
 export interface LODPreset {
@@ -20,89 +20,89 @@ export interface LODPreset {
   /** Max total quality budget (sum of numeric levels) this preset allows. */
   budget: number;
   /** Optional default focus hint for the preset. */
-  focusOn: "face" | "body" | "hand" | "none";
+  focusOn: 'face' | 'body' | 'hand' | 'none';
 }
 
 /** Built-in profiles. Deterministic and immutable. */
 export const LOD_PRESETS: ReadonlyArray<LODPreset> = [
   {
-    name: "cinematic",
+    name: 'cinematic',
     budget: 18,
-    focusOn: "face",
+    focusOn: 'face',
     quality: {
-      [PropertyCategory.Face]: "ULTRA",
-      [PropertyCategory.Eyes]: "ULTRA",
-      [PropertyCategory.Skin]: "ULTRA",
-      [PropertyCategory.Hair]: "HIGH",
-      [PropertyCategory.Expression]: "ULTRA",
-      [PropertyCategory.Body]: "HIGH",
-      [PropertyCategory.Skeleton]: "ULTRA",
-      [PropertyCategory.Attachment]: "MED",
-      [PropertyCategory.Physics]: "HIGH",
-      [PropertyCategory.Global]: "HIGH",
-      [PropertyCategory.Identity]: "ULTRA",
-      [PropertyCategory.Animation]: "ULTRA",
-      [PropertyCategory.LOD]: "HIGH",
+      [PropertyCategory.Face]: 'ULTRA',
+      [PropertyCategory.Eyes]: 'ULTRA',
+      [PropertyCategory.Skin]: 'ULTRA',
+      [PropertyCategory.Hair]: 'HIGH',
+      [PropertyCategory.Expression]: 'ULTRA',
+      [PropertyCategory.Body]: 'HIGH',
+      [PropertyCategory.Skeleton]: 'ULTRA',
+      [PropertyCategory.Attachment]: 'MED',
+      [PropertyCategory.Physics]: 'HIGH',
+      [PropertyCategory.Global]: 'HIGH',
+      [PropertyCategory.Identity]: 'ULTRA',
+      [PropertyCategory.Animation]: 'ULTRA',
+      [PropertyCategory.LOD]: 'HIGH',
     },
   },
   {
-    name: "closeup",
+    name: 'closeup',
     budget: 16,
-    focusOn: "face",
+    focusOn: 'face',
     quality: {
-      [PropertyCategory.Face]: "ULTRA",
-      [PropertyCategory.Eyes]: "ULTRA",
-      [PropertyCategory.Skin]: "HIGH",
-      [PropertyCategory.Hair]: "HIGH",
-      [PropertyCategory.Expression]: "ULTRA",
-      [PropertyCategory.Body]: "MED",
-      [PropertyCategory.Skeleton]: "HIGH",
-      [PropertyCategory.Attachment]: "MED",
-      [PropertyCategory.Physics]: "MED",
-      [PropertyCategory.Global]: "HIGH",
-      [PropertyCategory.Identity]: "HIGH",
-      [PropertyCategory.Animation]: "HIGH",
-      [PropertyCategory.LOD]: "MED",
+      [PropertyCategory.Face]: 'ULTRA',
+      [PropertyCategory.Eyes]: 'ULTRA',
+      [PropertyCategory.Skin]: 'HIGH',
+      [PropertyCategory.Hair]: 'HIGH',
+      [PropertyCategory.Expression]: 'ULTRA',
+      [PropertyCategory.Body]: 'MED',
+      [PropertyCategory.Skeleton]: 'HIGH',
+      [PropertyCategory.Attachment]: 'MED',
+      [PropertyCategory.Physics]: 'MED',
+      [PropertyCategory.Global]: 'HIGH',
+      [PropertyCategory.Identity]: 'HIGH',
+      [PropertyCategory.Animation]: 'HIGH',
+      [PropertyCategory.LOD]: 'MED',
     },
   },
   {
-    name: "medium",
+    name: 'medium',
     budget: 12,
-    focusOn: "body",
+    focusOn: 'body',
     quality: {
-      [PropertyCategory.Face]: "HIGH",
-      [PropertyCategory.Eyes]: "HIGH",
-      [PropertyCategory.Skin]: "MED",
-      [PropertyCategory.Hair]: "MED",
-      [PropertyCategory.Expression]: "MED",
-      [PropertyCategory.Body]: "HIGH",
-      [PropertyCategory.Skeleton]: "MED",
-      [PropertyCategory.Attachment]: "LOW",
-      [PropertyCategory.Physics]: "MED",
-      [PropertyCategory.Global]: "MED",
-      [PropertyCategory.Identity]: "MED",
-      [PropertyCategory.Animation]: "MED",
-      [PropertyCategory.LOD]: "MED",
+      [PropertyCategory.Face]: 'HIGH',
+      [PropertyCategory.Eyes]: 'HIGH',
+      [PropertyCategory.Skin]: 'MED',
+      [PropertyCategory.Hair]: 'MED',
+      [PropertyCategory.Expression]: 'MED',
+      [PropertyCategory.Body]: 'HIGH',
+      [PropertyCategory.Skeleton]: 'MED',
+      [PropertyCategory.Attachment]: 'LOW',
+      [PropertyCategory.Physics]: 'MED',
+      [PropertyCategory.Global]: 'MED',
+      [PropertyCategory.Identity]: 'MED',
+      [PropertyCategory.Animation]: 'MED',
+      [PropertyCategory.LOD]: 'MED',
     },
   },
   {
-    name: "far",
+    name: 'far',
     budget: 8,
-    focusOn: "none",
+    focusOn: 'none',
     quality: {
-      [PropertyCategory.Face]: "LOW",
-      [PropertyCategory.Eyes]: "LOW",
-      [PropertyCategory.Skin]: "LOW",
-      [PropertyCategory.Hair]: "LOW",
-      [PropertyCategory.Expression]: "LOW",
-      [PropertyCategory.Body]: "MED",
-      [PropertyCategory.Skeleton]: "LOW",
-      [PropertyCategory.Attachment]: "OFF",
-      [PropertyCategory.Physics]: "LOW",
-      [PropertyCategory.Global]: "LOW",
-      [PropertyCategory.Identity]: "MED",
-      [PropertyCategory.Animation]: "MED",
-      [PropertyCategory.LOD]: "LOW",
+      [PropertyCategory.Face]: 'LOW',
+      [PropertyCategory.Eyes]: 'LOW',
+      [PropertyCategory.Skin]: 'LOW',
+      [PropertyCategory.Hair]: 'LOW',
+      [PropertyCategory.Expression]: 'LOW',
+      [PropertyCategory.Body]: 'MED',
+      [PropertyCategory.Skeleton]: 'LOW',
+      [PropertyCategory.Attachment]: 'OFF',
+      [PropertyCategory.Physics]: 'LOW',
+      [PropertyCategory.Global]: 'LOW',
+      [PropertyCategory.Identity]: 'MED',
+      [PropertyCategory.Animation]: 'MED',
+      [PropertyCategory.LOD]: 'LOW',
     },
   },
 ];
@@ -174,7 +174,7 @@ export class SemanticLOD {
   }
 
   levelFor(category: PropertyCategory): SubsystemQuality {
-    return QUALITY_LEVELS[this.quality.get(category) ?? 4] ?? "HIGH";
+    return QUALITY_LEVELS[this.quality.get(category) ?? 4] ?? 'HIGH';
   }
 
   numeric(category: PropertyCategory): number {
@@ -220,7 +220,7 @@ export class LODTransitionManager {
   /** Advance all transitions by `dt` ms. Returns true if any is still active. */
   update(dt: number): boolean {
     let active = false;
-    for (const [cat, t] of this.transitions) {
+    for (const [, t] of this.transitions) {
       t.elapsed += dt;
       if (t.elapsed < t.duration) active = true;
     }
@@ -289,7 +289,7 @@ export class BudgetAllocator {
   allocate(
     budget: number,
     distance = 2,
-    focusOn: "face" | "body" | "hand" | "none" = "none"
+    focusOn: 'face' | 'body' | 'hand' | 'none' = 'none',
   ): Map<PropertyCategory, number> {
     const out = new Map<PropertyCategory, number>();
     let remaining = Math.max(0, budget);
@@ -312,7 +312,7 @@ export class BudgetAllocator {
       for (const c of LOD_SUBSYSTEMS) {
         const cur = out.get(c)!;
         if (cur >= this.cfg.cap) continue;
-        const score = (weights.get(c)! / QUALITY_INCREMENT[cur]);
+        const score = weights.get(c)! / QUALITY_INCREMENT[cur];
         if (score > bestScore) {
           bestScore = score;
           best = c;
@@ -334,16 +334,21 @@ export class BudgetAllocator {
    * subsystems. The boost is stronger when the camera is close and focused
    * on the face/hands; it fades once the subject recedes past 8m.
    */
-  private proximityFactor(category: PropertyCategory, distance: number, focusOn: "face" | "body" | "hand" | "none"): number {
-    const isHighValue = category === PropertyCategory.Face ||
+  private proximityFactor(
+    category: PropertyCategory,
+    distance: number,
+    focusOn: 'face' | 'body' | 'hand' | 'none',
+  ): number {
+    const isHighValue =
+      category === PropertyCategory.Face ||
       category === PropertyCategory.Eyes ||
       category === PropertyCategory.Skin ||
       category === PropertyCategory.Expression ||
-      (focusOn === "hand" && category === PropertyCategory.Attachment);
+      (focusOn === 'hand' && category === PropertyCategory.Attachment);
     if (!isHighValue) return 1;
     const near = Math.max(0, 1 - distance / 8.0); // 1 at camera, 0 past 8m
-    const focusBoost = focusOn === "face" && category !== PropertyCategory.Attachment ? 1.3 : 1;
-    return 1 + (near * this.cfg.faceBias * 2 * focusBoost);
+    const focusBoost = focusOn === 'face' && category !== PropertyCategory.Attachment ? 1.3 : 1;
+    return 1 + near * this.cfg.faceBias * 2 * focusBoost;
   }
 }
 
@@ -361,7 +366,7 @@ export interface LODStats {
 export interface LODReport {
   presets: LODPresetName[];
   distance: number;
-  focusOn: "face" | "body" | "hand" | "none";
+  focusOn: 'face' | 'body' | 'hand' | 'none';
   transitionManager: LODTransitionManager;
   assignments: Array<{
     category: PropertyCategory;
@@ -377,7 +382,7 @@ export interface LODReport {
  * Convenience: snap a fully blended float level to the nearest SubsystemQuality.
  */
 export function snapLevel(numeric: number): SubsystemQuality {
-  return QUALITY_LEVELS[Math.round(Math.min(4, Math.max(0, numeric)))] ?? "HIGH";
+  return QUALITY_LEVELS[Math.round(Math.min(4, Math.max(0, numeric)))] ?? 'HIGH';
 }
 
 /**
@@ -428,13 +433,16 @@ export class PerceptualLOD {
    */
   redistribute(
     distance: number,
-    preset: LODPresetName = "medium",
-    focusOn?: "face" | "body" | "hand" | "none",
-    duration = 250
+    preset: LODPresetName = 'medium',
+    focusOn?: 'face' | 'body' | 'hand' | 'none',
+    duration = 250,
   ): Map<PropertyCategory, number> {
     const p = this.preset(preset);
     const focus = focusOn ?? p.focusOn;
-    const budget = Math.min(p.budget, budgetForDistance(distance, p.budget, Math.floor(p.budget / 2)));
+    const budget = Math.min(
+      p.budget,
+      budgetForDistance(distance, p.budget, Math.floor(p.budget / 2)),
+    );
     const assigned = this.allocator.allocate(budget, distance, focus);
 
     for (const c of LOD_SUBSYSTEMS) {
@@ -452,8 +460,8 @@ export class PerceptualLOD {
   }
 
   /** Snapshot the current state as a debug LODReport. */
-  report(distance: number, focusOn: "face" | "body" | "hand" | "none" = "none"): LODReport {
-    const assigned: LODReport["assignments"] = [];
+  report(distance: number, focusOn: 'face' | 'body' | 'hand' | 'none' = 'none'): LODReport {
+    const assigned: LODReport['assignments'] = [];
     const perf: PerceptualScore[] = [];
     for (const c of LOD_SUBSYSTEMS) {
       assigned.push({
@@ -505,33 +513,33 @@ export class PerceptualLOD {
    * Build a set of kernels to execute given camera proximity and focus.
    * Close face → face/eyes/skin high; distant full-body → reduce micro detail.
    */
-  lodMask(distance: number, focusOn: "face" | "body" | "hand" | "none"): Set<KernelKind> {
+  lodMask(distance: number, focusOn: 'face' | 'body' | 'hand' | 'none'): Set<KernelKind> {
     // Mirror the existing behavior but drive the mask from the current budget.
     const budget = budgetForDistance(distance);
     const mask = new Set<KernelKind>([
-      "Skinning",
-      "Skeleton",
-      "SparseMorph",
-      "MorphAccumulation",
-      "Corrective",
+      'Skinning',
+      'Skeleton',
+      'SparseMorph',
+      'MorphAccumulation',
+      'Corrective',
     ]);
     const baseCount = mask.size;
 
-    if (distance < 3 && (focusOn === "face" || focusOn === "none")) {
+    if (distance < 3 && (focusOn === 'face' || focusOn === 'none')) {
       // close face: keep everything
     } else if (distance < 8) {
-      mask.add("Attachment");
-      mask.add("Visibility");
+      mask.add('Attachment');
+      mask.add('Visibility');
     } else {
       // distant: drop expensive micro work
-      mask.delete("Corrective");
-      mask.delete("Attachment");
-      mask.delete("Visibility");
-      mask.add("Hair"); // hair uses cluster/card LOD
+      mask.delete('Corrective');
+      mask.delete('Attachment');
+      mask.delete('Visibility');
+      mask.add('Hair'); // hair uses cluster/card LOD
     }
     // Focus on hand: keep normals/attachment but relax face micro detail.
-    if (focusOn === "hand") {
-      mask.add("Normal");
+    if (focusOn === 'hand') {
+      mask.add('Normal');
     }
 
     this.stats.lastMaskSize = mask.size;

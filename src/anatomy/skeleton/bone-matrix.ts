@@ -1,6 +1,6 @@
-import { Quat, Vec3, multiplyMatrices } from "../../core/math/vec";
-import { BoneDef } from "./skeleton";
-import { BonePose } from "../../animation/skeleton/skeletal-animation";
+import { Quat, Vec3, multiplyMatrices } from '../../core/math/vec';
+import { BoneDef } from './skeleton';
+import { BonePose } from '../../animation/skeleton/skeletal-animation';
 
 /**
  * Forward-kinematics + skin-matrix construction for the parametric skeleton.
@@ -14,7 +14,7 @@ import { BonePose } from "../../animation/skeleton/skeletal-animation";
  */
 export function buildBoneMatrices(
   bones: BoneDef[],
-  poses: BonePose[] = []
+  poses: BonePose[] = [],
 ): { current: Float32Array; bind: Float32Array; inverseBind: Float32Array } {
   const poseByName = new Map<string, BonePose>();
   for (const p of poses) poseByName.set(p.name, p);
@@ -46,7 +46,8 @@ export function buildBoneMatrices(
 
     // Bind layer (rest pose).
     const bindLocal = composeMatrix(bone.localPosition, bone.restRotation);
-    const bindWorld = parentI != null ? multiplyMatrices(read(bind, parentI), bindLocal) : bindLocal;
+    const bindWorld =
+      parentI != null ? multiplyMatrices(read(bind, parentI), bindLocal) : bindLocal;
     write(bind, i, bindWorld);
     write(inverseBind, i, invertMatrix(bindWorld));
   }
@@ -59,10 +60,7 @@ export function buildBoneMatrices(
  * skeleton order so index `i` matches `CanonicalHuman.boneId(name)` ordering.
  * At the rest pose every matrix is the identity.
  */
-export function combinedSkinMatrices(
-  bones: BoneDef[],
-  poses: BonePose[] = []
-): Float32Array {
+export function combinedSkinMatrices(bones: BoneDef[], poses: BonePose[] = []): Float32Array {
   const { inverseBind, current } = buildBoneMatrices(bones, poses);
   const n = bones.length;
   const out = new Float32Array(n * 16);
@@ -77,12 +75,7 @@ export function combinedSkinMatrices(
 // ---------------------------------------------------------------------------
 
 export function identityMatrix(): Float32Array {
-  return new Float32Array([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,
-  ]);
+  return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 }
 
 export function composeMatrix(t: Vec3, q: Quat): Float32Array {
@@ -91,9 +84,15 @@ export function composeMatrix(t: Vec3, q: Quat): Float32Array {
   m[13] = t.y;
   m[14] = t.z;
   const { x, y, z, w } = q;
-  const xx = x * x, yy = y * y, zz = z * z;
-  const xy = x * y, xz = x * z, yz = y * z;
-  const wx = w * x, wy = w * y, wz = w * z;
+  const xx = x * x,
+    yy = y * y,
+    zz = z * z;
+  const xy = x * y,
+    xz = x * z,
+    yz = y * z;
+  const wx = w * x,
+    wy = w * y,
+    wz = w * z;
   m[0] = 1 - 2 * (yy + zz);
   m[1] = 2 * (xy + wz);
   m[2] = 2 * (xz - wy);
@@ -109,14 +108,31 @@ export function composeMatrix(t: Vec3, q: Quat): Float32Array {
 /** Invert an affine transform (rotation+scale upper 3x3, translation col). */
 export function invertMatrix(m: Float32Array): Float32Array {
   const out = new Float32Array(16);
-  const a00 = m[0], a01 = m[1], a02 = m[2];
-  const a10 = m[4], a11 = m[5], a12 = m[6];
-  const a20 = m[8], a21 = m[9], a22 = m[10];
-  const tx = m[12], ty = m[13], tz = m[14];
-  out[0] = a00; out[1] = a10; out[2] = a20;
-  out[4] = a01; out[5] = a11; out[6] = a21;
-  out[8] = a02; out[9] = a12; out[10] = a22;
-  out[3] = 0; out[7] = 0; out[11] = 0; out[15] = 1;
+  const a00 = m[0],
+    a01 = m[1],
+    a02 = m[2];
+  const a10 = m[4],
+    a11 = m[5],
+    a12 = m[6];
+  const a20 = m[8],
+    a21 = m[9],
+    a22 = m[10];
+  const tx = m[12],
+    ty = m[13],
+    tz = m[14];
+  out[0] = a00;
+  out[1] = a10;
+  out[2] = a20;
+  out[4] = a01;
+  out[5] = a11;
+  out[6] = a21;
+  out[8] = a02;
+  out[9] = a12;
+  out[10] = a22;
+  out[3] = 0;
+  out[7] = 0;
+  out[11] = 0;
+  out[15] = 1;
   out[12] = -(a00 * tx + a01 * ty + a02 * tz);
   out[13] = -(a10 * tx + a11 * ty + a12 * tz);
   out[14] = -(a20 * tx + a21 * ty + a22 * tz);

@@ -1,4 +1,4 @@
-import { RegionName, PartKind } from "./canonical-human";
+import { RegionName, PartKind } from './canonical-human';
 
 export interface CanonicalTopologyVertex {
   id: number;

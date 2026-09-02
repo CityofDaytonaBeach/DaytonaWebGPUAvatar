@@ -1,24 +1,23 @@
-import { DependencyGraph } from "../dependency/dependency-graph";
-import { PropertyRegistry } from "../../core/schema/registry";
-import { PropertyCategory } from "../../core/schema/property";
-import { CharacterEvent } from "../../core/events/character-event";
-import { IndexRange, RegionName } from "../../geometry/canonical/canonical-human";
+import { DependencyGraph } from '../dependency/dependency-graph';
+import { PropertyRegistry } from '../../core/schema/registry';
+import { PropertyCategory } from '../../core/schema/property';
+import { IndexRange, RegionName } from '../../geometry/canonical/canonical-human';
 
 export type KernelKind =
-  | "SparseMorph"
-  | "MorphAccumulation"
-  | "Corrective"
-  | "Skeleton"
-  | "Skinning"
-  | "Normal"
-  | "Tangent"
-  | "Subdivision"
-  | "SDF"
-  | "Hair"
-  | "Cloth"
-  | "Attachment"
-  | "LODSelection"
-  | "Visibility";
+  | 'SparseMorph'
+  | 'MorphAccumulation'
+  | 'Corrective'
+  | 'Skeleton'
+  | 'Skinning'
+  | 'Normal'
+  | 'Tangent'
+  | 'Subdivision'
+  | 'SDF'
+  | 'Hair'
+  | 'Cloth'
+  | 'Attachment'
+  | 'LODSelection'
+  | 'Visibility';
 
 export interface KernelWork {
   kind: KernelKind;
@@ -33,19 +32,19 @@ export interface DeltaVertexRangeSource {
 }
 
 export const CATEGORY_TO_KERNEL: Record<PropertyCategory, KernelKind> = {
-  [PropertyCategory.Global]: "Skeleton",
-  [PropertyCategory.Identity]: "SparseMorph",
-  [PropertyCategory.Skeleton]: "Skeleton",
-  [PropertyCategory.Body]: "SparseMorph",
-  [PropertyCategory.Face]: "SparseMorph",
-  [PropertyCategory.Skin]: "Corrective",
-  [PropertyCategory.Eyes]: "Visibility",
-  [PropertyCategory.Hair]: "Hair",
-  [PropertyCategory.Expression]: "MorphAccumulation",
-  [PropertyCategory.Animation]: "Skinning",
-  [PropertyCategory.Physics]: "Cloth",
-  [PropertyCategory.LOD]: "LODSelection",
-  [PropertyCategory.Attachment]: "Attachment",
+  [PropertyCategory.Global]: 'Skeleton',
+  [PropertyCategory.Identity]: 'SparseMorph',
+  [PropertyCategory.Skeleton]: 'Skeleton',
+  [PropertyCategory.Body]: 'SparseMorph',
+  [PropertyCategory.Face]: 'SparseMorph',
+  [PropertyCategory.Skin]: 'Corrective',
+  [PropertyCategory.Eyes]: 'Visibility',
+  [PropertyCategory.Hair]: 'Hair',
+  [PropertyCategory.Expression]: 'MorphAccumulation',
+  [PropertyCategory.Animation]: 'Skinning',
+  [PropertyCategory.Physics]: 'Cloth',
+  [PropertyCategory.LOD]: 'LODSelection',
+  [PropertyCategory.Attachment]: 'Attachment',
 };
 
 /**
@@ -58,7 +57,11 @@ export const CATEGORY_TO_KERNEL: Record<PropertyCategory, KernelKind> = {
  * dispatching redundant passes. Unaffected systems produce no output.
  */
 export class DeltaCompiler {
-  constructor(private registry: PropertyRegistry, private graph: DependencyGraph, private ranges?: DeltaVertexRangeSource) {}
+  constructor(
+    private registry: PropertyRegistry,
+    private graph: DependencyGraph,
+    private ranges?: DeltaVertexRangeSource,
+  ) {}
 
   /**
    * Given the set of changed property ids, compute the minimal kernel work.
@@ -92,17 +95,17 @@ export class DeltaCompiler {
 
   private priorityFor(kind: KernelKind): number {
     switch (kind) {
-      case "Skeleton":
-      case "Skinning":
-      case "MorphAccumulation":
+      case 'Skeleton':
+      case 'Skinning':
+      case 'MorphAccumulation':
         return 10;
-      case "SparseMorph":
-      case "Normal":
+      case 'SparseMorph':
+      case 'Normal':
         return 8;
-      case "Corrective":
+      case 'Corrective':
         return 6;
-      case "Attachment":
-      case "Visibility":
+      case 'Attachment':
+      case 'Visibility':
         return 4;
       default:
         return 3;
@@ -114,9 +117,14 @@ export class DeltaCompiler {
     const regions = new Set<RegionName>();
     for (const id of work.propertyIds) {
       const meta = this.registry.requireId(id);
-      for (const region of regionsForProperty(meta.path, meta.category as PropertyCategory)) regions.add(region);
+      for (const region of regionsForProperty(meta.path, meta.category as PropertyCategory))
+        regions.add(region);
     }
-    work.vertexRanges = mergeRanges([...regions].map((region) => this.ranges?.regionRanges.get(region)).filter((range): range is IndexRange => !!range));
+    work.vertexRanges = mergeRanges(
+      [...regions]
+        .map((region) => this.ranges?.regionRanges.get(region))
+        .filter((range): range is IndexRange => !!range),
+    );
   }
 
   /** Compiler-aware merge of several change batches (optimizes multi-change). */
@@ -128,15 +136,56 @@ export class DeltaCompiler {
 }
 
 function regionsForProperty(path: string, category: PropertyCategory): RegionName[] {
-  if (path.startsWith("face.nose.")) return ["nose"];
-  if (path.startsWith("face.jaw.")) return ["jaw"];
-  if (path.startsWith("face.mouth.")) return ["mouth"];
-  if (path === "face.eyeSpacing") return ["eyes", "eye_sclera", "eye_iris"];
-  if (path.startsWith("face.")) return ["face", "nose", "jaw", "eyes", "mouth"];
-  if (path.startsWith("expression.")) return ["face", "jaw", "mouth", "tongue", "mouth_cavity", "eyes"];
-  if (path === "body.muscularity" || path === "body.bodyFat" || path === "body.chest" || path === "body.waist" || path === "body.hips") return ["torso"];
-  if (path.startsWith("skeleton.") || path.startsWith("global.")) return ["torso", "neck", "head", "upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "hand_l", "hand_r", "thigh_l", "thigh_r", "shin_l", "shin_r"];
-  if (category === PropertyCategory.Skin) return ["torso", "neck", "head", "face", "nose", "jaw", "upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "hand_l", "hand_r", "thigh_l", "thigh_r", "shin_l", "shin_r"];
+  if (path.startsWith('face.nose.')) return ['nose'];
+  if (path.startsWith('face.jaw.')) return ['jaw'];
+  if (path.startsWith('face.mouth.')) return ['mouth'];
+  if (path === 'face.eyeSpacing') return ['eyes', 'eye_sclera', 'eye_iris'];
+  if (path.startsWith('face.')) return ['face', 'nose', 'jaw', 'eyes', 'mouth'];
+  if (path.startsWith('expression.'))
+    return ['face', 'jaw', 'mouth', 'tongue', 'mouth_cavity', 'eyes'];
+  if (
+    path === 'body.muscularity' ||
+    path === 'body.bodyFat' ||
+    path === 'body.chest' ||
+    path === 'body.waist' ||
+    path === 'body.hips'
+  )
+    return ['torso'];
+  if (path.startsWith('skeleton.') || path.startsWith('global.'))
+    return [
+      'torso',
+      'neck',
+      'head',
+      'upperarm_l',
+      'upperarm_r',
+      'forearm_l',
+      'forearm_r',
+      'hand_l',
+      'hand_r',
+      'thigh_l',
+      'thigh_r',
+      'shin_l',
+      'shin_r',
+    ];
+  if (category === PropertyCategory.Skin)
+    return [
+      'torso',
+      'neck',
+      'head',
+      'face',
+      'nose',
+      'jaw',
+      'upperarm_l',
+      'upperarm_r',
+      'forearm_l',
+      'forearm_r',
+      'hand_l',
+      'hand_r',
+      'thigh_l',
+      'thigh_r',
+      'shin_l',
+      'shin_r',
+    ];
   return [];
 }
 

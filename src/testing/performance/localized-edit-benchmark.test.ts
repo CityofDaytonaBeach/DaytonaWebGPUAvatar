@@ -1,40 +1,43 @@
-import { describe, expect, it } from "vitest";
-import { runLocalizedEditBenchmark, runLocalizedEditGpuTimestampBenchmark } from "./localized-edit-benchmark";
+import { describe, expect, it } from 'vitest';
+import {
+  runLocalizedEditBenchmark,
+  runLocalizedEditGpuTimestampBenchmark,
+} from './localized-edit-benchmark';
 
-describe("localized edit benchmark", () => {
-  it("reports real event-path metrics for default benchmark cases", async () => {
+describe('localized edit benchmark', () => {
+  it('reports real event-path metrics for default benchmark cases', async () => {
     const summary = await runLocalizedEditBenchmark();
 
     expect(summary.baselineVertexCount).toBeGreaterThan(0);
-    expect(summary.results.map((item) => item.name)).toContain("nose width localized edit");
+    expect(summary.results.map((item) => item.name)).toContain('nose width localized edit');
     expect(summary.results.every((item) => item.cancelled === false)).toBe(true);
     expect(summary.results.every((item) => item.gpuTimeMs === null)).toBe(true);
   });
 
-  it("proves nose edits stay in face/sparse-morph work instead of hair", async () => {
+  it('proves nose edits stay in face/sparse-morph work instead of hair', async () => {
     const summary = await runLocalizedEditBenchmark();
-    const nose = summary.results.find((item) => item.name === "nose width localized edit")!;
+    const nose = summary.results.find((item) => item.name === 'nose width localized edit')!;
 
-    expect(nose.dirtyRegions).toContain("Face");
-    expect(nose.affectedSystems).toContain("FaceGeometry");
-    expect(nose.kernelKinds).toContain("SparseMorph");
-    expect(nose.kernelKinds).not.toContain("Hair");
+    expect(nose.dirtyRegions).toContain('Face');
+    expect(nose.affectedSystems).toContain('FaceGeometry');
+    expect(nose.kernelKinds).toContain('SparseMorph');
+    expect(nose.kernelKinds).not.toContain('Hair');
   });
 
-  it("separates cosmetic hair edits from face edits", async () => {
+  it('separates cosmetic hair edits from face edits', async () => {
     const summary = await runLocalizedEditBenchmark();
-    const hair = summary.results.find((item) => item.name === "hair cosmetic edit")!;
+    const hair = summary.results.find((item) => item.name === 'hair cosmetic edit')!;
 
-    expect(hair.dirtyRegions).toContain("Hair");
-    expect(hair.affectedSystems).toContain("HairSystem");
-    expect(hair.kernelKinds).toContain("Hair");
-    expect(hair.dirtyRegions).not.toContain("Face");
+    expect(hair.dirtyRegions).toContain('Hair');
+    expect(hair.affectedSystems).toContain('HairSystem');
+    expect(hair.kernelKinds).toContain('Hair');
+    expect(hair.dirtyRegions).not.toContain('Face');
   });
 
-  it("shows localized face edits touching fewer vertices than body edits", async () => {
+  it('shows localized face edits touching fewer vertices than body edits', async () => {
     const summary = await runLocalizedEditBenchmark();
-    const nose = summary.results.find((item) => item.name === "nose width localized edit")!;
-    const body = summary.results.find((item) => item.name === "body muscularity broader edit")!;
+    const nose = summary.results.find((item) => item.name === 'nose width localized edit')!;
+    const body = summary.results.find((item) => item.name === 'body muscularity broader edit')!;
 
     expect(nose.verticesModified).toBeGreaterThan(0);
     expect(body.verticesModified).toBeGreaterThan(0);
@@ -42,7 +45,7 @@ describe("localized edit benchmark", () => {
     // In the block human, each body part is a uniform box so counts may be similar.
   });
 
-  it("reports unsupported GPU timestamp benchmark when no device is provided", async () => {
+  it('reports unsupported GPU timestamp benchmark when no device is provided', async () => {
     const result = await runLocalizedEditGpuTimestampBenchmark({ cases: [] });
 
     expect(result.supported).toBe(false);

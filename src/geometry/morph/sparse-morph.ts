@@ -1,4 +1,4 @@
-import { CanonicalHuman, RegionName, SparseMorph, MorphDelta } from "../canonical/canonical-human";
+import { CanonicalHuman, RegionName, SparseMorph, MorphDelta } from '../canonical/canonical-human';
 
 /**
  * Sparse Morph Set.
@@ -16,7 +16,7 @@ export class SparseMorphSet {
   add(
     name: string,
     region: RegionName,
-    deltaFn: (vx: number, vy: number, vz: number) => { dx: number; dy: number; dz: number }
+    deltaFn: (vx: number, vy: number, vz: number) => { dx: number; dy: number; dz: number },
   ): void {
     const range = this.canonical.regionRanges.get(region);
     if (!range) {

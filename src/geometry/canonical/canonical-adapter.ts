@@ -1,6 +1,6 @@
-import { CanonicalHuman, PartGeometry, IndexRange } from "./canonical-human";
-import { CanonicalTopology } from "./canonical-topology";
-import { validateCanonicalTopology, CanonicalValidationIssue } from "./canonical-validator";
+import { CanonicalHuman, PartGeometry, IndexRange, RegionName } from './canonical-human';
+import { CanonicalTopology } from './canonical-topology';
+import { validateCanonicalTopology, CanonicalValidationIssue } from './canonical-validator';
 
 export interface CanonicalAdapterResult {
   ok: boolean;
@@ -15,10 +15,10 @@ export interface CanonicalAssetAdapter {
 }
 
 export class CanonicalTopologyAdapter implements CanonicalAssetAdapter {
-  readonly name = "CanonicalTopologyAdapter";
+  readonly name = 'CanonicalTopologyAdapter';
 
   accepts(asset: unknown): asset is CanonicalTopology {
-    if (!asset || typeof asset !== "object") return false;
+    if (!asset || typeof asset !== 'object') return false;
     const candidate = asset as CanonicalTopology;
     return (
       Array.isArray(candidate.vertices) &&
@@ -28,7 +28,8 @@ export class CanonicalTopologyAdapter implements CanonicalAssetAdapter {
   }
 
   resolve(asset: CanonicalTopology, boneNames: readonly string[]): CanonicalHuman {
-    if (!this.accepts(asset)) throw new TypeError(`${this.name}: asset does not match CanonicalTopology`);
+    if (!this.accepts(asset))
+      throw new TypeError(`${this.name}: asset does not match CanonicalTopology`);
 
     const parts: PartGeometry[] = asset.parts.map((part) => ({
       name: part.name,
@@ -40,34 +41,37 @@ export class CanonicalTopologyAdapter implements CanonicalAssetAdapter {
       indexCount: part.indexCount,
     }));
 
-    const canonical = new CanonicalHuman(boneNames);
+    const canonical = new CanonicalHuman([...boneNames]);
     return CanonicalTopologyAdapter.overlay(canonical, asset.vertices, asset.indices, parts);
   }
 
   private static overlay(
     canonical: CanonicalHuman,
-    vertices: CanonicalTopology["vertices"],
+    vertices: CanonicalTopology['vertices'],
     indices: Uint32Array,
-    parts: PartGeometry[]
+    parts: PartGeometry[],
   ): CanonicalHuman {
     (canonical as { vertices: typeof canonical.vertices }).vertices = Array.from(vertices);
     (canonical as { indices: typeof canonical.indices }).indices = indices;
     (canonical as { parts: typeof canonical.parts }).parts = parts;
 
-    const regions = new Map<string, IndexRange>();
+    const regions = new Map<RegionName, IndexRange>();
     for (let i = 0; i < vertices.length; i++) {
       const r = vertices[i].region;
       if (!regions.has(r)) regions.set(r, { start: i, count: 0 });
       regions.get(r)!.count++;
     }
-    (canonical as { regionRanges: typeof canonical.regionRanges }).regionRanges = new Map(regions);
+    (canonical as { regionRanges: typeof canonical.regionRanges }).regionRanges = regions;
 
-    const partByRegion = new Map<string, PartGeometry>();
+    const partByRegion = new Map<RegionName, PartGeometry>();
     for (const part of parts) partByRegion.set(part.region, part);
     (canonical as { partByRegion: typeof canonical.partByRegion }).partByRegion = partByRegion;
 
     for (const part of parts) {
-      (canonical.partIndexRanges as Map<string, IndexRange>).set(part.name, { start: part.indexStart, count: part.indexCount });
+      (canonical.partIndexRanges as Map<string, IndexRange>).set(part.name, {
+        start: part.indexStart,
+        count: part.indexCount,
+      });
     }
     return canonical;
   }
@@ -76,13 +80,19 @@ export class CanonicalTopologyAdapter implements CanonicalAssetAdapter {
 export function adaptCanonicalTopologyAsset(
   asset: unknown,
   boneNames: readonly string[],
-  adapter: CanonicalAssetAdapter = new CanonicalTopologyAdapter()
+  adapter: CanonicalAssetAdapter = new CanonicalTopologyAdapter(),
 ): CanonicalAdapterResult {
   if (!adapter.accepts(asset)) {
     return {
       ok: false,
       canonical: null,
-      report: { vertexCount: 0, partCount: 0, issues: [{ code: "archetype-mismatch", message: `${adapter.name} does not accept this asset` }] },
+      report: {
+        vertexCount: 0,
+        partCount: 0,
+        issues: [
+          { code: 'archetype-mismatch', message: `${adapter.name} does not accept this asset` },
+        ],
+      },
     };
   }
   const topology = asset as CanonicalTopology;
@@ -91,7 +101,11 @@ export function adaptCanonicalTopologyAsset(
     return {
       ok: false,
       canonical: null,
-      report: { vertexCount: validation.vertexCount, partCount: validation.partCount, issues: validation.issues },
+      report: {
+        vertexCount: validation.vertexCount,
+        partCount: validation.partCount,
+        issues: validation.issues,
+      },
     };
   }
   const canonical = adapter.resolve(topology, boneNames);

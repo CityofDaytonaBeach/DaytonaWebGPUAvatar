@@ -1,9 +1,9 @@
-import { AnatomyDimensions } from "../../anatomy/parametric/parametric-anatomy";
-import { BoneDef } from "../../anatomy/skeleton/skeleton";
-import { Vec3, vec3 } from "../../core/math/vec";
-import { RegionName } from "../../geometry/canonical/canonical-human";
+import { AnatomyDimensions } from '../../anatomy/parametric/parametric-anatomy';
+import { BoneDef } from '../../anatomy/skeleton/skeleton';
+import { Vec3, vec3 } from '../../core/math/vec';
+import { RegionName } from '../../geometry/canonical/canonical-human';
 
-export type HumanSdfPrimitiveKind = "sphere" | "capsule";
+export type HumanSdfPrimitiveKind = 'sphere' | 'capsule';
 
 export interface HumanSdfPrimitive {
   kind: HumanSdfPrimitiveKind;
@@ -52,28 +52,28 @@ export interface SdfLodProfile {
  *   ultra  -> + hand-tip detail
  */
 export const SDF_LOD_PROFILES: Record<SdfLodLevel, SdfLodProfile> = {
-  [SDF_LOW_LOD]: {
+  0: {
     level: SDF_LOW_LOD,
     includeTorso: true,
     includeHead: false,
     includeLimbs: false,
     includeDigits: false,
   },
-  [SDF_MEDIUM_LOD]: {
+  1: {
     level: SDF_MEDIUM_LOD,
     includeTorso: true,
     includeHead: true,
     includeLimbs: false,
     includeDigits: false,
   },
-  [SDF_HIGH_LOD]: {
+  2: {
     level: SDF_HIGH_LOD,
     includeTorso: true,
     includeHead: true,
     includeLimbs: true,
     includeDigits: false,
   },
-  [SDF_ULTRA_LOD]: {
+  3: {
     level: SDF_ULTRA_LOD,
     includeTorso: true,
     includeHead: true,
@@ -86,19 +86,19 @@ export const SDF_LOD_PROFILES: Record<SdfLodLevel, SdfLodProfile> = {
 // Collision primitives (sphere / capsule / box union)
 // ---------------------------------------------------------------------------
 
-export type CollisionPrimitiveKind = "sphere" | "capsule" | "box";
+export type CollisionPrimitiveKind = 'sphere' | 'capsule' | 'box';
 
 /** Generic collision primitive usable by hair, cloth and external systems. */
 export type CollisionPrimitive =
-  | { kind: "sphere"; center: Vec3; radius: number }
-  | { kind: "capsule"; a: Vec3; b: Vec3; radius: number }
-  | { kind: "box"; center: Vec3; halfExtents: Vec3 };
+  | { kind: 'sphere'; center: Vec3; radius: number }
+  | { kind: 'capsule'; a: Vec3; b: Vec3; radius: number }
+  | { kind: 'box'; center: Vec3; halfExtents: Vec3 };
 
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 
-export type SdfQuality = "low" | "medium" | "high" | "ultra";
+export type SdfQuality = 'low' | 'medium' | 'high' | 'ultra';
 
 export interface SdfCollisionConfig {
   /** Overall quality tier. */
@@ -130,19 +130,20 @@ const DEFAULT_LOD_BY_QUALITY: Record<SdfQuality, SdfLodLevel> = {
   ultra: SDF_ULTRA_LOD,
 };
 
-export function defaultSdfCollisionConfig(quality: SdfQuality = "medium"): SdfCollisionConfig {
+export function defaultSdfCollisionConfig(quality: SdfQuality = 'medium'): SdfCollisionConfig {
   const lod = DEFAULT_LOD_BY_QUALITY[quality];
   return {
     quality,
     lod,
     collisionPadding: 0.012,
-    solveIterations: quality === "low" ? 1 : quality === "medium" ? 2 : quality === "high" ? 4 : 8,
+    solveIterations: quality === 'low' ? 1 : quality === 'medium' ? 2 : quality === 'high' ? 4 : 8,
     predictionEnabled: true,
     predictionTime: 1 / 60,
     batchingEnabled: true,
     externalCollisionsEnabled: true,
-    maxExternalPrimitives: quality === "low" ? 16 : quality === "medium" ? 64 : quality === "high" ? 256 : 1024,
-    exactNearestSurface: quality === "high" || quality === "ultra",
+    maxExternalPrimitives:
+      quality === 'low' ? 16 : quality === 'medium' ? 64 : quality === 'high' ? 256 : 1024,
+    exactNearestSurface: quality === 'high' || quality === 'ultra',
   };
 }
 
@@ -182,7 +183,10 @@ export class HumanSdfField {
   private readonly config: SdfCollisionConfig;
   private external: CollisionPrimitive[];
 
-  constructor(primitives: HumanSdfPrimitive[], config: SdfCollisionConfig = defaultSdfCollisionConfig()) {
+  constructor(
+    primitives: HumanSdfPrimitive[],
+    config: SdfCollisionConfig = defaultSdfCollisionConfig(),
+  ) {
     this.primitives = primitives;
     this.config = config;
     this.external = [];
@@ -198,9 +202,10 @@ export class HumanSdfField {
     const cloth = inputs.cloth ?? [];
     const custom = inputs.custom ?? [];
     const all = [...hair, ...cloth, ...custom];
-    this.external = all.length > this.config.maxExternalPrimitives
-      ? all.slice(0, this.config.maxExternalPrimitives)
-      : all;
+    this.external =
+      all.length > this.config.maxExternalPrimitives
+        ? all.slice(0, this.config.maxExternalPrimitives)
+        : all;
   }
 
   /** Get the currently attached external collision primitives. */
@@ -214,7 +219,7 @@ export class HumanSdfField {
 
   sample(p: Vec3): HumanSdfSample {
     if (this.primitives.length === 0 && this.external.length === 0) {
-      throw new Error("Human SDF has no primitives");
+      throw new Error('Human SDF has no primitives');
     }
     let best: HumanSdfSample | null = null;
     for (const primitive of this.primitives) {
@@ -229,7 +234,7 @@ export class HumanSdfField {
         if (!best || distance < best.distance) {
           best = {
             distance,
-            region: "torso",
+            region: 'torso',
             primitive: toHumanPrimitive(primitive),
           };
         }
@@ -268,7 +273,7 @@ export class HumanSdfField {
    */
   nearestSurface(p: Vec3): HumanSdfNearestSample {
     if (this.primitives.length === 0 && this.external.length === 0) {
-      throw new Error("Human SDF has no primitives");
+      throw new Error('Human SDF has no primitives');
     }
     let best: HumanSdfNearestSample | null = null;
     for (const primitive of this.primitives) {
@@ -278,7 +283,7 @@ export class HumanSdfField {
     if (this.config.externalCollisionsEnabled) {
       for (const primitive of this.external) {
         const r = nearestOnCollisionPrimitive(p, primitive);
-        r.region = "torso";
+        r.region = 'torso';
         r.primitive = toHumanPrimitive(primitive);
         if (!best || r.distance < best.distance) best = r;
       }
@@ -315,7 +320,7 @@ export class HumanSdfField {
   /** Batch velocity-based prediction. */
   predictBatch(points: Vec3[], velocities: Vec3[], dt?: number): HumanSdfPredictResult[] {
     if (points.length !== velocities.length) {
-      throw new Error("predictBatch: points and velocities must have equal length");
+      throw new Error('predictBatch: points and velocities must have equal length');
     }
     const out = new Array<HumanSdfPredictResult>(points.length);
     for (let i = 0; i < points.length; i++) {
@@ -329,13 +334,17 @@ export class HumanSdfField {
    * the field. Replaces the transforms of every skeleton-derived primitive in
    * place and returns the field for chaining.
    */
-  updateFromSkeleton(skeleton: BoneDef[], dims: AnatomyDimensions, lod: SdfLodLevel = this.config.lod): HumanSdfField {
+  updateFromSkeleton(
+    skeleton: BoneDef[],
+    dims: AnatomyDimensions,
+    lod: SdfLodLevel = this.config.lod,
+  ): HumanSdfField {
     if (this.primitives.length === 0) {
-      throw new Error("updateFromSkeleton: field has no primitives to update");
+      throw new Error('updateFromSkeleton: field has no primitives to update');
     }
     const rebuilt = buildHumanSdfField(dims, skeleton, lod);
     if (rebuilt.primitives.length !== this.primitives.length) {
-      throw new Error("updateFromSkeleton: rebuilt primitive count does not match existing field");
+      throw new Error('updateFromSkeleton: rebuilt primitive count does not match existing field');
     }
     for (let i = 0; i < this.primitives.length; i++) {
       const dest = this.primitives[i];
@@ -373,7 +382,7 @@ export interface HumanSdfPredictResult {
 export function buildHumanSdfField(
   dims: AnatomyDimensions,
   skeleton: BoneDef[],
-  lod: SdfLodLevel = SDF_HIGH_LOD
+  lod: SdfLodLevel = SDF_HIGH_LOD,
 ): HumanSdfField {
   const profile: SdfLodProfile = SDF_LOD_PROFILES[lod];
   const joints = worldJoints(skeleton);
@@ -381,27 +390,68 @@ export function buildHumanSdfField(
   const primitives: HumanSdfPrimitive[] = [];
 
   if (profile.includeTorso) {
-    primitives.push({ kind: "capsule", region: "torso", a: joint("pelvis"), b: joint("chest"), radius: Math.max(dims.waistHalfWidth, dims.torsoHalfDepth) * 0.92 });
+    primitives.push({
+      kind: 'capsule',
+      region: 'torso',
+      a: joint('pelvis'),
+      b: joint('chest'),
+      radius: Math.max(dims.waistHalfWidth, dims.torsoHalfDepth) * 0.92,
+    });
   }
   if (profile.includeHead) {
-    primitives.push({ kind: "sphere", region: "head", a: joint("head"), radius: dims.height * 0.09 * dims.headScale });
-    primitives.push({ kind: "capsule", region: "neck", a: joint("neck"), b: joint("head"), radius: dims.height * 0.035 });
+    primitives.push({
+      kind: 'sphere',
+      region: 'head',
+      a: joint('head'),
+      radius: dims.height * 0.09 * dims.headScale,
+    });
+    primitives.push({
+      kind: 'capsule',
+      region: 'neck',
+      a: joint('neck'),
+      b: joint('head'),
+      radius: dims.height * 0.035,
+    });
   }
   if (profile.includeLimbs) {
-    addLimb(primitives, "upperarm_l", joint("upperarm_l"), joint("forearm_l"), dims.height * 0.04);
-    addLimb(primitives, "upperarm_r", joint("upperarm_r"), joint("forearm_r"), dims.height * 0.04);
-    addLimb(primitives, "forearm_l", joint("forearm_l"), joint("hand_l"), dims.height * 0.032);
-    addLimb(primitives, "forearm_r", joint("forearm_r"), joint("hand_r"), dims.height * 0.032);
-    addLimb(primitives, "hand_l", joint("hand_l"), add(joint("hand_l"), vec3(0, -dims.handLength * 0.45, 0)), dims.height * 0.03);
-    addLimb(primitives, "hand_r", joint("hand_r"), add(joint("hand_r"), vec3(0, -dims.handLength * 0.45, 0)), dims.height * 0.03);
-    addLimb(primitives, "thigh_l", joint("thigh_l"), joint("shin_l"), dims.height * 0.055);
-    addLimb(primitives, "thigh_r", joint("thigh_r"), joint("shin_r"), dims.height * 0.055);
-    addLimb(primitives, "shin_l", joint("shin_l"), joint("foot_l"), dims.height * 0.04);
-    addLimb(primitives, "shin_r", joint("shin_r"), joint("foot_r"), dims.height * 0.04);
+    addLimb(primitives, 'upperarm_l', joint('upperarm_l'), joint('forearm_l'), dims.height * 0.04);
+    addLimb(primitives, 'upperarm_r', joint('upperarm_r'), joint('forearm_r'), dims.height * 0.04);
+    addLimb(primitives, 'forearm_l', joint('forearm_l'), joint('hand_l'), dims.height * 0.032);
+    addLimb(primitives, 'forearm_r', joint('forearm_r'), joint('hand_r'), dims.height * 0.032);
+    addLimb(
+      primitives,
+      'hand_l',
+      joint('hand_l'),
+      add(joint('hand_l'), vec3(0, -dims.handLength * 0.45, 0)),
+      dims.height * 0.03,
+    );
+    addLimb(
+      primitives,
+      'hand_r',
+      joint('hand_r'),
+      add(joint('hand_r'), vec3(0, -dims.handLength * 0.45, 0)),
+      dims.height * 0.03,
+    );
+    addLimb(primitives, 'thigh_l', joint('thigh_l'), joint('shin_l'), dims.height * 0.055);
+    addLimb(primitives, 'thigh_r', joint('thigh_r'), joint('shin_r'), dims.height * 0.055);
+    addLimb(primitives, 'shin_l', joint('shin_l'), joint('foot_l'), dims.height * 0.04);
+    addLimb(primitives, 'shin_r', joint('shin_r'), joint('foot_r'), dims.height * 0.04);
   }
   if (profile.includeDigits) {
-    addLimb(primitives, "hand_l", joint("hand_l"), add(joint("hand_l"), vec3(0, -dims.handLength * 0.78, 0)), dims.height * 0.022);
-    addLimb(primitives, "hand_r", joint("hand_r"), add(joint("hand_r"), vec3(0, -dims.handLength * 0.78, 0)), dims.height * 0.022);
+    addLimb(
+      primitives,
+      'hand_l',
+      joint('hand_l'),
+      add(joint('hand_l'), vec3(0, -dims.handLength * 0.78, 0)),
+      dims.height * 0.022,
+    );
+    addLimb(
+      primitives,
+      'hand_r',
+      joint('hand_r'),
+      add(joint('hand_r'), vec3(0, -dims.handLength * 0.78, 0)),
+      dims.height * 0.022,
+    );
   }
 
   return new HumanSdfField(primitives, defaultSdfCollisionConfig(qualityForLod(lod)));
@@ -409,21 +459,33 @@ export function buildHumanSdfField(
 
 function qualityForLod(lod: SdfLodLevel): SdfQuality {
   switch (lod) {
-    case SDF_LOW_LOD: return "low";
-    case SDF_MEDIUM_LOD: return "medium";
-    case SDF_HIGH_LOD: return "high";
-    case SDF_ULTRA_LOD: return "ultra";
+    case SDF_LOW_LOD:
+      return 'low';
+    case SDF_MEDIUM_LOD:
+      return 'medium';
+    case SDF_HIGH_LOD:
+      return 'high';
+    case SDF_ULTRA_LOD:
+      return 'ultra';
+    default:
+      return 'medium';
   }
 }
 
-function addLimb(primitives: HumanSdfPrimitive[], region: RegionName, a: Vec3, b: Vec3, radius: number): void {
-  primitives.push({ kind: "capsule", region, a, b, radius });
+function addLimb(
+  primitives: HumanSdfPrimitive[],
+  region: RegionName,
+  a: Vec3,
+  b: Vec3,
+  radius: number,
+): void {
+  primitives.push({ kind: 'capsule', region, a, b, radius });
 }
 
 function worldJoints(skeleton: BoneDef[]): Map<string, Vec3> {
   const out = new Map<string, Vec3>();
   for (const bone of skeleton) {
-    const parent = bone.parent ? out.get(bone.parent) ?? vec3() : vec3();
+    const parent = bone.parent ? (out.get(bone.parent) ?? vec3()) : vec3();
     out.set(bone.name, add(parent, bone.localPosition));
   }
   return out;
@@ -437,7 +499,12 @@ function worldJoints(skeleton: BoneDef[]): Map<string, Vec3> {
  * Closest point on a capsule (cylinder + 2 hemispherical caps) to a query
  * point, together with the segment parameter t in [0,1].
  */
-export function capsulePointClosest(p: Vec3, a: Vec3, b: Vec3, radius: number): { point: Vec3; t: number; distance: number } {
+export function capsulePointClosest(
+  p: Vec3,
+  a: Vec3,
+  b: Vec3,
+  radius: number,
+): { point: Vec3; t: number; distance: number } {
   const pa = sub(p, a);
   const ba = sub(b, a);
   const denom = dot(ba, ba);
@@ -450,7 +517,14 @@ export function capsulePointClosest(p: Vec3, a: Vec3, b: Vec3, radius: number): 
 }
 
 /** Distance between two capsules (segment-segment closest approach minus radii). */
-export function capsuleCapsuleDistance(a1: Vec3, b1: Vec3, r1: number, a2: Vec3, b2: Vec3, r2: number): number {
+export function capsuleCapsuleDistance(
+  a1: Vec3,
+  b1: Vec3,
+  r1: number,
+  a2: Vec3,
+  b2: Vec3,
+  r2: number,
+): number {
   const { distance: segmentDistance } = segmentSegmentClosest(a1, b1, a2, b2);
   return Math.max(0, segmentDistance - (r1 + r2));
 }
@@ -465,7 +539,13 @@ export function sphereSphereDistance(c1: Vec3, r1: number, c2: Vec3, r2: number)
  * point on the capsule axis to the box, then measures signed distance from
  * that axis point to the box surface, minus the capsule radius.
  */
-export function capsuleBoxDistance(a: Vec3, b: Vec3, r: number, center: Vec3, halfExtents: Vec3): number {
+export function capsuleBoxDistance(
+  a: Vec3,
+  b: Vec3,
+  r: number,
+  center: Vec3,
+  halfExtents: Vec3,
+): number {
   const { point } = capsulePointClosest(center, a, b, 0);
   const boxDistance = boxSdf(center, halfExtents, point);
   return Math.max(0, boxDistance - r);
@@ -476,7 +556,7 @@ export function clampBoxPoint(p: Vec3, center: Vec3, halfExtents: Vec3): Vec3 {
   return vec3(
     clamp(p.x, center.x - halfExtents.x, center.x + halfExtents.x),
     clamp(p.y, center.y - halfExtents.y, center.y + halfExtents.y),
-    clamp(p.z, center.z - halfExtents.z, center.z + halfExtents.z)
+    clamp(p.z, center.z - halfExtents.z, center.z + halfExtents.z),
   );
 }
 
@@ -485,35 +565,48 @@ export function clampBoxPoint(p: Vec3, center: Vec3, halfExtents: Vec3): Vec3 {
 // ---------------------------------------------------------------------------
 
 function primitiveDistance(p: Vec3, primitive: HumanSdfPrimitive): number {
-  return primitive.kind === "sphere"
+  return primitive.kind === 'sphere'
     ? sphereSdf(p, primitive.a, primitive.radius)
     : capsuleSdf(p, primitive.a, primitive.b ?? primitive.a, primitive.radius);
 }
 
 function collisionPrimitiveDistance(p: Vec3, primitive: CollisionPrimitive): number {
   switch (primitive.kind) {
-    case "sphere": return sphereSdf(p, primitive.center, primitive.radius);
-    case "capsule": return capsuleSdf(p, primitive.a, primitive.b, primitive.radius);
-    case "box": return boxSdf(primitive.center, primitive.halfExtents, p);
+    case 'sphere':
+      return sphereSdf(p, primitive.center, primitive.radius);
+    case 'capsule':
+      return capsuleSdf(p, primitive.a, primitive.b, primitive.radius);
+    case 'box':
+      return boxSdf(primitive.center, primitive.halfExtents, p);
   }
 }
 
 function nearestOnPrimitive(p: Vec3, primitive: HumanSdfPrimitive): HumanSdfNearestSample {
-  if (primitive.kind === "sphere") {
+  if (primitive.kind === 'sphere') {
     return nearestOnSphere(p, primitive.a, primitive.radius, primitive.region, primitive);
   }
   const b = primitive.b ?? primitive.a;
   return nearestOnCapsule(p, primitive.a, b, primitive.radius, primitive.region, primitive);
 }
 
-function nearestOnCollisionPrimitive(p: Vec3, primitive: CollisionPrimitive): HumanSdfNearestSample {
+function nearestOnCollisionPrimitive(
+  p: Vec3,
+  primitive: CollisionPrimitive,
+): HumanSdfNearestSample {
   const humanPrimitive = toHumanPrimitive(primitive);
   switch (primitive.kind) {
-    case "sphere":
-      return nearestOnSphere(p, primitive.center, primitive.radius, "torso", humanPrimitive);
-    case "capsule":
-      return nearestOnCapsule(p, primitive.a, primitive.b, primitive.radius, "torso", humanPrimitive);
-    case "box": {
+    case 'sphere':
+      return nearestOnSphere(p, primitive.center, primitive.radius, 'torso', humanPrimitive);
+    case 'capsule':
+      return nearestOnCapsule(
+        p,
+        primitive.a,
+        primitive.b,
+        primitive.radius,
+        'torso',
+        humanPrimitive,
+      );
+    case 'box': {
       const clamped = clampBoxPoint(p, primitive.center, primitive.halfExtents);
       const distance = boxSdf(primitive.center, primitive.halfExtents, p);
       const toP = sub(p, clamped);
@@ -523,14 +616,20 @@ function nearestOnCollisionPrimitive(p: Vec3, primitive: CollisionPrimitive): Hu
         distance,
         point: clamped,
         normal,
-        region: "torso",
+        region: 'torso',
         primitive: humanPrimitive,
       };
     }
   }
 }
 
-function nearestOnSphere(p: Vec3, center: Vec3, radius: number, region: RegionName, primitive: HumanSdfPrimitive): HumanSdfNearestSample {
+function nearestOnSphere(
+  p: Vec3,
+  center: Vec3,
+  radius: number,
+  region: RegionName,
+  primitive: HumanSdfPrimitive,
+): HumanSdfNearestSample {
   const offset = sub(p, center);
   const len = length(offset);
   const distance = len - radius;
@@ -539,7 +638,14 @@ function nearestOnSphere(p: Vec3, center: Vec3, radius: number, region: RegionNa
   return { distance, point, normal, region, primitive };
 }
 
-function nearestOnCapsule(p: Vec3, a: Vec3, b: Vec3, radius: number, region: RegionName, primitive: HumanSdfPrimitive): HumanSdfNearestSample {
+function nearestOnCapsule(
+  p: Vec3,
+  a: Vec3,
+  b: Vec3,
+  radius: number,
+  region: RegionName,
+  primitive: HumanSdfPrimitive,
+): HumanSdfNearestSample {
   const { point } = capsulePointClosest(p, a, b, 0);
   const toSurface = sub(p, point);
   const len = length(toSurface);
@@ -551,14 +657,20 @@ function nearestOnCapsule(p: Vec3, a: Vec3, b: Vec3, radius: number, region: Reg
 
 function toHumanPrimitive(primitive: CollisionPrimitive): HumanSdfPrimitive {
   switch (primitive.kind) {
-    case "sphere":
-      return { kind: "sphere", region: "torso", a: primitive.center, radius: primitive.radius };
-    case "capsule":
-      return { kind: "capsule", region: "torso", a: primitive.a, b: primitive.b, radius: primitive.radius };
-    case "box": {
+    case 'sphere':
+      return { kind: 'sphere', region: 'torso', a: primitive.center, radius: primitive.radius };
+    case 'capsule':
       return {
-        kind: "capsule",
-        region: "torso",
+        kind: 'capsule',
+        region: 'torso',
+        a: primitive.a,
+        b: primitive.b,
+        radius: primitive.radius,
+      };
+    case 'box': {
+      return {
+        kind: 'capsule',
+        region: 'torso',
         a: primitive.center,
         radius: Math.max(primitive.halfExtents.x, primitive.halfExtents.y, primitive.halfExtents.z),
       };
@@ -592,8 +704,10 @@ function boxSdf(center: Vec3, halfExtents: Vec3, p: Vec3): number {
  * distance and the closest points on each segment.
  */
 export function segmentSegmentClosest(
-  p1: Vec3, q1: Vec3,
-  p2: Vec3, q2: Vec3
+  p1: Vec3,
+  q1: Vec3,
+  p2: Vec3,
+  q2: Vec3,
 ): { distance: number; closest1: Vec3; closest2: Vec3; t1: number; t2: number } {
   const d1 = sub(q1, p1);
   const d2 = sub(q2, p2);

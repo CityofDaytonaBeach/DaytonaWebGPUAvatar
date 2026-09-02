@@ -8,17 +8,17 @@ The system must create, represent, modify, animate, simulate, preserve, and rend
 
 This is NOT simply:
 
-* a character creator
-* a collection of sliders
-* a Three.js avatar viewer
-* a GLB viewer
-* a text-to-3D wrapper
-* a MetaHuman clone
-* a collection of morph targets
-* an AI-generated mesh system
-* an Unreal Engine replacement running through streaming
-* a server-rendered avatar
-* a static character generator
+- a character creator
+- a collection of sliders
+- a Three.js avatar viewer
+- a GLB viewer
+- a text-to-3D wrapper
+- a MetaHuman clone
+- a collection of morph targets
+- an AI-generated mesh system
+- an Unreal Engine replacement running through streaming
+- a server-rendered avatar
+- a static character generator
 
 The objective is to invent a new **persistent semantic digital-human runtime**.
 
@@ -78,47 +78,47 @@ The same character must be continuously editable without regeneration.
 
 Build the architecture from the beginning to support:
 
-* realistic human anatomy
-* skeleton
-* joints
-* muscles
-* soft tissue
-* optional internal organs
-* skin
-* eyes
-* teeth
-* tongue
-* hair
-* facial hair
-* body hair
-* nails
-* tattoos
-* scars
-* makeup
-* piercings
-* jewelry
-* clothing
-* shoes
-* accessories
-* facial expressions
-* skeletal animation
-* facial animation
-* speech/lip synchronization
-* gaze
-* blinking
-* breathing
-* gestures
-* locomotion
-* IK
-* procedural animation
-* motion capture
-* animation retargeting
-* progressive aging
-* character history
-* environmental changes
-* automation
-* prompt control
-* external API control
+- realistic human anatomy
+- skeleton
+- joints
+- muscles
+- soft tissue
+- optional internal organs
+- skin
+- eyes
+- teeth
+- tongue
+- hair
+- facial hair
+- body hair
+- nails
+- tattoos
+- scars
+- makeup
+- piercings
+- jewelry
+- clothing
+- shoes
+- accessories
+- facial expressions
+- skeletal animation
+- facial animation
+- speech/lip synchronization
+- gaze
+- blinking
+- breathing
+- gestures
+- locomotion
+- IK
+- procedural animation
+- motion capture
+- animation retargeting
+- progressive aging
+- character history
+- environmental changes
+- automation
+- prompt control
+- external API control
 
 Do not assume every subsystem must be completed immediately.
 
@@ -294,151 +294,151 @@ The schema should be extensible enough to eventually describe:
 
 ## Global body
 
-* height
-* overall scale
-* head/body ratio
-* torso length
-* arm length
-* leg length
-* shoulder width
-* shoulder slope
-* rib cage
-* chest
-* waist
-* pelvis
-* hips
-* neck
-* limb thickness
-* body composition
-* muscularity
-* soft tissue
-* posture
-* asymmetry
+- height
+- overall scale
+- head/body ratio
+- torso length
+- arm length
+- leg length
+- shoulder width
+- shoulder slope
+- rib cage
+- chest
+- waist
+- pelvis
+- hips
+- neck
+- limb thickness
+- body composition
+- muscularity
+- soft tissue
+- posture
+- asymmetry
 
 ## Skeleton
 
-* root
-* pelvis
-* spine
-* chest
-* neck
-* head
-* clavicles
-* shoulders
-* upper arms
-* elbows
-* forearms
-* wrists
-* hands
-* fingers
-* hips
-* thighs
-* knees
-* shins
-* ankles
-* feet
-* toes
+- root
+- pelvis
+- spine
+- chest
+- neck
+- head
+- clavicles
+- shoulders
+- upper arms
+- elbows
+- forearms
+- wrists
+- hands
+- fingers
+- hips
+- thighs
+- knees
+- shins
+- ankles
+- feet
+- toes
 
 Support:
 
-* joint limits
-* IK
-* twist bones
-* corrective deformation
-* retargeting
-* parametric joint placement
+- joint limits
+- IK
+- twist bones
+- corrective deformation
+- retargeting
+- parametric joint placement
 
 ## Head
 
-* skull
-* cranium
-* forehead
-* temples
-* brow
-* cheeks
-* jaw
-* chin
-* nose
-* mouth
-* lips
-* eyes
-* eyelids
-* ears
-* teeth
-* gums
-* tongue
+- skull
+- cranium
+- forehead
+- temples
+- brow
+- cheeks
+- jaw
+- chin
+- nose
+- mouth
+- lips
+- eyes
+- eyelids
+- ears
+- teeth
+- gums
+- tongue
 
 ## Skin
 
-* pigmentation
-* base color
-* roughness
-* specular response
-* micro-normal
-* displacement
-* thickness
-* subsurface properties
-* freckles
-* moles
-* scars
-* wrinkles
-* pores
-* veins
-* blemishes
-* oiliness
-* wetness
-* temporary effects
+- pigmentation
+- base color
+- roughness
+- specular response
+- micro-normal
+- displacement
+- thickness
+- subsurface properties
+- freckles
+- moles
+- scars
+- wrinkles
+- pores
+- veins
+- blemishes
+- oiliness
+- wetness
+- temporary effects
 
 ## Hair
 
-* scalp hair
-* eyebrows
-* eyelashes
-* beard
-* mustache
-* stubble
-* body hair
+- scalp hair
+- eyebrows
+- eyelashes
+- beard
+- mustache
+- stubble
+- body hair
 
 Properties:
 
-* density
-* length
-* thickness
-* curl
-* wave
-* frizz
-* clumping
-* direction
-* part
-* color
-* highlights
-* gray percentage
+- density
+- length
+- thickness
+- curl
+- wave
+- frizz
+- clumping
+- direction
+- part
+- color
+- highlights
+- gray percentage
 
 ## Attachments
 
-* tattoos
-* scars
-* makeup
-* body paint
-* piercings
-* earrings
-* necklaces
-* rings
-* watches
-* glasses
-* wearable devices
+- tattoos
+- scars
+- makeup
+- body paint
+- piercings
+- earrings
+- necklaces
+- rings
+- watches
+- glasses
+- wearable devices
 
 ## Clothing
 
-* garment type
-* sizing
-* fit
-* layering
-* material
-* skinning
-* cloth physics
-* collision
-* LOD
+- garment type
+- sizing
+- fit
+- layering
+- material
+- skinning
+- cloth physics
+- collision
+- LOD
 
 ---
 
@@ -452,16 +452,16 @@ All normal humans should derive from compatible canonical topology.
 
 Requirements:
 
-* stable vertex IDs
-* stable anatomical regions
-* stable facial loops
-* animation-friendly topology
-* predictable UVs or equivalent surface coordinates
-* skeleton compatibility
-* facial animation compatibility
-* semantic anatomical landmarks
-* attachment coordinates
-* subdivision compatibility
+- stable vertex IDs
+- stable anatomical regions
+- stable facial loops
+- animation-friendly topology
+- predictable UVs or equivalent surface coordinates
+- skeleton compatibility
+- facial animation compatibility
+- semantic anatomical landmarks
+- attachment coordinates
+- subdivision compatibility
 
 Separate major geometry where appropriate:
 
@@ -745,12 +745,12 @@ VisibilityKernel
 
 The graph should:
 
-* respect dependencies
-* merge compatible work
-* minimize CPU/GPU synchronization
-* minimize dispatch count
-* reuse buffers
-* avoid unnecessary readback
+- respect dependencies
+- merge compatible work
+- minimize CPU/GPU synchronization
+- minimize dispatch count
+- reuse buffers
+- avoid unnecessary readback
 
 ---
 
@@ -870,16 +870,16 @@ deltaZ
 
 Investigate:
 
-* Float32
-* Float16 where supported/appropriate
-* signed 16-bit quantization
-* signed 8-bit quantization
-* local-region transforms
-* delta prediction
-* run-length/range encoding
-* PCA
-* deformation bases
-* learned compression
+- Float32
+- Float16 where supported/appropriate
+- signed 16-bit quantization
+- signed 8-bit quantization
+- local-region transforms
+- delta prediction
+- run-length/range encoding
+- PCA
+- deformation bases
+- learned compression
 
 The GPU should ideally decompress morph information directly.
 
@@ -992,13 +992,13 @@ orientation
 
 This should allow:
 
-* tattoos
-* scars
-* piercings
-* jewelry
-* wearable sensors
-* makeup
-* decals
+- tattoos
+- scars
+- piercings
+- jewelry
+- wearable sensors
+- makeup
+- decals
 
 to remain attached while anatomy changes or animates.
 
@@ -1025,13 +1025,13 @@ Example:
 
 The tattoo must:
 
-* follow skin deformation
-* bend with joints
-* survive body modifications
-* be removable
-* be resizable
-* support history
-* support automation
+- follow skin deformation
+- bend with joints
+- survive body modifications
+- be removable
+- be resizable
+- support history
+- support automation
 
 Use similar architecture for:
 
@@ -1098,12 +1098,12 @@ Initial implementation may use simplified muscle volumes and corrective deformat
 
 Future implementation should support:
 
-* muscle contraction
-* bulging
-* skin sliding
-* fat distribution
-* soft-tissue secondary motion
-* pose-dependent deformation
+- muscle contraction
+- bulging
+- skin sliding
+- fat distribution
+- soft-tissue secondary motion
+- pose-dependent deformation
 
 Avoid attempting expensive medical-grade simulation.
 
@@ -1432,16 +1432,16 @@ eyelids
 
 Support:
 
-* corneal bulge
-* refraction approximation
-* iris depth
-* pupil dilation
-* sclera variation
-* wetness
-* gaze
-* saccades
-* blinking
-* eyelid contact
+- corneal bulge
+- refraction approximation
+- iris depth
+- pupil dilation
+- sclera variation
+- wetness
+- gaze
+- saccades
+- blinking
+- eyelid contact
 
 Create eye-specific LOD.
 
@@ -1471,17 +1471,17 @@ scalp
 
 Support:
 
-* semantic hairstyle parameters
-* growth
-* length
-* density
-* curl
-* color
-* gray percentage
-* wetness
-* physics
-* collision
-* LOD
+- semantic hairstyle parameters
+- growth
+- length
+- density
+- curl
+- color
+- gray percentage
+- wetness
+- physics
+- collision
+- LOD
 
 Hair must remain attached as skull/head shape changes.
 
@@ -2229,50 +2229,50 @@ Build automated tests for:
 
 ### Schema
 
-* validation
-* serialization
-* migration
+- validation
+- serialization
+- migration
 
 ### Constraints
 
-* parameter bounds
-* anatomical relationships
+- parameter bounds
+- anatomical relationships
 
 ### Identity
 
-* unrelated changes do not modify identity parameters
+- unrelated changes do not modify identity parameters
 
 ### Dependency graph
 
-* correct descendants become dirty
+- correct descendants become dirty
 
 ### Delta compiler
 
-* minimal required systems execute
+- minimal required systems execute
 
 ### GPU layout
 
-* CPU/WGSL offsets match
+- CPU/WGSL offsets match
 
 ### Morphs
 
-* sparse decode accuracy
+- sparse decode accuracy
 
 ### Timeline
 
-* deterministic replay
+- deterministic replay
 
 ### Attachments
 
-* remain attached after deformation
+- remain attached after deformation
 
 ### Animation
 
-* identity modifications do not destroy animation
+- identity modifications do not destroy animation
 
 ### Performance
 
-* localized modifications remain localized
+- localized modifications remain localized
 
 ---
 
@@ -2710,11 +2710,11 @@ Change nose width.
 
 Requirements:
 
-* only appropriate state changes
-* only affected geometry recomputes
-* GPU remains resident
-* undo restores exact previous state
-* identity remains stable
+- only appropriate state changes
+- only affected geometry recomputes
+- GPU remains resident
+- undo restores exact previous state
+- identity remains stable
 
 ---
 
@@ -3448,23 +3448,23 @@ The evolved character must reconstruct exactly.
 
 Throughout implementation:
 
-* Type everything.
-* Validate everything.
-* Measure performance.
-* Avoid hidden global state.
-* Keep persistent state separate from GPU cache.
-* Keep identity separate from expression.
-* Keep anatomy separate from clothing.
-* Keep surface attachments independent.
-* Keep AI outside geometry internals.
-* Make every mutation transactional.
-* Make changes deterministic where practical.
-* Make GPU state reconstructable.
-* Prefer standards for interoperability.
-* Prefer custom technology where it produces measurable differentiation.
-* Document experimental algorithms.
-* Build benchmarks alongside implementation.
-* Never sacrifice correctness merely to claim a feature is complete.
+- Type everything.
+- Validate everything.
+- Measure performance.
+- Avoid hidden global state.
+- Keep persistent state separate from GPU cache.
+- Keep identity separate from expression.
+- Keep anatomy separate from clothing.
+- Keep surface attachments independent.
+- Keep AI outside geometry internals.
+- Make every mutation transactional.
+- Make changes deterministic where practical.
+- Make GPU state reconstructable.
+- Prefer standards for interoperability.
+- Prefer custom technology where it produces measurable differentiation.
+- Document experimental algorithms.
+- Build benchmarks alongside implementation.
+- Never sacrifice correctness merely to claim a feature is complete.
 
 ---
 

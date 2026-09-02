@@ -1,5 +1,4 @@
-import { PropertyRegistry } from "./registry";
-import { PropertyMeta } from "./property";
+import { PropertyRegistry } from './registry';
 
 export type PrimitiveValue = number;
 
@@ -10,10 +9,13 @@ export type PrimitiveValue = number;
  * the definition can be reconstructed deterministically from events.
  */
 export class HumanDefinition {
-  readonly version = "1.0";
+  readonly version = '1.0';
   private values = new Map<number, PrimitiveValue>();
 
-  constructor(private registry: PropertyRegistry, seed?: Record<string, PrimitiveValue>) {
+  constructor(
+    private registry: PropertyRegistry,
+    seed?: Record<string, PrimitiveValue>,
+  ) {
     for (const meta of registry.all()) {
       this.values.set(meta.id, meta.default);
     }
@@ -55,7 +57,7 @@ export class HumanDefinition {
     let next: PrimitiveValue = value;
     if (meta.min !== undefined) next = Math.max(next, meta.min);
     if (meta.max !== undefined) next = Math.min(next, meta.max);
-    if (meta.type === "u32" || meta.type === "i32") next = Math.round(next);
+    if (meta.type === 'u32' || meta.type === 'i32') next = Math.round(next);
     this.values.set(id, next);
     return prev;
   }
@@ -79,7 +81,7 @@ export class HumanDefinition {
   toJSON(): Record<string, unknown> {
     return {
       version: this.version,
-      identity: { id: this.get("identity.id"), seed: this.get("identity.seed") },
+      identity: { id: this.get('identity.id'), seed: this.get('identity.seed') },
       anatomy: this.serialize(),
     };
   }

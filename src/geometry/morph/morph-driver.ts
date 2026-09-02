@@ -1,5 +1,5 @@
-import { PropertyRegistry } from "../../core/schema/registry";
-import { HumanDefinition } from "../../core/schema/human-definition";
+import { PropertyRegistry } from '../../core/schema/registry';
+import { HumanDefinition } from '../../core/schema/human-definition';
 
 /**
  * Maps semantic property values into morph weights that drive the GPU/CPU
@@ -18,22 +18,32 @@ export class MorphDriver {
   private morphToProperty = new Map<string, string>();
 
   constructor(private registry: PropertyRegistry) {
-    this.register("face.nose.width", "noseWidth");
-    this.register("face.jaw.width", "jawWidth");
-    this.register("face.eyeSpacing", "eyeSpacing", "eyeSpacingSclera", "eyeSpacingIris");
-    this.register("body.muscularity", "muscularity");
-    this.register("face.mouth.width", "mouthWidth");
-    this.register("expression.jawOpen", "jawOpen", "jawOpenCavity");
+    this.register('face.nose.width', 'noseWidth');
+    this.register('face.jaw.width', 'jawWidth');
+    this.register('face.eyeSpacing', 'eyeSpacing', 'eyeSpacingSclera', 'eyeSpacingIris');
+    this.register('body.muscularity', 'muscularity');
+    this.register('face.mouth.width', 'mouthWidth');
+    this.register('expression.jawOpen', 'jawOpen', 'jawOpenCavity');
     // Parametric anatomy corrective morphs.
-    this.register("global.height",
-      "heightTorso", "heightNeck", "heightHead",
-      "heightUpperarmL", "heightUpperarmR", "heightForearmL", "heightForearmR",
-      "heightThighL", "heightThighR", "heightShinL", "heightShinR");
-    this.register("skeleton.shoulderWidth", "shoulderWidth");
-    this.register("body.waist", "waist");
-    this.register("body.bodyFat", "bodyFat");
-    this.register("skeleton.spineLength", "spine");
-    this.register("skeleton.neckLength", "neckScale");
+    this.register(
+      'global.height',
+      'heightTorso',
+      'heightNeck',
+      'heightHead',
+      'heightUpperarmL',
+      'heightUpperarmR',
+      'heightForearmL',
+      'heightForearmR',
+      'heightThighL',
+      'heightThighR',
+      'heightShinL',
+      'heightShinR',
+    );
+    this.register('skeleton.shoulderWidth', 'shoulderWidth');
+    this.register('body.waist', 'waist');
+    this.register('body.bodyFat', 'bodyFat');
+    this.register('skeleton.spineLength', 'spine');
+    this.register('skeleton.neckLength', 'neckScale');
   }
 
   private register(propPath: string, ...morphNames: string[]): void {
@@ -62,8 +72,8 @@ export class MorphDriver {
       return value / meta.default - 1;
     }
     // Range-based weight for 0-default (typically 0..1) properties.
-    const lo = typeof meta.min === "number" ? meta.min : 0;
-    const hi = typeof meta.max === "number" ? meta.max : 1;
+    const lo = typeof meta.min === 'number' ? meta.min : 0;
+    const hi = typeof meta.max === 'number' ? meta.max : 1;
     const span = hi - lo;
     if (span <= 0) return 0;
     return Math.min(1, Math.max(0, (value - lo) / span));

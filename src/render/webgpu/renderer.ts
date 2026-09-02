@@ -1,4 +1,4 @@
-import { HUMAN_PARAM_STRUCT } from "../wgsl/shaders";
+import { HUMAN_PARAM_STRUCT } from '../wgsl/shaders';
 
 /**
  * Full WGSL program for the human renderer (single module so vertex/fragment
@@ -76,7 +76,7 @@ export function buildCameraMatrices(
   width: number,
   height: number,
   angleY = 0.5,
-  angleX = -0.15
+  angleX = -0.15,
 ): CameraMatrices {
   const aspect = width / height;
   const fov = Math.PI / 3;
@@ -84,28 +84,49 @@ export function buildCameraMatrices(
   const far = 100;
   const t = 1 / Math.tan(fov / 2);
   const proj = new Float32Array(16);
-  proj[0] = t / aspect; proj[5] = t; proj[10] = far / (near - far); proj[11] = -1;
+  proj[0] = t / aspect;
+  proj[5] = t;
+  proj[10] = far / (near - far);
+  proj[11] = -1;
   proj[14] = (far * near) / (near - far);
 
-  const cy = Math.cos(angleY), sy = Math.sin(angleY);
-  const cx = Math.cos(angleX), sx = Math.sin(angleX);
+  const cy = Math.cos(angleY),
+    sy = Math.sin(angleY);
+  const cx = Math.cos(angleX),
+    sx = Math.sin(angleX);
   const view = new Float32Array(16);
-  view[0] = cy; view[2] = -sy;
+  view[0] = cy;
+  view[2] = -sy;
   view[5] = 1;
-  view[8] = sy; view[10] = cy;
+  view[8] = sy;
+  view[10] = cy;
   const translate = new Float32Array(16);
-  translate[0] = 1; translate[5] = 1; translate[10] = 1; translate[14] = -4.2;
+  translate[0] = 1;
+  translate[5] = 1;
+  translate[10] = 1;
+  translate[14] = -4.2;
   const vt = multiplyMat4(view, translate);
   const tilt = new Float32Array(16);
-  tilt[0] = 1; tilt[10] = cx; tilt[6] = sx; tilt[9] = -sx; tilt[5] = 1; tilt[15] = 1;
+  tilt[0] = 1;
+  tilt[10] = cx;
+  tilt[6] = sx;
+  tilt[9] = -sx;
+  tilt[5] = 1;
+  tilt[15] = 1;
   const viewFinal = multiplyMat4(tilt, vt);
 
   const mvp = multiplyMat4(proj, viewFinal);
 
   const rot = new Float32Array(9);
-  rot[0] = viewFinal[0]; rot[1] = viewFinal[1]; rot[2] = viewFinal[2];
-  rot[3] = viewFinal[4]; rot[4] = viewFinal[5]; rot[5] = viewFinal[6];
-  rot[6] = viewFinal[8]; rot[7] = viewFinal[9]; rot[8] = viewFinal[10];
+  rot[0] = viewFinal[0];
+  rot[1] = viewFinal[1];
+  rot[2] = viewFinal[2];
+  rot[3] = viewFinal[4];
+  rot[4] = viewFinal[5];
+  rot[5] = viewFinal[6];
+  rot[6] = viewFinal[8];
+  rot[7] = viewFinal[9];
+  rot[8] = viewFinal[10];
 
   return { mvp, normalMat: rot };
 }
@@ -143,37 +164,53 @@ export class WebGPURenderer {
 
   constructor(
     private device: GPUDevice,
-    format: GPUTextureFormat = "bgra8unorm"
+    format: GPUTextureFormat = 'bgra8unorm',
   ) {
     this.init(format);
   }
 
   private init(format: GPUTextureFormat): void {
-    const module = this.device.createShaderModule({ code: HUMAN_RENDER_WGSL, label: "human-render" });
+    const module = this.device.createShaderModule({
+      code: HUMAN_RENDER_WGSL,
+      label: 'human-render',
+    });
     this.bindGroupLayout = this.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } },
-        { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: "uniform" } },
-        { binding: 2, visibility: GPUShaderStage.FRAGMENT, buffer: { type: "uniform" } },
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform' },
+        },
+        { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } },
+        { binding: 2, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
       ],
     });
     this.pipeline = this.device.createRenderPipeline({
       layout: this.device.createPipelineLayout({ bindGroupLayouts: [this.bindGroupLayout] }),
       vertex: {
         module,
-        entryPoint: "vs_main",
+        entryPoint: 'vs_main',
         buffers: [
-          { arrayStride: 3 * 4, attributes: [{ shaderLocation: 0, offset: 0, format: "float32x3" }] },
-          { arrayStride: 3 * 4, attributes: [{ shaderLocation: 1, offset: 0, format: "float32x3" }] },
-          { arrayStride: 2 * 4, attributes: [{ shaderLocation: 2, offset: 0, format: "float32x2" }] },
+          {
+            arrayStride: 3 * 4,
+            attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }],
+          },
+          {
+            arrayStride: 3 * 4,
+            attributes: [{ shaderLocation: 1, offset: 0, format: 'float32x3' }],
+          },
+          {
+            arrayStride: 2 * 4,
+            attributes: [{ shaderLocation: 2, offset: 0, format: 'float32x2' }],
+          },
         ],
       },
       fragment: {
         module,
-        entryPoint: "fs_main",
+        entryPoint: 'fs_main',
         targets: [{ format }],
       },
-      primitive: { topology: "triangle-list", cullMode: "back" },
+      primitive: { topology: 'triangle-list', cullMode: 'back' },
     });
     this.cameraBuffer = this.device.createBuffer({
       size: 112, // mat4 (64) + mat3 (48)
@@ -193,7 +230,12 @@ export class WebGPURenderer {
       this.device.queue.writeBuffer(
         colorBuffer,
         0,
-        new Float32Array([p.color[0], p.color[1], p.color[2], p.opaque ? 1 : 1]) as unknown as ArrayBuffer
+        new Float32Array([
+          p.color[0],
+          p.color[1],
+          p.color[2],
+          p.opaque ? 1 : 1,
+        ]) as unknown as ArrayBuffer,
       );
       return this.device.createBindGroup({
         layout: this.bindGroupLayout,
@@ -230,12 +272,17 @@ export class WebGPURenderer {
     width: number,
     height: number,
     deformedBuffer: GPUBuffer,
-    normalsBuffer?: GPUBuffer
+    normalsBuffer?: GPUBuffer,
   ): void {
     this.uploadCamera(width, height);
     const pass = encoder.beginRenderPass({
       colorAttachments: [
-        { view, clearValue: { r: 0.07, g: 0.09, b: 0.12, a: 1 }, loadOp: "clear", storeOp: "store" },
+        {
+          view,
+          clearValue: { r: 0.07, g: 0.09, b: 0.12, a: 1 },
+          loadOp: 'clear',
+          storeOp: 'store',
+        },
       ],
     });
     pass.setPipeline(this.pipeline);
@@ -245,7 +292,7 @@ export class WebGPURenderer {
     for (let i = 0; i < this.parts.length; i++) {
       const p = this.parts[i];
       pass.setBindGroup(0, this.partBindGroups[i]);
-      pass.setIndexBuffer(p.indexBuffer, "uint32");
+      pass.setIndexBuffer(p.indexBuffer, 'uint32');
       pass.drawIndexed(p.indexCount);
     }
     pass.end();

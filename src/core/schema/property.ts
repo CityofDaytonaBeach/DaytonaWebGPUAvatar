@@ -23,29 +23,29 @@ export const enum PropertyCategory {
 }
 
 export const PROPERTY_CATEGORIES: Readonly<Record<number, string>> = {
-  [PropertyCategory.Global]: "Global",
-  [PropertyCategory.Identity]: "Identity",
-  [PropertyCategory.Skeleton]: "Skeleton",
-  [PropertyCategory.Body]: "Body",
-  [PropertyCategory.Face]: "Face",
-  [PropertyCategory.Skin]: "Skin",
-  [PropertyCategory.Eyes]: "Eyes",
-  [PropertyCategory.Hair]: "Hair",
-  [PropertyCategory.Expression]: "Expression",
-  [PropertyCategory.Animation]: "Animation",
-  [PropertyCategory.Physics]: "Physics",
-  [PropertyCategory.LOD]: "LOD",
-  [PropertyCategory.Attachment]: "Attachment",
+  [PropertyCategory.Global]: 'Global',
+  [PropertyCategory.Identity]: 'Identity',
+  [PropertyCategory.Skeleton]: 'Skeleton',
+  [PropertyCategory.Body]: 'Body',
+  [PropertyCategory.Face]: 'Face',
+  [PropertyCategory.Skin]: 'Skin',
+  [PropertyCategory.Eyes]: 'Eyes',
+  [PropertyCategory.Hair]: 'Hair',
+  [PropertyCategory.Expression]: 'Expression',
+  [PropertyCategory.Animation]: 'Animation',
+  [PropertyCategory.Physics]: 'Physics',
+  [PropertyCategory.LOD]: 'LOD',
+  [PropertyCategory.Attachment]: 'Attachment',
 };
 
-export type PropertyType = "f32" | "f64" | "u32" | "i32" | "bool";
+export type PropertyType = 'f32' | 'f64' | 'u32' | 'i32' | 'bool';
 
 export const enum PersistenceType {
-  Identity = "identity",
-  Anatomical = "anatomical",
-  Cosmetic = "cosmetic",
-  Performance = "performance",
-  Transient = "transient",
+  Identity = 'identity',
+  Anatomical = 'anatomical',
+  Cosmetic = 'cosmetic',
+  Performance = 'performance',
+  Transient = 'transient',
 }
 
 export const enum IdentityImportance {
@@ -77,5 +77,3 @@ export interface PropertyMeta {
   animationCapable?: boolean;
   automationCapable?: boolean;
 }
-
-

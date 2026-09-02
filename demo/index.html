@@ -5,59 +5,195 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Daytona WebGPU Avatar — Demonstration</title>
     <style>
-      :root { color-scheme: dark; }
-      * { box-sizing: border-box; }
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
       body {
-        margin: 0; font-family: system-ui, sans-serif; color: #d5d9e0;
-        background: #0c1016; display: flex; gap: 16px; padding: 16px; height: 100vh;
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        color: #d5d9e0;
+        background: #0c1016;
+        display: flex;
+        gap: 16px;
+        padding: 16px;
+        height: 100vh;
       }
-      #viewport { flex: 1; border: 1px solid #2a3440; border-radius: 8px; background: #0a0d12; }
+      #viewport {
+        flex: 1;
+        border: 1px solid #2a3440;
+        border-radius: 8px;
+        background: #0a0d12;
+      }
       #panel {
-        width: 340px; background: #12161d; border: 1px solid #2a3440; border-radius: 8px;
-        padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+        width: 340px;
+        background: #12161d;
+        border: 1px solid #2a3440;
+        border-radius: 8px;
+        padding: 14px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
       }
-      h1 { font-size: 15px; margin: 0; color: #8ab4ff; }
-      h2 { font-size: 12px; margin: 8px 0 4px; color: #9aa7b8; text-transform: uppercase; letter-spacing: .05em; }
-      .row { display: flex; align-items: center; gap: 8px; }
-      .row label { width: 130px; font-size: 12px; color: #b9c2cf; }
-      .row input[type=range] { flex: 1; }
-      .row .val { width: 44px; text-align: right; font-size: 12px; color: #8ab4ff; font-variant-numeric: tabular-nums; }
+      h1 {
+        font-size: 15px;
+        margin: 0;
+        color: #8ab4ff;
+      }
+      h2 {
+        font-size: 12px;
+        margin: 8px 0 4px;
+        color: #9aa7b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .row label {
+        width: 130px;
+        font-size: 12px;
+        color: #b9c2cf;
+      }
+      .row input[type='range'] {
+        flex: 1;
+      }
+      .row .val {
+        width: 44px;
+        text-align: right;
+        font-size: 12px;
+        color: #8ab4ff;
+        font-variant-numeric: tabular-nums;
+      }
       button {
-        background: #1a5fb4; color: #fff; border: 0; border-radius: 6px; padding: 8px 12px;
-        font-size: 13px; cursor: pointer; margin-top: 4px;
+        background: #1a5fb4;
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        margin-top: 4px;
       }
-      button:hover { background: #2a74d6; }
-      button.ghost { background: #1c2530; color: #c2cbd7; }
-      button.ghost:hover { background: #273342; }
-      .prompt-row { display: flex; gap: 6px; }
-      input[type=text] { flex: 1; background: #0a0e14; border: 1px solid #2a3440; color: #e3e8ee; border-radius: 6px; padding: 8px; font-size: 13px; }
-      #log { font-size: 11px; color: #7fd0a0; white-space: pre-wrap; line-height: 1.5; font-family: ui-monospace, monospace; }
-      .badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; }
-      .badge.ok { background: #143d2b; color: #7fd0a0; }
-      .badge.no { background: #4a2020; color: #f0a0a0; }
-      .muted { color: #78828f; font-size: 11px; }
+      button:hover {
+        background: #2a74d6;
+      }
+      button.ghost {
+        background: #1c2530;
+        color: #c2cbd7;
+      }
+      button.ghost:hover {
+        background: #273342;
+      }
+      .prompt-row {
+        display: flex;
+        gap: 6px;
+      }
+      input[type='text'] {
+        flex: 1;
+        background: #0a0e14;
+        border: 1px solid #2a3440;
+        color: #e3e8ee;
+        border-radius: 6px;
+        padding: 8px;
+        font-size: 13px;
+      }
+      #log {
+        font-size: 11px;
+        color: #7fd0a0;
+        white-space: pre-wrap;
+        line-height: 1.5;
+        font-family: ui-monospace, monospace;
+      }
+      .badge {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .badge.ok {
+        background: #143d2b;
+        color: #7fd0a0;
+      }
+      .badge.no {
+        background: #4a2020;
+        color: #f0a0a0;
+      }
+      .muted {
+        color: #78828f;
+        font-size: 11px;
+      }
     </style>
   </head>
   <body>
     <canvas id="viewport" width="720" height="900"></canvas>
     <div id="panel">
       <h1>Daytona WebGPU Avatar — v0.4 Rigging &amp; Skinning Proof-of-Concept</h1>
-      <div class="muted">The Character is NOT the Mesh. All UI/AI/automation flow through one event API; only affected GPU work recomputes.</div>
+      <div class="muted">
+        The Character is NOT the Mesh. All UI/AI/automation flow through one event API; only
+        affected GPU work recomputes.
+      </div>
 
       <h2>Direct modification</h2>
-      <div class="row"><label>Nose width</label><input id="nose" type="range" min="60" max="160" value="100"><span class="val" id="noseV">1.00</span></div>
-      <div class="row"><label>Jaw width</label><input id="jaw" type="range" min="80" max="135" value="100"><span class="val" id="jawV">1.00</span></div>
-      <div class="row"><label>Muscularity</label><input id="musc" type="range" min="0" max="100" value="48"><span class="val" id="muscV">0.48</span></div>
+      <div class="row">
+        <label>Nose width</label
+        ><input id="nose" type="range" min="60" max="160" value="100" /><span class="val" id="noseV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Jaw width</label><input id="jaw" type="range" min="80" max="135" value="100" /><span
+          class="val"
+          id="jawV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Muscularity</label><input id="musc" type="range" min="0" max="100" value="48" /><span
+          class="val"
+          id="muscV"
+          >0.48</span
+        >
+      </div>
 
       <h2>Body / parametric anatomy</h2>
-      <div class="row"><label>Height</label><input id="height" type="range" min="60" max="260" value="178"><span class="val" id="heightV">1.78</span></div>
-      <div class="row"><label>Waist</label><input id="waist" type="range" min="50" max="180" value="100"><span class="val" id="waistV">1.00</span></div>
-      <div class="row"><label>Shoulders</label><input id="shoulders" type="range" min="70" max="140" value="100"><span class="val" id="shoulderV">1.00</span></div>
-      <div class="muted">Sliders drive identity body morphs; joints + anatomy score track the resolved dimensions.</div>
+      <div class="row">
+        <label>Height</label><input id="height" type="range" min="60" max="260" value="178" /><span
+          class="val"
+          id="heightV"
+          >1.78</span
+        >
+      </div>
+      <div class="row">
+        <label>Waist</label><input id="waist" type="range" min="50" max="180" value="100" /><span
+          class="val"
+          id="waistV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Shoulders</label
+        ><input id="shoulders" type="range" min="70" max="140" value="100" /><span
+          class="val"
+          id="shoulderV"
+          >1.00</span
+        >
+      </div>
+      <div class="muted">
+        Sliders drive identity body morphs; joints + anatomy score track the resolved dimensions.
+      </div>
 
       <h2>Prompt control (deterministic interpreter)</h2>
       <div class="prompt-row">
-        <input id="prompt" type="text" placeholder="e.g. make her nose narrower / smile / slim down" />
+        <input
+          id="prompt"
+          type="text"
+          placeholder="e.g. make her nose narrower / smile / slim down"
+        />
         <button id="go">Run</button>
       </div>
       <button class="ghost" id="preset">Try "make the nose narrower"</button>
@@ -85,7 +221,10 @@
         <button class="ghost" id="raiseHand">Raise hand</button>
         <button class="ghost" id="lookCamera">Look camera</button>
       </div>
-      <div class="muted">Bone rotations replay through the skinning rig; vertices bound to the posed chain move on the GPU/CPU.</div>
+      <div class="muted">
+        Bone rotations replay through the skinning rig; vertices bound to the posed chain move on
+        the GPU/CPU.
+      </div>
 
       <h2>Profiler / dirty regions</h2>
       <div id="log">initializing…</div>

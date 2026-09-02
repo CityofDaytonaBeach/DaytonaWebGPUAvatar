@@ -1,4 +1,4 @@
-import { CanonicalHuman, RegionName } from "../../geometry/canonical/canonical-human";
+import { CanonicalHuman, RegionName } from '../../geometry/canonical/canonical-human';
 
 export interface FrameMetrics {
   frameTimeMs: number;
@@ -61,23 +61,20 @@ export class HumanProfiler {
   /** Convenience summary for console/debug overlays. */
   summarize(): string {
     const m = this.latest();
-    if (!m) return "no frames yet";
+    if (!m) return 'no frames yet';
     return [
       `cpu ${m.cpuTimeMs.toFixed(2)}ms`,
-      `gpu ${m.gpuTimeMs === null ? "n/a" : m.gpuTimeMs.toFixed(2) + "ms"}`,
+      `gpu ${m.gpuTimeMs === null ? 'n/a' : m.gpuTimeMs.toFixed(2) + 'ms'}`,
       `passes ${m.computePasses}`,
       `draws ${m.drawCalls}`,
       `morph ${m.morphDeltaProcessed}`,
-      `dirty [${m.dirtyRegions.join(",")}]`,
-    ].join(" · ");
+      `dirty [${m.dirtyRegions.join(',')}]`,
+    ].join(' · ');
   }
 }
 
 /** Reports how many vertices a set of dirty regions actually touches. */
-export function countDirtyVertices(
-  canonical: CanonicalHuman,
-  dirtyRegionNames: string[]
-): number {
+export function countDirtyVertices(canonical: CanonicalHuman, dirtyRegionNames: string[]): number {
   const touched = new Set<number>();
   for (const name of dirtyRegionNames) {
     for (const region of regionsForDirtyName(name)) {
@@ -92,13 +89,61 @@ export function countDirtyVertices(
 function regionsForDirtyName(name: string): RegionName[] {
   const normalized = name.toLowerCase();
   switch (normalized) {
-    case "face":
-      return ["face", "nose", "jaw", "eyes", "eye_sclera", "eye_iris", "mouth", "teeth", "tongue", "mouth_cavity"];
-    case "body":
-      return ["torso", "neck", "upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "hand_l", "hand_r", "thigh_l", "thigh_r", "shin_l", "shin_r"];
-    case "skeleton":
-    case "global":
-      return ["torso", "neck", "head", "face", "nose", "jaw", "eyes", "eye_sclera", "eye_iris", "mouth", "teeth", "tongue", "mouth_cavity", "upperarm_l", "upperarm_r", "forearm_l", "forearm_r", "hand_l", "hand_r", "thigh_l", "thigh_r", "shin_l", "shin_r"];
+    case 'face':
+      return [
+        'face',
+        'nose',
+        'jaw',
+        'eyes',
+        'eye_sclera',
+        'eye_iris',
+        'mouth',
+        'teeth',
+        'tongue',
+        'mouth_cavity',
+      ];
+    case 'body':
+      return [
+        'torso',
+        'neck',
+        'upperarm_l',
+        'upperarm_r',
+        'forearm_l',
+        'forearm_r',
+        'hand_l',
+        'hand_r',
+        'thigh_l',
+        'thigh_r',
+        'shin_l',
+        'shin_r',
+      ];
+    case 'skeleton':
+    case 'global':
+      return [
+        'torso',
+        'neck',
+        'head',
+        'face',
+        'nose',
+        'jaw',
+        'eyes',
+        'eye_sclera',
+        'eye_iris',
+        'mouth',
+        'teeth',
+        'tongue',
+        'mouth_cavity',
+        'upperarm_l',
+        'upperarm_r',
+        'forearm_l',
+        'forearm_r',
+        'hand_l',
+        'hand_r',
+        'thigh_l',
+        'thigh_r',
+        'shin_l',
+        'shin_r',
+      ];
     default:
       return [normalized as RegionName];
   }

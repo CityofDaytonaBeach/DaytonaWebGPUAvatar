@@ -1,8 +1,8 @@
-import { PropertyRegistry } from "../../core/schema/registry";
-import { PropertyMeta } from "../../core/schema/property";
-import { HumanDefinition } from "../../core/schema/human-definition";
+import { PropertyRegistry } from '../../core/schema/registry';
+import { PropertyMeta } from '../../core/schema/property';
+import { HumanDefinition } from '../../core/schema/human-definition';
 
-export type NodeExecutionType = "cpu" | "gpu";
+export type NodeExecutionType = 'cpu' | 'gpu';
 
 export class DependencyNode {
   readonly id: number;
@@ -13,7 +13,7 @@ export class DependencyNode {
   execution: NodeExecutionType;
   lodImportance: number;
 
-  constructor(meta: PropertyMeta, execution: NodeExecutionType = "gpu") {
+  constructor(meta: PropertyMeta, execution: NodeExecutionType = 'gpu') {
     this.id = meta.id;
     this.path = meta.path;
     this.meta = meta;

@@ -1,6 +1,6 @@
-import { KernelKind, KernelWork } from "../delta/delta-compiler";
+import { KernelKind, KernelWork } from '../delta/delta-compiler';
 
-export type GraphNodeType = "kernel" | "feedback" | "readback";
+export type GraphNodeType = 'kernel' | 'feedback' | 'readback';
 
 /**
  * Human Compute Graph. Represents the ordered GPU operations required to
@@ -12,11 +12,11 @@ export class ComputeGraph {
   private nodeSequence: GraphNode[] = [];
 
   private cachedPlan: GraphNode[] | null = null;
-  private cachedKey = "";
+  private cachedKey = '';
 
   /** Feed a set of kernel work items and produce an execution plan. */
   plan(work: KernelWork[]): GraphNode[] {
-    const key = work.map((w) => `${w.kind}:${w.propertyIds.join(",")}`).join("|");
+    const key = work.map((w) => `${w.kind}:${w.propertyIds.join(',')}`).join('|');
     if (this.cachedPlan && this.cachedKey === key) {
       return this.cachedPlan;
     }
@@ -25,7 +25,7 @@ export class ComputeGraph {
     const sorted = [...work].sort((a, b) => b.priority - a.priority);
     for (const w of sorted) {
       nodes.push({
-        type: "kernel",
+        type: 'kernel',
         kind: w.kind,
         propertyIds: [...w.propertyIds],
         vertexRanges: [...w.vertexRanges],

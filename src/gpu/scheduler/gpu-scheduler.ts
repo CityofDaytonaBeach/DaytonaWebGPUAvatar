@@ -1,9 +1,9 @@
-import { KernelKind } from "../../compiler/delta/delta-compiler";
-import { HumanProfiler } from "../profiler/profiler";
+import { KernelKind } from '../../compiler/delta/delta-compiler';
+import { HumanProfiler } from '../profiler/profiler';
 
 // ─── Existing types (kept for backwards compatibility) ────────────────────────
 
-export type ScheduleDecision = "execute" | "reduce" | "reuse" | "defer" | "skip";
+export type ScheduleDecision = 'execute' | 'reduce' | 'reuse' | 'defer' | 'skip';
 
 export interface ScheduleItem {
   kind: KernelKind;
@@ -17,7 +17,7 @@ export interface ScheduleItem {
 
 // ─── New production types ─────────────────────────────────────────────────────
 
-export type SchedulerProfile = "mobile" | "desktop" | "high-end";
+export type SchedulerProfile = 'mobile' | 'desktop' | 'high-end';
 
 export interface SchedulerConfig {
   /** Frame pacing target in frames per second. */
@@ -82,17 +82,32 @@ export interface SchedulerTimestampQueryState {
 // ─── Frame pacing presets ─────────────────────────────────────────────────────
 
 const FPS_PRESETS: Record<number, Partial<SchedulerConfig>> = {
-  20: { frameBudgetMs: 50, profile: "mobile" },
-  30: { frameBudgetMs: 33.33, profile: "mobile" },
-  60: { frameBudgetMs: 16.67, profile: "desktop" },
-  90: { frameBudgetMs: 11.11, profile: "desktop" },
-  120: { frameBudgetMs: 8.33, profile: "high-end" },
+  20: { frameBudgetMs: 50, profile: 'mobile' },
+  30: { frameBudgetMs: 33.33, profile: 'mobile' },
+  60: { frameBudgetMs: 16.67, profile: 'desktop' },
+  90: { frameBudgetMs: 11.11, profile: 'desktop' },
+  120: { frameBudgetMs: 8.33, profile: 'high-end' },
 };
 
 const PROFILE_PRESETS: Record<SchedulerProfile, Partial<SchedulerConfig>> = {
-  mobile: { frameBudgetMs: 33.33, targetFps: 30, qualityScaleFactor: 0.4, highPriorityThreshold: 9 },
-  desktop: { frameBudgetMs: 16.67, targetFps: 60, qualityScaleFactor: 0.5, highPriorityThreshold: 8 },
-  "high-end": { frameBudgetMs: 11.11, targetFps: 90, qualityScaleFactor: 0.6, highPriorityThreshold: 8 },
+  mobile: {
+    frameBudgetMs: 33.33,
+    targetFps: 30,
+    qualityScaleFactor: 0.4,
+    highPriorityThreshold: 9,
+  },
+  desktop: {
+    frameBudgetMs: 16.67,
+    targetFps: 60,
+    qualityScaleFactor: 0.5,
+    highPriorityThreshold: 8,
+  },
+  'high-end': {
+    frameBudgetMs: 11.11,
+    targetFps: 90,
+    qualityScaleFactor: 0.6,
+    highPriorityThreshold: 8,
+  },
 };
 
 const DEFAULT_SCHEDULER_CONFIG: SchedulerConfig = {
@@ -102,7 +117,7 @@ const DEFAULT_SCHEDULER_CONFIG: SchedulerConfig = {
   qualityScaleFactor: 0.5,
   highPriorityThreshold: 8,
   timestampQueryEnabled: false,
-  profile: "desktop",
+  profile: 'desktop',
 };
 
 // ─── Priority queue (min-heap by priority descending, higher = more urgent) ───
@@ -155,6 +170,7 @@ export class PriorityQueue<T> {
 
   private bubbleDown(index: number): void {
     const n = this.heap.length;
+    // eslint-disable-next-line no-constant-condition -- terminated by `break` below
     while (true) {
       let largest = index;
       const left = 2 * index + 1;
@@ -202,11 +218,20 @@ export class GpuScheduler {
     scheduleOverheadMs: number;
     gpuFrameMs: number | null;
   } = {
-    executed: 0, deferred: 0, skipped: 0, reduced: 0, reused: 0, scheduleOverheadMs: 0, gpuFrameMs: null,
+    executed: 0,
+    deferred: 0,
+    skipped: 0,
+    reduced: 0,
+    reused: 0,
+    scheduleOverheadMs: 0,
+    gpuFrameMs: null,
   };
   private totalScheduled = 0;
   private timestampQueryState: SchedulerTimestampQueryState = {
-    available: false, querySet: null, resolveBuffer: null, readBuffer: null,
+    available: false,
+    querySet: null,
+    resolveBuffer: null,
+    readBuffer: null,
   };
   private timestampDevice: GPUDevice | null = null;
   private priorityQueue = new PriorityQueue<ScheduleItem>();
@@ -214,8 +239,11 @@ export class GpuScheduler {
   constructor(profiler: HumanProfiler, config?: Partial<SchedulerConfig>);
   /** @deprecated Use the profiler-first overload instead. */
   constructor(frameBudgetMs: number, profiler: HumanProfiler);
-  constructor(frameBudgetMsOrProfiler: number | HumanProfiler, profilerOrConfig?: HumanProfiler | Partial<SchedulerConfig>) {
-    if (typeof frameBudgetMsOrProfiler === "number") {
+  constructor(
+    frameBudgetMsOrProfiler: number | HumanProfiler,
+    profilerOrConfig?: HumanProfiler | Partial<SchedulerConfig>,
+  ) {
+    if (typeof frameBudgetMsOrProfiler === 'number') {
       // Legacy overload: (frameBudgetMs, profiler)
       this.profiler = profilerOrConfig as HumanProfiler;
       this.config = { ...DEFAULT_SCHEDULER_CONFIG, frameBudgetMs: frameBudgetMsOrProfiler };
@@ -230,12 +258,12 @@ export class GpuScheduler {
 
   /** Enable timestamp-query GPU timing with the given device. Call once at init. */
   enableTimestampQuery(device: GPUDevice): boolean {
-    if (!device.features.has("timestamp-query")) {
+    if (!device.features.has('timestamp-query')) {
       this.config.timestampQueryEnabled = false;
       return false;
     }
     const probe = device.createCommandEncoder();
-    if (typeof (probe as { writeTimestamp?: unknown }).writeTimestamp !== "function") {
+    if (typeof (probe as { writeTimestamp?: unknown }).writeTimestamp !== 'function') {
       this.config.timestampQueryEnabled = false;
       return false;
     }
@@ -251,28 +279,45 @@ export class GpuScheduler {
     this.timestampQueryState.querySet?.destroy();
     this.timestampQueryState.resolveBuffer?.destroy();
     this.timestampQueryState.readBuffer?.destroy();
-    this.timestampQueryState = { available: false, querySet: null, resolveBuffer: null, readBuffer: null };
+    this.timestampQueryState = {
+      available: false,
+      querySet: null,
+      resolveBuffer: null,
+      readBuffer: null,
+    };
     this.timestampDevice = null;
   }
 
   private ensureTimestampBuffers(device: GPUDevice): void {
     if (this.timestampQueryState.querySet) return;
-    this.timestampQueryState.querySet = device.createQuerySet({ type: "timestamp", count: 2 });
-    this.timestampQueryState.resolveBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC });
-    this.timestampQueryState.readBuffer = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    this.timestampQueryState.querySet = device.createQuerySet({ type: 'timestamp', count: 2 });
+    this.timestampQueryState.resolveBuffer = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC,
+    });
+    this.timestampQueryState.readBuffer = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+    });
     this.timestampQueryState.available = true;
   }
 
   /** Record GPU timestamp pair around a render pass. Call at start of frame. */
   beginGpuTimestamp(encoder: GPUCommandEncoder): void {
     if (!this.config.timestampQueryEnabled || !this.timestampQueryState.querySet) return;
-    (encoder as { writeTimestamp?: (qs: GPUQuerySet, i: number) => void }).writeTimestamp?.(this.timestampQueryState.querySet, 0);
+    (encoder as { writeTimestamp?: (qs: GPUQuerySet, i: number) => void }).writeTimestamp?.(
+      this.timestampQueryState.querySet,
+      0,
+    );
   }
 
   /** End GPU timestamp pair. Call after render pass. */
   endGpuTimestamp(encoder: GPUCommandEncoder): void {
     if (!this.config.timestampQueryEnabled || !this.timestampQueryState.querySet) return;
-    (encoder as { writeTimestamp?: (qs: GPUQuerySet, i: number) => void }).writeTimestamp?.(this.timestampQueryState.querySet, 1);
+    (encoder as { writeTimestamp?: (qs: GPUQuerySet, i: number) => void }).writeTimestamp?.(
+      this.timestampQueryState.querySet,
+      1,
+    );
     const qs = this.timestampQueryState.querySet;
     const resolve = this.timestampQueryState.resolveBuffer!;
     encoder.resolveQuerySet(qs, 0, 2, resolve, 0);
@@ -298,19 +343,21 @@ export class GpuScheduler {
 
   /** Make a decision for one schedule item each frame. */
   decide(item: ScheduleItem): ScheduleDecision {
-    if (!item.visible) return "skip";
-    if (!item.dirty) return "reuse";
+    if (!item.visible) return 'skip';
+    if (!item.dirty) return 'reuse';
 
     const available = this.frameBudgetMs - this.profiler.averageCpuMs;
-    if (available < 0) return "defer";
-    if (item.estimatedCostMs <= available) return "execute";
-    if (item.priority >= this.config.highPriorityThreshold) return "execute";
-    if (item.quality > 0.5) return "reduce";
-    return "defer";
+    if (available < 0) return 'defer';
+    if (item.estimatedCostMs <= available) return 'execute';
+    if (item.priority >= this.config.highPriorityThreshold) return 'execute';
+    if (item.quality > 0.5) return 'reduce';
+    return 'defer';
   }
 
   /** Schedule a batch of items using the priority queue. Returns decisions in priority order. */
-  scheduleBatch(items: readonly ScheduleItem[]): Array<{ item: ScheduleItem; decision: ScheduleDecision }> {
+  scheduleBatch(
+    items: readonly ScheduleItem[],
+  ): Array<{ item: ScheduleItem; decision: ScheduleDecision }> {
     const scheduleStart = nowMs();
     this.priorityQueue.clear();
     for (const item of items) {
@@ -331,11 +378,21 @@ export class GpuScheduler {
       this.totalScheduled++;
 
       switch (decision) {
-        case "execute": executed++; break;
-        case "defer": deferred++; break;
-        case "skip": skipped++; break;
-        case "reduce": reduced++; break;
-        case "reuse": reused++; break;
+        case 'execute':
+          executed++;
+          break;
+        case 'defer':
+          deferred++;
+          break;
+        case 'skip':
+          skipped++;
+          break;
+        case 'reduce':
+          reduced++;
+          break;
+        case 'reuse':
+          reused++;
+          break;
       }
 
       item = this.priorityQueue.pop();
@@ -406,7 +463,7 @@ export class GpuScheduler {
   // ─── History & stats ─────────────────────────────────────────────────────
 
   private recordHistory(measuredMs: number): void {
-    this.budgetHistory.push(this.frameBudgetMs);
+    this.budgetHistory.push(measuredMs);
     this.cpuBudgetHistory.push(this.profiler.averageCpuMs);
     this.gpuBudgetHistory.push(this.lastFrameStats.gpuFrameMs);
     this.frameIndex++;
@@ -466,6 +523,7 @@ export class GpuScheduler {
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 function nowMs(): number {
-  if (typeof performance !== "undefined" && typeof performance.now === "function") return performance.now();
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function')
+    return performance.now();
   return Date.now();
 }

@@ -1,5 +1,5 @@
-import { HumanSdfField } from "../sdf/human-sdf";
-import { Vec3, vec3 } from "../../core/math/vec";
+import { HumanSdfField } from '../sdf/human-sdf';
+import { Vec3, vec3 } from '../../core/math/vec';
 
 export interface ClothParticle {
   position: Vec3;
@@ -34,7 +34,7 @@ export interface ClothWindConfig {
 }
 
 export interface CollisionPrimitive {
-  kind: "sphere" | "capsule";
+  kind: 'sphere' | 'capsule';
   center: Vec3;
   end?: Vec3;
   radius: number;
@@ -99,7 +99,11 @@ export function createTorsoCloth(width = 8, height = 10): ClothMesh {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const p = vec3(x0 + x * dx, y0 - y * dy, z);
-      particles.push({ position: p, previous: { ...p }, pinned: y === 0 && (x === 0 || x === width - 1) });
+      particles.push({
+        position: p,
+        previous: { ...p },
+        pinned: y === 0 && (x === 0 || x === width - 1),
+      });
     }
   }
 
@@ -117,7 +121,11 @@ export function createTorsoCloth(width = 8, height = 10): ClothMesh {
   return { width, height, particles, constraints };
 }
 
-export function stepCloth(mesh: ClothMesh, sdf: HumanSdfField, options: ClothStepOptions = {}): ClothMesh {
+export function stepCloth(
+  mesh: ClothMesh,
+  sdf: HumanSdfField,
+  options: ClothStepOptions = {},
+): ClothMesh {
   const config: ClothSimConfig = {
     ...DEFAULT_CONFIG,
     ...options,
@@ -127,8 +135,23 @@ export function stepCloth(mesh: ClothMesh, sdf: HumanSdfField, options: ClothSte
   return stepClothAdvanced(mesh, sdf, config);
 }
 
-export function stepClothAdvanced(mesh: ClothMesh, sdf: HumanSdfField, config: ClothSimConfig): ClothMesh {
-  const { dt, gravity, iterations, collisionPadding, damping, stiffness, tearThreshold, selfCollisionRadius, wind, collisionPrimitives } = config;
+export function stepClothAdvanced(
+  mesh: ClothMesh,
+  sdf: HumanSdfField,
+  config: ClothSimConfig,
+): ClothMesh {
+  const {
+    dt,
+    gravity,
+    iterations,
+    collisionPadding,
+    damping,
+    stiffness,
+    tearThreshold,
+    selfCollisionRadius,
+    wind,
+    collisionPrimitives,
+  } = config;
   const next = cloneCloth(mesh);
   const wDir = length(wind.direction) > 0 ? normalize(wind.direction) : vec3();
 
@@ -155,7 +178,7 @@ export function stepClothAdvanced(mesh: ClothMesh, sdf: HumanSdfField, config: C
     p.position = vec3(
       p.position.x + vx + fx * dt * dt,
       p.position.y + vy + fy * dt * dt,
-      p.position.z + vz + fz * dt * dt
+      p.position.z + vz + fz * dt * dt,
     );
     p.previous = pos;
   }
@@ -176,13 +199,23 @@ export function stepClothAdvanced(mesh: ClothMesh, sdf: HumanSdfField, config: C
   return next;
 }
 
-export function simulateCloth(mesh: ClothMesh, sdf: HumanSdfField, steps: number, options: ClothStepOptions = {}): ClothMesh {
+export function simulateCloth(
+  mesh: ClothMesh,
+  sdf: HumanSdfField,
+  steps: number,
+  options: ClothStepOptions = {},
+): ClothMesh {
   let current = mesh;
   for (let i = 0; i < steps; i++) current = stepCloth(current, sdf, options);
   return current;
 }
 
-export function simulateClothAdvanced(mesh: ClothMesh, sdf: HumanSdfField, steps: number, config: ClothSimConfig): ClothMesh {
+export function simulateClothAdvanced(
+  mesh: ClothMesh,
+  sdf: HumanSdfField,
+  steps: number,
+  config: ClothSimConfig,
+): ClothMesh {
   let current = mesh;
   for (let i = 0; i < steps; i++) current = stepClothAdvanced(current, sdf, config);
   return current;
@@ -192,7 +225,11 @@ export function cloneCloth(mesh: ClothMesh): ClothMesh {
   return {
     width: mesh.width,
     height: mesh.height,
-    particles: mesh.particles.map((p) => ({ position: { ...p.position }, previous: { ...p.previous }, pinned: p.pinned })),
+    particles: mesh.particles.map((p) => ({
+      position: { ...p.position },
+      previous: { ...p.previous },
+      pinned: p.pinned,
+    })),
     constraints: mesh.constraints.map((c) => ({ ...c })),
   };
 }
@@ -260,7 +297,15 @@ export function meshToGPULayout(mesh: ClothMesh): {
     restLengths[i] = mesh.constraints[i].restLength;
   }
 
-  return { positions, previous, constraintIndices, restLengths, pinnedMask, count: n, constraintCount: m };
+  return {
+    positions,
+    previous,
+    constraintIndices,
+    restLengths,
+    pinnedMask,
+    count: n,
+    constraintCount: m,
+  };
 }
 
 export function meshFromGPULayout(layout: {
@@ -275,8 +320,16 @@ export function meshFromGPULayout(layout: {
   const particles: ClothParticle[] = [];
   for (let i = 0; i < layout.count; i++) {
     particles.push({
-      position: vec3(layout.positions[i * 3], layout.positions[i * 3 + 1], layout.positions[i * 3 + 2]),
-      previous: vec3(layout.previous[i * 3], layout.previous[i * 3 + 1], layout.previous[i * 3 + 2]),
+      position: vec3(
+        layout.positions[i * 3],
+        layout.positions[i * 3 + 1],
+        layout.positions[i * 3 + 2],
+      ),
+      previous: vec3(
+        layout.previous[i * 3],
+        layout.previous[i * 3 + 1],
+        layout.previous[i * 3 + 2],
+      ),
       pinned: layout.pinnedMask[i] === 1,
     });
   }
@@ -291,7 +344,12 @@ export function meshFromGPULayout(layout: {
   return { width: 0, height: 0, particles, constraints };
 }
 
-function satisfyConstraints(mesh: ClothMesh, stiffness: number, tearThreshold: number, live: Uint8Array): void {
+function satisfyConstraints(
+  mesh: ClothMesh,
+  stiffness: number,
+  tearThreshold: number,
+  live: Uint8Array,
+): void {
   for (let ci = 0; ci < mesh.constraints.length; ci++) {
     if (!live[ci]) continue;
     const c = mesh.constraints[ci];
@@ -305,7 +363,7 @@ function satisfyConstraints(mesh: ClothMesh, stiffness: number, tearThreshold: n
       continue;
     }
 
-    const correction = scale(delta, (len - c.restLength) / len * 0.5 * stiffness);
+    const correction = scale(delta, ((len - c.restLength) / len) * 0.5 * stiffness);
     if (!a.pinned) a.position = add(a.position, correction);
     if (!b.pinned) b.position = sub(b.position, correction);
   }
@@ -326,11 +384,15 @@ function collideSdf(mesh: ClothMesh, sdf: HumanSdfField, padding: number): void 
   }
 }
 
-function collidePrimitives(mesh: ClothMesh, primitives: CollisionPrimitive[], padding: number): void {
+function collidePrimitives(
+  mesh: ClothMesh,
+  primitives: CollisionPrimitive[],
+  padding: number,
+): void {
   for (const p of mesh.particles) {
     if (p.pinned) continue;
     for (const prim of primitives) {
-      if (prim.kind === "sphere") {
+      if (prim.kind === 'sphere') {
         sphereCollide(p, prim, padding);
       } else {
         capsuleCollide(p, prim, padding);
@@ -384,10 +446,18 @@ function avoidSelfCollision(mesh: ClothMesh, radius: number): void {
       const ny = dy / dist;
       const nz = dz / dist;
       if (!pi.pinned) {
-        pi.position = vec3(pi.position.x + nx * push, pi.position.y + ny * push, pi.position.z + nz * push);
+        pi.position = vec3(
+          pi.position.x + nx * push,
+          pi.position.y + ny * push,
+          pi.position.z + nz * push,
+        );
       }
       if (!pj.pinned) {
-        pj.position = vec3(pj.position.x - nx * push, pj.position.y - ny * push, pj.position.z - nz * push);
+        pj.position = vec3(
+          pj.position.x - nx * push,
+          pj.position.y - ny * push,
+          pj.position.z - nz * push,
+        );
       }
     }
   }

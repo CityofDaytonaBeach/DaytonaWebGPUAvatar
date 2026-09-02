@@ -1,5 +1,5 @@
-import { SKIN_COMPUTE_WGSL } from "../../render/wgsl/skin-wgsl";
-import { SkinInfluences } from "./skin-mesh";
+import { SKIN_COMPUTE_WGSL } from '../../render/wgsl/skin-wgsl';
+import { SkinInfluences } from './skin-mesh';
 
 /**
  * Dispatches the GPU skinning compute pass. Reads GPU-resident positions (the
@@ -31,7 +31,7 @@ export class SkinningKernel {
     influences: SkinInfluences,
     boneMatrices: Float32Array,
     numBones: number,
-    inputNormals: GPUBuffer
+    inputNormals: GPUBuffer,
   ) {
     this.device = device;
     this.vertexCount = vertexCount;
@@ -45,7 +45,7 @@ export class SkinningKernel {
     this.outNormalBuffer = makeStorage(device, vertexCount * 12);
 
     this.pipeline = device.createComputePipeline({
-      layout: "auto",
+      layout: 'auto',
       compute: { module: device.createShaderModule({ code: SKIN_COMPUTE_WGSL }) },
     });
 
@@ -94,7 +94,11 @@ export class SkinningKernel {
   }
 }
 
-function makeStorage(device: GPUDevice, size: number, data?: ArrayBufferView | ArrayBuffer): GPUBuffer {
+function makeStorage(
+  device: GPUDevice,
+  size: number,
+  data?: ArrayBufferView | ArrayBuffer,
+): GPUBuffer {
   const usage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC;
   const buf = device.createBuffer({ size, usage });
   if (data) device.queue.writeBuffer(buf, 0, data as GPUAllowSharedBufferSource);

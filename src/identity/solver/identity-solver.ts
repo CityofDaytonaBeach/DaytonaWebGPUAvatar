@@ -1,7 +1,7 @@
-import { IdentityImportance, PropertyCategory, PropertyMeta } from "../../core/schema/property";
-import { PropertyRegistry } from "../../core/schema/registry";
-import { HumanDefinition } from "../../core/schema/human-definition";
-import { CharacterEvent } from "../../core/events/character-event";
+import { IdentityImportance } from '../../core/schema/property';
+import { PropertyRegistry } from '../../core/schema/registry';
+import { HumanDefinition } from '../../core/schema/human-definition';
+import { CharacterEvent } from '../../core/events/character-event';
 
 export interface IdentityBudget {
   /**
@@ -49,23 +49,23 @@ export class IdentitySolver {
    * Identity-critical structure that is NOT explicitly targeted is only
    * modified when the operation carries a full identity budget (amount >= 1).
    */
-  gate(event: CharacterEvent, current: HumanDefinition, budget: IdentityBudget = { amount: 0 }): IdentityChangeGate {
+  gate(
+    event: CharacterEvent,
+    current: HumanDefinition,
+    budget: IdentityBudget = { amount: 0 },
+  ): IdentityChangeGate {
     // Only structural 'set'/'adjust' events touch identity.
-    if (event.type !== "set" && event.type !== "adjust") {
-      return { allowed: true, reason: "non-structural event" };
+    if (event.type !== 'set' && event.type !== 'adjust') {
+      return { allowed: true, reason: 'non-structural event' };
     }
 
-    const paths = event.changes
-      ? Object.keys(event.changes)
-      : event.path
-        ? [event.path]
-        : [];
+    const paths = event.changes ? Object.keys(event.changes) : event.path ? [event.path] : [];
 
     const explicitTarget = new Set<string>(budget.allowedDimensions ?? []);
     // The paths being changed are inherently explicitly targeted.
     for (const p of paths) explicitTarget.add(p);
 
-    const clampedChanges: IdentityChangeGate["clampedChanges"] = {};
+    const clampedChanges: IdentityChangeGate['clampedChanges'] = {};
 
     for (const path of paths) {
       const meta = this.registry.require(path);
@@ -88,6 +88,6 @@ export class IdentitySolver {
       }
     }
 
-    return { allowed: true, reason: "identity-safe change" };
+    return { allowed: true, reason: 'identity-safe change' };
   }
 }

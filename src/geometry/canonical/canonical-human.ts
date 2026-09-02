@@ -1,38 +1,32 @@
-import { Vec3 } from "../../core/math/vec";
+import { Vec3 } from '../../core/math/vec';
 
 export type RegionName =
-  | "head"
-  | "face"
-  | "nose"
-  | "jaw"
-  | "eyes"
-  | "eye_sclera"
-  | "eye_iris"
-  | "mouth"
-  | "teeth"
-  | "tongue"
-  | "mouth_cavity"
-  | "neck"
-  | "torso"
-  | "upperarm_l"
-  | "upperarm_r"
-  | "forearm_l"
-  | "forearm_r"
-  | "hand_l"
-  | "hand_r"
-  | "thigh_l"
-  | "thigh_r"
-  | "shin_l"
-  | "shin_r";
+  | 'head'
+  | 'face'
+  | 'nose'
+  | 'jaw'
+  | 'eyes'
+  | 'eye_sclera'
+  | 'eye_iris'
+  | 'mouth'
+  | 'teeth'
+  | 'tongue'
+  | 'mouth_cavity'
+  | 'neck'
+  | 'torso'
+  | 'upperarm_l'
+  | 'upperarm_r'
+  | 'forearm_l'
+  | 'forearm_r'
+  | 'hand_l'
+  | 'hand_r'
+  | 'thigh_l'
+  | 'thigh_r'
+  | 'shin_l'
+  | 'shin_r';
 
 /** Semantic part kind, used by the renderer to pick a shading path. */
-export type PartKind =
-  | "skin"
-  | "sclera"
-  | "iris"
-  | "teeth"
-  | "tongue"
-  | "mouth_cavity";
+export type PartKind = 'skin' | 'sclera' | 'iris' | 'teeth' | 'tongue' | 'mouth_cavity';
 
 export interface PartGeometry {
   /** Stable part name, e.g. "eye_l", "teeth_upper", "tongue". */
@@ -100,7 +94,7 @@ export class CanonicalHuman {
 
   constructor(boneNames: string[]) {
     boneNames.forEach((b, i) => this.boneIndex.set(b, i));
-    const headBone = "head";
+    const headBone = 'head';
 
     const body = generateBlockHuman(boneNames);
     const vertices: Vertex[] = [...body.vertices];
@@ -205,32 +199,89 @@ export class CanonicalHuman {
  * Procedural block human: a simple humanoid built from boxes/slabs. This is the
  * body; detail parts (eyes/teeth/tongue/cavity) are appended by CanonicalHuman.
  */
-export function generateBlockHuman(boneNames: string[]): { vertices: Vertex[]; indices: Uint32Array } {
+export function generateBlockHuman(boneNames: string[]): {
+  vertices: Vertex[];
+  indices: Uint32Array;
+} {
   const vertices: Vertex[] = [];
   const indices: number[] = [];
   const boneId = new Map<string, number>();
   boneNames.forEach((b, i) => boneId.set(b, i));
 
-  const parts: Array<{ cx: number; cy: number; cz: number; sx: number; sy: number; sz: number; region: RegionName; bones: string[] }> = [
-    { cx: 0, cy: 1.5, cz: 0, sx: 0.34, sy: 0.55, sz: 0.22, region: "torso", bones: ["spine_01", "spine_02", "chest"] },
-    { cx: 0, cy: 1.85, cz: 0, sx: 0.28, sy: 0.22, sz: 0.26, region: "head", bones: ["head"] },
-    { cx: 0, cy: 1.85, cz: 0.16, sx: 0.24, sy: 0.16, sz: 0.12, region: "face", bones: ["head"] },
-    { cx: 0, cy: 1.86, cz: 0.23, sx: 0.05, sy: 0.08, sz: 0.04, region: "nose", bones: ["head"] },
-    { cx: 0, cy: 1.79, cz: 0.17, sx: 0.2, sy: 0.07, sz: 0.06, region: "jaw", bones: ["head"] },
-    { cx: -0.06, cy: 1.9, cz: 0.19, sx: 0.03, sy: 0.03, sz: 0.02, region: "eyes", bones: ["head"] },
-    { cx: 0.06, cy: 1.9, cz: 0.19, sx: 0.03, sy: 0.03, sz: 0.02, region: "eyes", bones: ["head"] },
-    { cx: 0, cy: 1.79, cz: 0.22, sx: 0.06, sy: 0.02, sz: 0.03, region: "mouth", bones: ["head"] },
-    { cx: 0, cy: 1.85, cz: -0.26, sx: 0.18, sy: 0.12, sz: 0.06, region: "neck", bones: ["neck"] },
-    { cx: -0.42, cy: 1.9, cz: 0, sx: 0.14, sy: 0.06, sz: 0.14, region: "upperarm_l", bones: ["upperarm_l"] },
-    { cx: 0.42, cy: 1.9, cz: 0, sx: 0.14, sy: 0.06, sz: 0.14, region: "upperarm_r", bones: ["upperarm_r"] },
-    { cx: -0.72, cy: 1.72, cz: 0, sx: 0.12, sy: 0.3, sz: 0.12, region: "forearm_l", bones: ["forearm_l"] },
-    { cx: 0.72, cy: 1.72, cz: 0, sx: 0.12, sy: 0.3, sz: 0.12, region: "forearm_r", bones: ["forearm_r"] },
-    { cx: -0.84, cy: 1.58, cz: 0, sx: 0.1, sy: 0.1, sz: 0.1, region: "hand_l", bones: ["hand_l"] },
-    { cx: 0.84, cy: 1.58, cz: 0, sx: 0.1, sy: 0.1, sz: 0.1, region: "hand_r", bones: ["hand_r"] },
-    { cx: 0, cy: 1.25, cz: 0, sx: 0.16, sy: 0.28, sz: 0.2, region: "thigh_l", bones: ["thigh_l"] },
-    { cx: 0, cy: 1.25, cz: 0, sx: -0.16, sy: 0.28, sz: 0.2, region: "thigh_r", bones: ["thigh_r"] },
-    { cx: 0, cy: 0.85, cz: 0, sx: 0.14, sy: 0.3, sz: 0.16, region: "shin_l", bones: ["shin_l"] },
-    { cx: 0, cy: 0.85, cz: 0, sx: -0.14, sy: 0.3, sz: 0.16, region: "shin_r", bones: ["shin_r"] },
+  const parts: Array<{
+    cx: number;
+    cy: number;
+    cz: number;
+    sx: number;
+    sy: number;
+    sz: number;
+    region: RegionName;
+    bones: string[];
+  }> = [
+    {
+      cx: 0,
+      cy: 1.5,
+      cz: 0,
+      sx: 0.34,
+      sy: 0.55,
+      sz: 0.22,
+      region: 'torso',
+      bones: ['spine_01', 'spine_02', 'chest'],
+    },
+    { cx: 0, cy: 1.85, cz: 0, sx: 0.28, sy: 0.22, sz: 0.26, region: 'head', bones: ['head'] },
+    { cx: 0, cy: 1.85, cz: 0.16, sx: 0.24, sy: 0.16, sz: 0.12, region: 'face', bones: ['head'] },
+    { cx: 0, cy: 1.86, cz: 0.23, sx: 0.05, sy: 0.08, sz: 0.04, region: 'nose', bones: ['head'] },
+    { cx: 0, cy: 1.79, cz: 0.17, sx: 0.2, sy: 0.07, sz: 0.06, region: 'jaw', bones: ['head'] },
+    { cx: -0.06, cy: 1.9, cz: 0.19, sx: 0.03, sy: 0.03, sz: 0.02, region: 'eyes', bones: ['head'] },
+    { cx: 0.06, cy: 1.9, cz: 0.19, sx: 0.03, sy: 0.03, sz: 0.02, region: 'eyes', bones: ['head'] },
+    { cx: 0, cy: 1.79, cz: 0.22, sx: 0.06, sy: 0.02, sz: 0.03, region: 'mouth', bones: ['head'] },
+    { cx: 0, cy: 1.85, cz: -0.26, sx: 0.18, sy: 0.12, sz: 0.06, region: 'neck', bones: ['neck'] },
+    {
+      cx: -0.42,
+      cy: 1.9,
+      cz: 0,
+      sx: 0.14,
+      sy: 0.06,
+      sz: 0.14,
+      region: 'upperarm_l',
+      bones: ['upperarm_l'],
+    },
+    {
+      cx: 0.42,
+      cy: 1.9,
+      cz: 0,
+      sx: 0.14,
+      sy: 0.06,
+      sz: 0.14,
+      region: 'upperarm_r',
+      bones: ['upperarm_r'],
+    },
+    {
+      cx: -0.72,
+      cy: 1.72,
+      cz: 0,
+      sx: 0.12,
+      sy: 0.3,
+      sz: 0.12,
+      region: 'forearm_l',
+      bones: ['forearm_l'],
+    },
+    {
+      cx: 0.72,
+      cy: 1.72,
+      cz: 0,
+      sx: 0.12,
+      sy: 0.3,
+      sz: 0.12,
+      region: 'forearm_r',
+      bones: ['forearm_r'],
+    },
+    { cx: -0.84, cy: 1.58, cz: 0, sx: 0.1, sy: 0.1, sz: 0.1, region: 'hand_l', bones: ['hand_l'] },
+    { cx: 0.84, cy: 1.58, cz: 0, sx: 0.1, sy: 0.1, sz: 0.1, region: 'hand_r', bones: ['hand_r'] },
+    { cx: 0, cy: 1.25, cz: 0, sx: 0.16, sy: 0.28, sz: 0.2, region: 'thigh_l', bones: ['thigh_l'] },
+    { cx: 0, cy: 1.25, cz: 0, sx: -0.16, sy: 0.28, sz: 0.2, region: 'thigh_r', bones: ['thigh_r'] },
+    { cx: 0, cy: 0.85, cz: 0, sx: 0.14, sy: 0.3, sz: 0.16, region: 'shin_l', bones: ['shin_l'] },
+    { cx: 0, cy: 0.85, cz: 0, sx: -0.14, sy: 0.3, sz: 0.16, region: 'shin_r', bones: ['shin_r'] },
   ];
 
   parts[10].cx = -0.09;
@@ -293,19 +344,37 @@ function buildDetailParts(): DetailPart[] {
     const iris = disc(side, cx, ey, ez + 0.008, 0.017, 0);
     const pupil = disc(side, cx, ey, ez + 0.012, 0.008, 0);
 
-    parts.push(shade("sclera", { name: side < 0 ? "eye_l" : "eye_r", kind: "sclera", region: "eye_sclera" }, sclera));
-    parts.push(shade("iris", { name: side < 0 ? "iris_l" : "iris_r", kind: "iris", region: "eye_iris" }, iris));
-    parts.push(shade("pupil", { name: side < 0 ? "pupil_l" : "pupil_r", kind: "iris", region: "eye_iris" }, pupil));
+    parts.push(
+      shade(
+        'sclera',
+        { name: side < 0 ? 'eye_l' : 'eye_r', kind: 'sclera', region: 'eye_sclera' },
+        sclera,
+      ),
+    );
+    parts.push(
+      shade(
+        'iris',
+        { name: side < 0 ? 'iris_l' : 'iris_r', kind: 'iris', region: 'eye_iris' },
+        iris,
+      ),
+    );
+    parts.push(
+      shade(
+        'pupil',
+        { name: side < 0 ? 'pupil_l' : 'pupil_r', kind: 'iris', region: 'eye_iris' },
+        pupil,
+      ),
+    );
   }
 
   // Teeth: two small rows inside the mouth.
   parts.push(
-    boxPart("teeth_upper", "teeth", "teeth", 0, 1.805, 0.2, 0.05, 0.02, 0.02),
-    boxPart("teeth_lower", "teeth", "teeth", 0, 1.775, 0.2, 0.05, 0.02, 0.02)
+    boxPart('teeth_upper', 'teeth', 'teeth', 0, 1.805, 0.2, 0.05, 0.02, 0.02),
+    boxPart('teeth_lower', 'teeth', 'teeth', 0, 1.775, 0.2, 0.05, 0.02, 0.02),
   );
 
   // Tongue: a slim slab slightly below the upper teeth.
-  parts.push(boxPart("tongue", "tongue", "tongue", 0, 1.785, 0.185, 0.035, 0.012, 0.03));
+  parts.push(boxPart('tongue', 'tongue', 'tongue', 0, 1.785, 0.185, 0.035, 0.012, 0.03));
 
   // Mouth cavity: a small dark hemisphere behind the teeth row.
   parts.push(cavityPart());
@@ -313,7 +382,11 @@ function buildDetailParts(): DetailPart[] {
   return parts;
 }
 
-function shade(what: string, base: { name: string; kind: PartKind; region: RegionName }, g: { positions: Vec3[]; normals: Vec3[]; uvs: number[][]; indices: number[] }): DetailPart {
+function shade(
+  what: string,
+  base: { name: string; kind: PartKind; region: RegionName },
+  g: { positions: Vec3[]; normals: Vec3[]; uvs: number[][]; indices: number[] },
+): DetailPart {
   void what;
   const verts: DetailVertex[] = g.positions.map((p, i) => ({
     localIndex: i,
@@ -333,18 +406,18 @@ function boxPart(
   cz: number,
   sx: number,
   sy: number,
-  sz: number
+  sz: number,
 ): DetailPart {
   void _what;
   const g = boxVertices(cx, cy, cz, sx, sy, sz);
-  const kind: PartKind = region === "tongue" ? "tongue" : "teeth";
+  const kind: PartKind = region === 'tongue' ? 'tongue' : 'teeth';
   return shade(region, { name, kind, region }, g);
 }
 
 function cavityPart(): DetailPart {
   // Half-sphere facing +z (dark) used as an interior mouth cavity.
   const g = sphere(0, 1.79, 0.185, 0.04, 8, 5);
-  return shade("cavity", { name: "mouth_cavity", kind: "mouth_cavity", region: "mouth_cavity" }, g);
+  return shade('cavity', { name: 'mouth_cavity', kind: 'mouth_cavity', region: 'mouth_cavity' }, g);
 }
 
 /** UV-sphere centered at (cx,cy,cz) with given radius. */
@@ -390,24 +463,73 @@ function disc(side: number, cx: number, cy: number, cz: number, r: number, _slic
     positions.push({ x: cx + Math.cos(theta) * r, y: cy + Math.sin(theta) * r, z: cz });
     normals.push({ x: 0, y: 0, z: 1 });
     uvs.push([0.5 + Math.cos(theta) * 0.5, 0.5 + Math.sin(theta) * 0.5]);
-      if (j > 0) indices.push(0, j, j + 1);
+    if (j > 0) indices.push(0, j, j + 1);
   }
   return { positions, normals, uvs, indices };
 }
 
-function boxVertices(cx: number, cy: number, cz: number, sx: number, sy: number, sz: number): { positions: Vec3[]; normals: Vec3[]; uvs: number[][]; indices: number[] } {
+function boxVertices(
+  cx: number,
+  cy: number,
+  cz: number,
+  sx: number,
+  sy: number,
+  sz: number,
+): { positions: Vec3[]; normals: Vec3[]; uvs: number[][]; indices: number[] } {
   const positions: Vec3[] = [];
   const normals: Vec3[] = [];
   const uvs: number[][] = [];
   const indices: number[] = [];
 
   const faces: Array<{ n: Vec3; u: Vec3; v: Vec3; c: Vec3; du: number; dv: number }> = [
-    { n: { x: 0, y: 0, z: 1 }, u: { x: 1, y: 0, z: 0 }, v: { x: 0, y: 1, z: 0 }, c: { x: cx, y: cy, z: cz + sz / 2 }, du: sx, dv: sy },
-    { n: { x: 0, y: 0, z: -1 }, u: { x: -1, y: 0, z: 0 }, v: { x: 0, y: 1, z: 0 }, c: { x: cx, y: cy, z: cz - sz / 2 }, du: sx, dv: sy },
-    { n: { x: 1, y: 0, z: 0 }, u: { x: 0, y: 0, z: 1 }, v: { x: 0, y: 1, z: 0 }, c: { x: cx + sx / 2, y: cy, z: cz }, du: sz, dv: sy },
-    { n: { x: -1, y: 0, z: 0 }, u: { x: 0, y: 0, z: -1 }, v: { x: 0, y: 1, z: 0 }, c: { x: cx - sx / 2, y: cy, z: cz }, du: sz, dv: sy },
-    { n: { x: 0, y: 1, z: 0 }, u: { x: 1, y: 0, z: 0 }, v: { x: 0, y: 0, z: 1 }, c: { x: cx, y: cy + sy / 2, z: cz }, du: sx, dv: sz },
-    { n: { x: 0, y: -1, z: 0 }, u: { x: 1, y: 0, z: 0 }, v: { x: 0, y: 0, z: -1 }, c: { x: cx, y: cy - sy / 2, z: cz }, du: sx, dv: sz },
+    {
+      n: { x: 0, y: 0, z: 1 },
+      u: { x: 1, y: 0, z: 0 },
+      v: { x: 0, y: 1, z: 0 },
+      c: { x: cx, y: cy, z: cz + sz / 2 },
+      du: sx,
+      dv: sy,
+    },
+    {
+      n: { x: 0, y: 0, z: -1 },
+      u: { x: -1, y: 0, z: 0 },
+      v: { x: 0, y: 1, z: 0 },
+      c: { x: cx, y: cy, z: cz - sz / 2 },
+      du: sx,
+      dv: sy,
+    },
+    {
+      n: { x: 1, y: 0, z: 0 },
+      u: { x: 0, y: 0, z: 1 },
+      v: { x: 0, y: 1, z: 0 },
+      c: { x: cx + sx / 2, y: cy, z: cz },
+      du: sz,
+      dv: sy,
+    },
+    {
+      n: { x: -1, y: 0, z: 0 },
+      u: { x: 0, y: 0, z: -1 },
+      v: { x: 0, y: 1, z: 0 },
+      c: { x: cx - sx / 2, y: cy, z: cz },
+      du: sz,
+      dv: sy,
+    },
+    {
+      n: { x: 0, y: 1, z: 0 },
+      u: { x: 1, y: 0, z: 0 },
+      v: { x: 0, y: 0, z: 1 },
+      c: { x: cx, y: cy + sy / 2, z: cz },
+      du: sx,
+      dv: sz,
+    },
+    {
+      n: { x: 0, y: -1, z: 0 },
+      u: { x: 1, y: 0, z: 0 },
+      v: { x: 0, y: 0, z: -1 },
+      c: { x: cx, y: cy - sy / 2, z: cz },
+      du: sx,
+      dv: sz,
+    },
   ];
 
   for (const f of faces) {

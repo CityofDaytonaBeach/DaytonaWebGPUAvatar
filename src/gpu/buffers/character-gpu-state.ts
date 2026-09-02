@@ -1,4 +1,4 @@
-import { HumanDefinition } from "../../core/schema/human-definition";
+import { HumanDefinition } from '../../core/schema/human-definition';
 
 /**
  * GPU-resident character state manager. Keeps hot character state on the GPU:
@@ -26,7 +26,7 @@ export class CharacterGpuState {
     normals: Float32Array,
     uvs: Float32Array | null,
     indices: Uint32Array,
-    paramByteSize: number
+    paramByteSize: number,
   ) {
     this.vertexCount = vertexPositions.length / 3;
     this.indexCount = indices.length;
@@ -37,9 +37,13 @@ export class CharacterGpuState {
       size: paramByteSize,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    this.basePositionBuffer = createVertexBuffer(device, vertexPositions, "base positions");
-    this.normalBuffer = createVertexBuffer(device, normals, "normals");
-    this.uvBuffer = createVertexBuffer(device, uvs ?? new Float32Array((vertexPositions.length / 3) * 2), "uvs");
+    this.basePositionBuffer = createVertexBuffer(device, vertexPositions, 'base positions');
+    this.normalBuffer = createVertexBuffer(device, normals, 'normals');
+    this.uvBuffer = createVertexBuffer(
+      device,
+      uvs ?? new Float32Array((vertexPositions.length / 3) * 2),
+      'uvs',
+    );
     this.indexBuffer = device.createBuffer({
       size: indices.byteLength,
       usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
@@ -59,7 +63,7 @@ function writeBuffer(
   device: GPUDevice,
   buffer: GPUBuffer,
   offset: number,
-  data: ArrayBufferView | ArrayBuffer
+  data: ArrayBufferView | ArrayBuffer,
 ): void {
   device.queue.writeBuffer(buffer, offset, data as GPUAllowSharedBufferSource);
 }
@@ -68,6 +72,7 @@ function createVertexBuffer(device: GPUDevice, data: Float32Array, label: string
   const buf = device.createBuffer({
     size: data.byteLength,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+    label,
   });
   writeBuffer(device, buf, 0, data);
   return buf;

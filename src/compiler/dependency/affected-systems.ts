@@ -1,21 +1,21 @@
-import { PropertyCategory } from "../../core/schema/property";
-import { PropertyRegistry } from "../../core/schema/registry";
-import { DependencyGraph } from "./dependency-graph";
+import { PropertyCategory } from '../../core/schema/property';
+import { PropertyRegistry } from '../../core/schema/registry';
+import { DependencyGraph } from './dependency-graph';
 
 export type AffectedSystemName =
-  | "Global"
-  | "Identity"
-  | "Skeleton"
-  | "BodyGeometry"
-  | "FaceGeometry"
-  | "SkinMaterial"
-  | "EyeSystem"
-  | "HairSystem"
-  | "Expression"
-  | "Animation"
-  | "Physics"
-  | "LOD"
-  | "Attachment";
+  | 'Global'
+  | 'Identity'
+  | 'Skeleton'
+  | 'BodyGeometry'
+  | 'FaceGeometry'
+  | 'SkinMaterial'
+  | 'EyeSystem'
+  | 'HairSystem'
+  | 'Expression'
+  | 'Animation'
+  | 'Physics'
+  | 'LOD'
+  | 'Attachment';
 
 export interface AffectedSystem {
   system: AffectedSystemName;
@@ -27,7 +27,7 @@ export interface AffectedSystem {
 export function affectedSystemsForChange(
   registry: PropertyRegistry,
   graph: DependencyGraph,
-  changedIds: readonly number[]
+  changedIds: readonly number[],
 ): AffectedSystem[] {
   const direct = new Set(changedIds);
   const affected = graph.affectedBy([...changedIds]);
@@ -52,32 +52,32 @@ export function affectedSystemsForChange(
 export function systemForCategory(category: PropertyCategory): AffectedSystemName {
   switch (category) {
     case PropertyCategory.Global:
-      return "Global";
+      return 'Global';
     case PropertyCategory.Identity:
-      return "Identity";
+      return 'Identity';
     case PropertyCategory.Skeleton:
-      return "Skeleton";
+      return 'Skeleton';
     case PropertyCategory.Body:
-      return "BodyGeometry";
+      return 'BodyGeometry';
     case PropertyCategory.Face:
-      return "FaceGeometry";
+      return 'FaceGeometry';
     case PropertyCategory.Skin:
-      return "SkinMaterial";
+      return 'SkinMaterial';
     case PropertyCategory.Eyes:
-      return "EyeSystem";
+      return 'EyeSystem';
     case PropertyCategory.Hair:
-      return "HairSystem";
+      return 'HairSystem';
     case PropertyCategory.Expression:
-      return "Expression";
+      return 'Expression';
     case PropertyCategory.Animation:
-      return "Animation";
+      return 'Animation';
     case PropertyCategory.Physics:
-      return "Physics";
+      return 'Physics';
     case PropertyCategory.LOD:
-      return "LOD";
+      return 'LOD';
     case PropertyCategory.Attachment:
-      return "Attachment";
+      return 'Attachment';
     default:
-      return "Global";
+      return 'Global';
   }
 }

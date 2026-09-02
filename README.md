@@ -4,7 +4,7 @@ A browser-native, GPU-resident, persistent **digital-human runtime** built on We
 
 > **The Character is NOT the Mesh.** A character is persistent structured state
 > (anatomy, identity, materials, attachments, history, expressions). The visible
-> mesh is only one real-time representation *compiled* from that state.
+> mesh is only one real-time representation _compiled_ from that state.
 
 This is the first full SDK milestone implementing the architecture specified in
 `start.md` — a schema-compiled Human Definition Language, a semantic dependency
@@ -18,52 +18,52 @@ Capability matrix and production roadmap are queryable through
 `CAPABILITY_MATRIX`, `capabilityReport()`, `START_MD_PHASES`, and
 `phaseReport()` in `src/index.ts`:
 
-| System | Status |
-| --- | --- |
-| Human Definition Language + schema compiler | IMPLEMENTED |
-| Stable numeric property IDs + GPU buffer layout | IMPLEMENTED |
-| Human dependency graph | IMPLEMENTED |
-| Affected-system diagnostics | IMPLEMENTED |
-| Human delta compiler | IMPLEMENTED |
-| Vertex-range delta compilation | IMPLEMENTED |
-| Sparse morph format | IMPLEMENTED |
-| GPU sparse-morph compute (WGSL) + deform | IMPLEMENTED |
-| GPU-resident rendering (deformed mesh) | IMPLEMENTED |
-| Identity preservation solver | IMPLEMENTED |
-| Anatomical constraint solver | IMPLEMENTED |
+| System                                               | Status      |
+| ---------------------------------------------------- | ----------- |
+| Human Definition Language + schema compiler          | IMPLEMENTED |
+| Stable numeric property IDs + GPU buffer layout      | IMPLEMENTED |
+| Human dependency graph                               | IMPLEMENTED |
+| Affected-system diagnostics                          | IMPLEMENTED |
+| Human delta compiler                                 | IMPLEMENTED |
+| Vertex-range delta compilation                       | IMPLEMENTED |
+| Sparse morph format                                  | IMPLEMENTED |
+| GPU sparse-morph compute (WGSL) + deform             | IMPLEMENTED |
+| GPU-resident rendering (deformed mesh)               | IMPLEMENTED |
+| Identity preservation solver                         | IMPLEMENTED |
+| Anatomical constraint solver                         | IMPLEMENTED |
 | Constraint profiles (REALISTIC / STYLIZED / FANTASY) | IMPLEMENTED |
-| Event-sourced timeline, undo/redo, snapshots | IMPLEMENTED |
-| Timeline dirty work reporting | IMPLEMENTED |
-| Non-property event dirty work reporting | IMPLEMENTED |
-| Canonical human (procedural block, replaceable) | PROTOTYPE |
-| Canonical topology validation | IMPLEMENTED |
-| Canonical topology asset adapter | IMPLEMENTED |
-| Canonical human parts (eyes/teeth/tongue/cavity) | IMPLEMENTED |
-| Parametric skeleton + joint placement | IMPLEMENTED |
+| Event-sourced timeline, undo/redo, snapshots         | IMPLEMENTED |
+| Timeline dirty work reporting                        | IMPLEMENTED |
+| Non-property event dirty work reporting              | IMPLEMENTED |
+| Canonical human (procedural block, replaceable)      | PROTOTYPE   |
+| Canonical topology validation                        | IMPLEMENTED |
+| Canonical topology asset adapter                     | IMPLEMENTED |
+| Canonical human parts (eyes/teeth/tongue/cavity)     | IMPLEMENTED |
+| Parametric skeleton + joint placement                | IMPLEMENTED |
 | Parametric anatomy solver (dimensions + constraints) | IMPLEMENTED |
-| Internal anatomy view modes | PROTOTYPE |
-| Bone matrices (FK) + inverse-bind skinning | IMPLEMENTED |
-| Skeletal animation (clips/blending) + GPU skinning | IMPLEMENTED |
-| Motion compiler / behavior commands | PROTOTYPE |
-| Facial expressions + speech visemes | IMPLEMENTED |
-| Human attachment coordinates | IMPLEMENTED |
-| Time-based parameter transitions | PROTOTYPE |
-| Snapshot restore | IMPLEMENTED |
-| Tattoo decal projection | PROTOTYPE |
-| Wearable clothing geometry | PROTOTYPE |
-| Procedural strand hair runtime | PROTOTYPE |
-| Human-specific SDF collision fields | PROTOTYPE |
-| Cloth physics runtime | PROTOTYPE |
-| Neural skin residual runtime | PROTOTYPE |
-| GPU scheduler + dev profiler | IMPLEMENTED |
-| Localized edit benchmark | PROTOTYPE |
-| GPU timestamp benchmark | PROTOTYPE |
-| Semantic + perceptual LOD | IMPLEMENTED |
-| Perceptual validation reports | PROTOTYPE |
-| WebGPU renderer + WGSL shaders | IMPLEMENTED |
-| WebGL2 fallback renderer | IMPLEMENTED |
-| Prompt interpreter (patch-based) | IMPLEMENTED |
-| Phase tracking aligned to `start.md` | IMPLEMENTED |
+| Internal anatomy view modes                          | PROTOTYPE   |
+| Bone matrices (FK) + inverse-bind skinning           | IMPLEMENTED |
+| Skeletal animation (clips/blending) + GPU skinning   | IMPLEMENTED |
+| Motion compiler / behavior commands                  | PROTOTYPE   |
+| Facial expressions + speech visemes                  | IMPLEMENTED |
+| Human attachment coordinates                         | IMPLEMENTED |
+| Time-based parameter transitions                     | PROTOTYPE   |
+| Snapshot restore                                     | IMPLEMENTED |
+| Tattoo decal projection                              | PROTOTYPE   |
+| Wearable clothing geometry                           | PROTOTYPE   |
+| Procedural strand hair runtime                       | PROTOTYPE   |
+| Human-specific SDF collision fields                  | PROTOTYPE   |
+| Cloth physics runtime                                | PROTOTYPE   |
+| Neural skin residual runtime                         | PROTOTYPE   |
+| GPU scheduler + dev profiler                         | IMPLEMENTED |
+| Localized edit benchmark                             | PROTOTYPE   |
+| GPU timestamp benchmark                              | PROTOTYPE   |
+| Semantic + perceptual LOD                            | IMPLEMENTED |
+| Perceptual validation reports                        | PROTOTYPE   |
+| WebGPU renderer + WGSL shaders                       | IMPLEMENTED |
+| WebGL2 fallback renderer                             | IMPLEMENTED |
+| Prompt interpreter (patch-based)                     | IMPLEMENTED |
+| Phase tracking aligned to `start.md`                 | IMPLEMENTED |
 
 ## Quick start
 
@@ -78,16 +78,17 @@ npm run build:demo # build the demo app (dist-demo/)
 ## The character API
 
 ```ts
-import { Human } from "daytona-webgpu-avatar";
+import { Human } from 'daytona-webgpu-avatar';
 
 const human = await Human.create();
 
-human.modify({ "face.nose.width": 0.6 });          // non-destructive, localized
-human.setExpression("smile", 1);
-human.prompt("make the nose narrower");            // natural language → events
-human.speak("hello there");
-human.undo(); human.redo();                         // transactional
-human.applyEvent(anyEvent);                         // single automation/API path
+human.modify({ 'face.nose.width': 0.6 }); // non-destructive, localized
+human.setExpression('smile', 1);
+human.prompt('make the nose narrower'); // natural language → events
+human.speak('hello there');
+human.undo();
+human.redo(); // transactional
+human.applyEvent(anyEvent); // single automation/API path
 ```
 
 Every mutation flows through **one** `applyEvent` method. The engine (not the AI)
@@ -117,6 +118,7 @@ Prompt / UI / API / Automation / Simulation / Motion / Speech / Animation
 ```
 
 Key files:
+
 - `src/core/schema/` — property registry (schema compiler), `HumanDefinition`, IDs
 - `src/compiler/dependency/` and `src/compiler/delta/` — dirty regions + delta compiler
 - `src/identity/`, `src/constraints/` — identity preservation & anatomical limits
@@ -286,7 +288,7 @@ The parametric skeleton is now wired to the mesh as a live **skinning rig**:
   region weights (normalized, up to `MAX_INFLUENCES` = 4) and provides CPU
   skinning references: `skinMeshCPU` (positions) and `skinNormalsCPU` (normals).
 - `skinning-kernel.ts` + `skin-wgsl.ts` is the GPU compute counterpart,
-  chained *after* morph deformation: morph → skin → render. It skins **both
+  chained _after_ morph deformation: morph → skin → render. It skins **both
   positions and normals** (normals via the weighted rotation 3×3 + normalize, so
   posed limbs light correctly instead of keeping baked rest normals). Each WGSL
   loop is byte-identical to its CPU reference (verified by parity tests).

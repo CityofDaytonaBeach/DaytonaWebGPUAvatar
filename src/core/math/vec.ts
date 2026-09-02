@@ -25,12 +25,7 @@ export function vec3(x = 0, y = 0, z = 0): Vec3 {
 export const IDENTITY_QUAT: Quat = { x: 0, y: 0, z: 0, w: 1 };
 
 export function identityMatrix(): Float32Array {
-  return new Float32Array([
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, 1,
-  ]);
+  return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 }
 
 export function multiplyMatrices(a: Float32Array, b: Float32Array): Float32Array {

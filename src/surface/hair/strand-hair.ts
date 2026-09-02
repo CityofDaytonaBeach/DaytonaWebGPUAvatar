@@ -1,6 +1,6 @@
-import { HumanDefinition } from "../../core/schema/human-definition";
-import { Vec3, vec3 } from "../../core/math/vec";
-import { CanonicalHuman, Vertex } from "../../geometry/canonical/canonical-human";
+import { HumanDefinition } from '../../core/schema/human-definition';
+import { Vec3, vec3 } from '../../core/math/vec';
+import { CanonicalHuman, Vertex } from '../../geometry/canonical/canonical-human';
 
 export interface HairStrandPoint {
   position: Vec3;
@@ -30,18 +30,18 @@ export interface StrandHairOptions {
 export function generateStrandHair(
   definition: HumanDefinition,
   canonical: CanonicalHuman,
-  options: StrandHairOptions = {}
+  options: StrandHairOptions = {},
 ): StrandHairGeometry {
   const maxStrands = Math.max(0, Math.floor(options.maxStrands ?? 96));
   const segments = Math.max(2, Math.floor(options.segments ?? 5));
-  const length = definition.get("hair.length");
-  const density = definition.get("hair.density");
-  const curl = definition.get("hair.curl");
-  const gray = definition.get("hair.gray");
+  const length = definition.get('hair.length');
+  const density = definition.get('hair.density');
+  const curl = definition.get('hair.curl');
+  const gray = definition.get('hair.gray');
   const color = mixColor(
-    [definition.get("hair.colorR"), definition.get("hair.colorG"), definition.get("hair.colorB")],
+    [definition.get('hair.colorR'), definition.get('hair.colorG'), definition.get('hair.colorB')],
     [0.62, 0.62, 0.62],
-    gray
+    gray,
   );
 
   if (length <= 0 || density <= 0 || maxStrands === 0) return { strands: [], color };
@@ -88,29 +88,26 @@ export interface ClumpOptions {
  * root direction around the scalp center. Strands are sorted into an azimuthal
  * order and split into contiguous buckets so members are always neighbours.
  */
-export function clumpStrands(
-  hair: StrandHairGeometry,
-  options: ClumpOptions = {}
-): HairClump[] {
+export function clumpStrands(hair: StrandHairGeometry, options: ClumpOptions = {}): HairClump[] {
   if (hair.strands.length === 0) return [];
 
-  const centroid = hair.strands.reduce(
-    (acc, s) => add(acc, s.points[0].position),
-    vec3()
-  );
+  const centroid = hair.strands.reduce((acc, s) => add(acc, s.points[0].position), vec3());
   const center = scale(centroid, 1 / hair.strands.length);
 
   // Order strands by azimuth around the scalp centroid (stable, tie-broken by id).
   const ordered = hair.strands
-    .map((s) => ({ s, a: Math.atan2(s.points[0].position.z - center.z, s.points[0].position.x - center.x) }))
+    .map((s) => ({
+      s,
+      a: Math.atan2(s.points[0].position.z - center.z, s.points[0].position.x - center.x),
+    }))
     .sort((p, q) => p.a - q.a || p.s.id - q.s.id);
 
   const clampCount = Math.max(
     1,
     Math.min(
       hair.strands.length,
-      Math.floor(options.clumps ?? Math.max(1, Math.round(hair.strands.length * 0.15)))
-    )
+      Math.floor(options.clumps ?? Math.max(1, Math.round(hair.strands.length * 0.15))),
+    ),
   );
 
   const rng = mulberry32(options.seed ?? 0);
@@ -164,7 +161,7 @@ export interface TaperOptions {
  */
 export function taperStrandThickness(
   hair: StrandHairGeometry,
-  options: TaperOptions = {}
+  options: TaperOptions = {},
 ): StrandHairGeometry {
   const taper = options.taper ?? { rootRadius: 0.004, tipRadius: 0.001 };
   const curve = Math.max(0.001, options.curve ?? 1);
@@ -214,7 +211,7 @@ export function applyHairWind(
   hair: StrandHairGeometry,
   wind: WindField,
   time: number,
-  options: WindOptions = {}
+  options: WindOptions = {},
 ): StrandHairGeometry {
   const gusts = Math.max(0, options.gusts ?? 0.5);
   const frequency = Math.max(0, options.frequency ?? 2);
@@ -232,7 +229,7 @@ export function applyHairWind(
         position: vec3(
           p.position.x + wind.direction.x * amp,
           p.position.y + wind.direction.y * amp,
-          p.position.z + wind.direction.z * amp
+          p.position.z + wind.direction.z * amp,
         ),
         radius: p.radius,
       };
@@ -270,7 +267,7 @@ export interface LodOptions {
 export function reduceStrandsForLOD(
   hair: StrandHairGeometry,
   level: HairLodLevel,
-  options: LodOptions = {}
+  options: LodOptions = {},
 ): StrandHairGeometry {
   const maxStrands = Math.max(0, options.maxStrands ?? HAIR_LOD_BUDGETS[level]);
   if (hair.strands.length <= maxStrands) return hair;
@@ -307,7 +304,7 @@ export type StrandColorMap = Map<number, [number, number, number]>;
  */
 export function strandColors(
   hair: StrandHairGeometry,
-  options: HairColorOption = {}
+  options: HairColorOption = {},
 ): StrandColorMap {
   const variance = Math.max(0, options.variance ?? 0.02);
   const base = options.base ?? hair.color;
@@ -364,7 +361,7 @@ export interface HairMeshOptions {
   /** Ribbon width relative to local strand radius (default 2). */
   widthScale?: number;
   /** Direction pair used to orient cards: "face" (toward +z) or "radial". */
-  mode?: "face" | "radial";
+  mode?: 'face' | 'radial';
 }
 
 /**
@@ -375,10 +372,10 @@ export interface HairMeshOptions {
  */
 export function buildHairMesh(
   hair: StrandHairGeometry,
-  options: HairMeshOptions = {}
+  options: HairMeshOptions = {},
 ): HairRenderMesh {
   const widthScale = Math.max(0.01, options.widthScale ?? 2);
-  const mode = options.mode ?? "face";
+  const mode = options.mode ?? 'face';
 
   const cards: HairCard[] = [];
   const positions: number[] = [];
@@ -394,9 +391,8 @@ export function buildHairMesh(
 
       const tang = normalize(sub(p1.position, p0.position));
       // Perpendicular basis for the ribbon plane.
-      const perp = mode === "radial"
-        ? normalize(sub(p0.position, scalpCentroid(hair)))
-        : vec3(0, 0, 1);
+      const perp =
+        mode === 'radial' ? normalize(sub(p0.position, scalpCentroid(hair))) : vec3(0, 0, 1);
       const binorm = normalize(cross(tang, perp));
       const width = (p0.radius + p1.radius) * 0.5 * widthScale;
 
@@ -493,7 +489,7 @@ export class HairSim {
         position: { ...p.position },
         prev: { ...p.position },
         rest: { ...p.position },
-      }))
+      })),
     );
   }
 
@@ -605,11 +601,7 @@ function normalize(a: Vec3): Vec3 {
   return vec3(a.x / l, a.y / l, a.z / l);
 }
 function cross(a: Vec3, b: Vec3): Vec3 {
-  return vec3(
-    a.y * b.z - a.z * b.y,
-    a.z * b.x - a.x * b.z,
-    a.x * b.y - a.y * b.x
-  );
+  return vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
 function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
@@ -621,7 +613,7 @@ function pushVertex(
   p: Vec3,
   u: number,
   v: number,
-  strandId: number
+  strandId: number,
 ): void {
   void strandId;
   positions.push(p.x, p.y, p.z);
@@ -633,7 +625,7 @@ function scalpCentroid(hair: StrandHairGeometry): Vec3 {
   if (hair.strands.length === 0) return vec3();
   return scale(
     hair.strands.reduce((acc, s) => add(acc, s.points[0].position), vec3()),
-    1 / hair.strands.length
+    1 / hair.strands.length,
   );
 }
 
@@ -653,11 +645,17 @@ function mulberry32(seed: number): () => number {
 }
 
 function scalpAnchors(canonical: CanonicalHuman): Vertex[] {
-  const head = canonical.vertices.filter((v) => v.region === "head" && v.position.y >= 1.85);
+  const head = canonical.vertices.filter((v) => v.region === 'head' && v.position.y >= 1.85);
   return head.sort((a, b) => a.id - b.id);
 }
 
-function makeStrand(id: number, root: Vertex, length: number, curl: number, segments: number): HairStrand {
+function makeStrand(
+  id: number,
+  root: Vertex,
+  length: number,
+  curl: number,
+  segments: number,
+): HairStrand {
   const points: HairStrandPoint[] = [];
   const rootPos = root.position;
   const side = Math.sign(rootPos.x) || (id % 2 === 0 ? -1 : 1);
@@ -665,25 +663,21 @@ function makeStrand(id: number, root: Vertex, length: number, curl: number, segm
   const worldLength = 0.08 + length * 0.42;
   for (let s = 0; s <= segments; s++) {
     const t = s / segments;
-    const curlWave = Math.sin((t * Math.PI * 2) + id * 1.618) * curl * 0.045 * t;
+    const curlWave = Math.sin(t * Math.PI * 2 + id * 1.618) * curl * 0.045 * t;
     const fall = worldLength * t;
     points.push({
-      position: vec3(
-        rootPos.x + side * curlWave,
-        rootPos.y - fall,
-        rootPos.z + back * curlWave
-      ),
+      position: vec3(rootPos.x + side * curlWave, rootPos.y - fall, rootPos.z + back * curlWave),
       radius: 0.004 * (1 - t) + 0.001 * t,
     });
   }
   return { id, rootVertexId: root.id, points };
 }
 
-function mixColor(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
+function mixColor(
+  a: [number, number, number],
+  b: [number, number, number],
+  t: number,
+): [number, number, number] {
   const f = Math.max(0, Math.min(1, t));
-  return [
-    a[0] * (1 - f) + b[0] * f,
-    a[1] * (1 - f) + b[1] * f,
-    a[2] * (1 - f) + b[2] * f,
-  ];
+  return [a[0] * (1 - f) + b[0] * f, a[1] * (1 - f) + b[1] * f, a[2] * (1 - f) + b[2] * f];
 }

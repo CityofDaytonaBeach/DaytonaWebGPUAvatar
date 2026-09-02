@@ -1,6 +1,6 @@
-import { Vec3 } from "../../core/math/vec";
-import { BoneDef, BoneName } from "../../anatomy/skeleton/skeleton";
-import { BonePose, quatFromEulerDeg, nlerp } from "../skeleton/skeletal-animation";
+import { Vec3 } from '../../core/math/vec';
+import { BoneDef, BoneName } from '../../anatomy/skeleton/skeleton';
+import { BonePose, quatFromEulerDeg, nlerp } from '../skeleton/skeletal-animation';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -31,13 +31,7 @@ const DEFAULT_CONFIG: MotionCompilerConfig = {
 // ─── Existing exports (kept identical) ───────────────────────────────────────
 
 export type MotionKind =
-  | "raiseHand"
-  | "lookAtCamera"
-  | "neutral"
-  | "unknown"
-  | "gesture"
-  | "walk"
-  | "transition";
+  'raiseHand' | 'lookAtCamera' | 'neutral' | 'unknown' | 'gesture' | 'walk' | 'transition';
 
 export interface MotionPlan {
   kind: MotionKind;
@@ -61,14 +55,14 @@ export class MotionCompiler {
     const text = command.toLowerCase().trim();
 
     // --- Neutral / rest ---
-    if (text.includes("neutral") || text.includes("rest pose") || text.includes("stand still")) {
-      return { kind: "neutral", confidence: 0.95, poses: [] };
+    if (text.includes('neutral') || text.includes('rest pose') || text.includes('stand still')) {
+      return { kind: 'neutral', confidence: 0.95, poses: [] };
     }
 
     // --- Walk / locomotion ---
-    if (text.includes("walk") || text.includes("step forward") || text.includes("locomotion")) {
-      const phase = extractNumber(text, "phase") ?? 0;
-      const speed = extractNumber(text, "speed") ?? 1;
+    if (text.includes('walk') || text.includes('step forward') || text.includes('locomotion')) {
+      const phase = extractNumber(text, 'phase') ?? 0;
+      const speed = extractNumber(text, 'speed') ?? 1;
       return compileWalk(skeleton, phase, speed, this.getConfig());
     }
 
@@ -79,12 +73,12 @@ export class MotionCompiler {
     }
 
     // --- Look-at camera ---
-    if (text.includes("look") && (text.includes("camera") || text.includes("forward"))) {
+    if (text.includes('look') && (text.includes('camera') || text.includes('forward'))) {
       return compileLookAt(skeleton, { x: 0, y: 0, z: 1 }, this.getConfig());
     }
 
     // --- Look-at arbitrary target ---
-    if (text.includes("look") && text.includes("at")) {
+    if (text.includes('look') && text.includes('at')) {
       const target = extractVec3(text);
       if (target) {
         return compileLookAt(skeleton, target, this.getConfig());
@@ -92,12 +86,12 @@ export class MotionCompiler {
     }
 
     // --- Raise hand (existing) ---
-    if (text.includes("raise") && (text.includes("hand") || text.includes("arm"))) {
-      const side = text.includes("left") ? "l" : "r";
-      const sign = side === "l" ? -1 : 1;
+    if (text.includes('raise') && (text.includes('hand') || text.includes('arm'))) {
+      const side = text.includes('left') ? 'l' : 'r';
+      const sign = side === 'l' ? -1 : 1;
       return {
-        kind: "raiseHand",
-        confidence: text.includes("left") || text.includes("right") ? 0.9 : 0.72,
+        kind: 'raiseHand',
+        confidence: text.includes('left') || text.includes('right') ? 0.9 : 0.72,
         poses: restPoses(skeleton, [
           [`clavicle_${side}`, -10, 0, sign * 8],
           [`upperarm_${side}`, 0, 0, sign * 118],
@@ -107,7 +101,12 @@ export class MotionCompiler {
       };
     }
 
-    return { kind: "unknown", confidence: 0.1, poses: [], reason: `unrecognized motion command: "${command}"` };
+    return {
+      kind: 'unknown',
+      confidence: 0.1,
+      poses: [],
+      reason: `unrecognized motion command: "${command}"`,
+    };
   }
 
   /** Legacy static entry-point preserved for backwards compatibility. */
@@ -161,7 +160,6 @@ export function solveIK2Bone(
 
   // Joint positions in parent-relative local space (T-pose).
   const shoulderPos = bone0.localPosition;
-  const elbowLocal = bone1.localPosition;
   const totalLen = L0 + L1;
 
   // --- Solve two-bone IK in the plane defined by shoulder, target, elbow hint ---
@@ -203,16 +201,6 @@ export function solveIK2Bone(
   // Elbow rotation: bend in the plane.
   const elbowRot = quatFromAxisAngle({ x: 0, y: 0, z: 1 }, Math.PI - elbowAngle);
 
-  // Pole-vector correction: rotate the chain plane so the elbow points toward pole.
-  if (chain.poleVector) {
-    const pv = normalize3(chain.poleVector);
-    // Approximate: apply a small twist around the upper-arm axis to bias the elbow.
-    const elbowHint = normalize3(cross3(targetDir, pv));
-    const pvTwistAngle = Math.atan2(dot3(elbowHint, { x: 0, y: 0, z: 1 }), 0.8);
-    const pvTwist = quatFromAxisAngle(targetDir, pvTwistAngle * 0.3);
-    // Apply as a left-multiply to the shoulder so it rotates the whole chain.
-  }
-
   return [
     { name: chain.bones[0], localPos: { ...bone0.localPosition }, localRot: shoulderRot },
     { name: chain.bones[1], localPos: { ...bone1.localPosition }, localRot: elbowRot },
@@ -236,13 +224,13 @@ export function solveLookAt(
   config: MotionCompilerConfig,
 ): BonePose[] {
   const byName = new Map(skeleton.map((b) => [b.name, b]));
-  const neck = byName.get("neck");
-  const head = byName.get("head");
+  const neck = byName.get('neck');
+  const head = byName.get('head');
   if (!neck || !head) return [];
 
   // Chain root is chest → neck → head. We approximate the "eye" position as
   // the world-space tip of the head bone.
-  const chest = byName.get("chest");
+  const chest = byName.get('chest');
   const chestWorld = chest ? chest.localPosition : { x: 0, y: 0, z: 0 };
   const neckWorld = add3(chestWorld, neck.localPosition);
   const headWorld = add3(neckWorld, head.localPosition);
@@ -264,34 +252,35 @@ export function solveLookAt(
   const headPitch = clampedPitch * 0.4;
 
   return [
-    { name: "neck", localPos: { ...neck.localPosition }, localRot: quatFromEulerDeg(-toDeg(neckPitch), toDeg(neckYaw), 0) },
-    { name: "head", localPos: { ...head.localPosition }, localRot: quatFromEulerDeg(-toDeg(headPitch), toDeg(headYaw), 0) },
+    {
+      name: 'neck',
+      localPos: { ...neck.localPosition },
+      localRot: quatFromEulerDeg(-toDeg(neckPitch), toDeg(neckYaw), 0),
+    },
+    {
+      name: 'head',
+      localPos: { ...head.localPosition },
+      localRot: quatFromEulerDeg(-toDeg(headPitch), toDeg(headYaw), 0),
+    },
   ];
 }
 
 // ─── Gesture Library ─────────────────────────────────────────────────────────
 
 export type GestureName =
-  | "wave"
-  | "point"
-  | "thumbsUp"
-  | "crossArms"
-  | "hipHands"
-  | "shrug"
-  | "headNod"
-  | "headShake";
+  'wave' | 'point' | 'thumbsUp' | 'crossArms' | 'hipHands' | 'shrug' | 'headNod' | 'headShake';
 
 const GESTURE_PATTERNS: Array<[string[], GestureName]> = [
-  [["wave"], "wave"],
-  [["point"], "point"],
-  [["thumb", "up"], "thumbsUp"],
-  [["cross", "arm"], "crossArms"],
-  [["hip", "hand"], "hipHands"],
-  [["shrug"], "shrug"],
-  [["nod", "head"], "headNod"],
-  [["nod"], "headNod"],
-  [["shake", "head"], "headShake"],
-  [["shake"], "headShake"],
+  [['wave'], 'wave'],
+  [['point'], 'point'],
+  [['thumb', 'up'], 'thumbsUp'],
+  [['cross', 'arm'], 'crossArms'],
+  [['hip', 'hand'], 'hipHands'],
+  [['shrug'], 'shrug'],
+  [['nod', 'head'], 'headNod'],
+  [['nod'], 'headNod'],
+  [['shake', 'head'], 'headShake'],
+  [['shake'], 'headShake'],
 ];
 
 function matchGesture(text: string): GestureName | null {
@@ -301,87 +290,91 @@ function matchGesture(text: string): GestureName | null {
   return null;
 }
 
-function compileGesture(gesture: GestureName, skeleton: BoneDef[], _config: MotionCompilerConfig): MotionPlan {
+function compileGesture(
+  gesture: GestureName,
+  skeleton: BoneDef[],
+  _config: MotionCompilerConfig,
+): MotionPlan {
   const poses = gesturePoses(gesture, skeleton);
-  return { kind: "gesture", confidence: 0.88, poses, reason: `gesture: ${gesture}` };
+  return { kind: 'gesture', confidence: 0.88, poses, reason: `gesture: ${gesture}` };
 }
 
 function gesturePoses(gesture: GestureName, skeleton: BoneDef[]): BonePose[] {
   switch (gesture) {
-    case "wave":
+    case 'wave':
       return restPoses(skeleton, [
-        ["clavicle_r", -10, 0, 8],
-        ["upperarm_r", 0, -20, 130],
-        ["forearm_r", 0, -40, 30],
-        ["hand_r", 0, 0, 20],
+        ['clavicle_r', -10, 0, 8],
+        ['upperarm_r', 0, -20, 130],
+        ['forearm_r', 0, -40, 30],
+        ['hand_r', 0, 0, 20],
       ]);
 
-    case "point":
+    case 'point':
       return restPoses(skeleton, [
-        ["clavicle_r", -5, 0, 6],
-        ["upperarm_r", 10, -30, 90],
-        ["forearm_r", 0, 0, 10],
-        ["hand_r", 0, 0, 0],
+        ['clavicle_r', -5, 0, 6],
+        ['upperarm_r', 10, -30, 90],
+        ['forearm_r', 0, 0, 10],
+        ['hand_r', 0, 0, 0],
       ]);
 
-    case "thumbsUp":
+    case 'thumbsUp':
       return restPoses(skeleton, [
-        ["clavicle_r", -8, 0, 6],
-        ["upperarm_r", -20, 0, 80],
-        ["forearm_r", 0, 0, 80],
-        ["hand_r", 0, 30, 0],
+        ['clavicle_r', -8, 0, 6],
+        ['upperarm_r', -20, 0, 80],
+        ['forearm_r', 0, 0, 80],
+        ['hand_r', 0, 30, 0],
       ]);
 
-    case "crossArms":
+    case 'crossArms':
       return [
         ...restPoses(skeleton, [
-          ["clavicle_l", -5, 0, -6],
-          ["upperarm_l", 20, 40, -60],
-          ["forearm_l", 0, 60, 0],
-          ["hand_l", 0, 20, 0],
+          ['clavicle_l', -5, 0, -6],
+          ['upperarm_l', 20, 40, -60],
+          ['forearm_l', 0, 60, 0],
+          ['hand_l', 0, 20, 0],
         ]),
         ...restPoses(skeleton, [
-          ["clavicle_r", -5, 0, 6],
-          ["upperarm_r", 20, -40, 60],
-          ["forearm_r", 0, -60, 0],
-          ["hand_r", 0, -20, 0],
+          ['clavicle_r', -5, 0, 6],
+          ['upperarm_r', 20, -40, 60],
+          ['forearm_r', 0, -60, 0],
+          ['hand_r', 0, -20, 0],
         ]),
       ];
 
-    case "hipHands":
+    case 'hipHands':
       return [
         ...restPoses(skeleton, [
-          ["clavicle_l", 0, 0, -4],
-          ["upperarm_l", -10, 0, -30],
-          ["forearm_l", -60, 0, 0],
-          ["hand_l", 0, 0, 0],
+          ['clavicle_l', 0, 0, -4],
+          ['upperarm_l', -10, 0, -30],
+          ['forearm_l', -60, 0, 0],
+          ['hand_l', 0, 0, 0],
         ]),
         ...restPoses(skeleton, [
-          ["clavicle_r", 0, 0, 4],
-          ["upperarm_r", -10, 0, 30],
-          ["forearm_r", -60, 0, 0],
-          ["hand_r", 0, 0, 0],
+          ['clavicle_r', 0, 0, 4],
+          ['upperarm_r', -10, 0, 30],
+          ['forearm_r', -60, 0, 0],
+          ['hand_r', 0, 0, 0],
         ]),
       ];
 
-    case "shrug":
+    case 'shrug':
       return restPoses(skeleton, [
-        ["clavicle_l", -8, 0, -4],
-        ["clavicle_r", -8, 0, 4],
-        ["neck", -3, 0, 0],
-        ["head", -2, 0, 0],
+        ['clavicle_l', -8, 0, -4],
+        ['clavicle_r', -8, 0, 4],
+        ['neck', -3, 0, 0],
+        ['head', -2, 0, 0],
       ]);
 
-    case "headNod":
+    case 'headNod':
       return restPoses(skeleton, [
-        ["neck", -5, 0, 0],
-        ["head", -12, 0, 0],
+        ['neck', -5, 0, 0],
+        ['head', -12, 0, 0],
       ]);
 
-    case "headShake":
+    case 'headShake':
       return restPoses(skeleton, [
-        ["neck", 0, -10, 0],
-        ["head", 0, -14, 0],
+        ['neck', 0, -10, 0],
+        ['head', 0, -14, 0],
       ]);
   }
 }
@@ -400,10 +393,7 @@ export interface RetargetMapping {
  * skeleton. Scales local positions by the ratio of segment lengths and
  * preserves rotations.
  */
-export function retargetPoses(
-  poses: BonePose[],
-  mapping: RetargetMapping,
-): BonePose[] {
+export function retargetPoses(poses: BonePose[], mapping: RetargetMapping): BonePose[] {
   const srcByName = new Map(mapping.sourceSkeleton.map((b) => [b.name, b]));
   const tgtByName = new Map(mapping.targetSkeleton.map((b) => [b.name, b]));
 
@@ -439,7 +429,7 @@ export function compileWalk(
   skeleton: BoneDef[],
   phase: number,
   speed: number,
-  config: MotionCompilerConfig,
+  _config: MotionCompilerConfig,
 ): MotionPlan {
   const p = ((phase % 1) + 1) % 1; // normalise to [0,1)
   const cycle = p * Math.PI * 2; // one full cycle in radians
@@ -447,7 +437,6 @@ export function compileWalk(
   // Swing / stance offsets.
   const hipSwing = Math.sin(cycle) * 25 * speed; // degrees
   const kneeBend = Math.max(0, Math.sin(cycle)) * 40; // degrees
-  const footLift = Math.max(0, Math.sin(cycle)) * 0.08; // metres
   const armSwing = -hipSwing * 0.7; // contra-lateral
 
   // Pelvis bob.
@@ -456,49 +445,63 @@ export function compileWalk(
   const poses: BonePose[] = [];
 
   // Pelvis vertical bob.
-  const pelvis = skeleton.find((b) => b.name === "pelvis");
+  const pelvis = skeleton.find((b) => b.name === 'pelvis');
   if (pelvis) {
     poses.push({
-      name: "pelvis",
-      localPos: { x: pelvis.localPosition.x, y: pelvis.localPosition.y + pelvisBob, z: pelvis.localPosition.z },
+      name: 'pelvis',
+      localPos: {
+        x: pelvis.localPosition.x,
+        y: pelvis.localPosition.y + pelvisBob,
+        z: pelvis.localPosition.z,
+      },
       localRot: quatFromEulerDeg(0, hipSwing * 0.15, 0),
     });
   }
 
   // Left leg.
-  poses.push(...restPoses(skeleton, [
-    ["thigh_l", hipSwing, 0, 0],
-    ["shin_l", kneeBend, 0, 0],
-    ["foot_l", -kneeBend * 0.5, 0, 0],
-  ]));
+  poses.push(
+    ...restPoses(skeleton, [
+      ['thigh_l', hipSwing, 0, 0],
+      ['shin_l', kneeBend, 0, 0],
+      ['foot_l', -kneeBend * 0.5, 0, 0],
+    ]),
+  );
 
   // Right leg (opposite phase).
-  poses.push(...restPoses(skeleton, [
-    ["thigh_r", -hipSwing, 0, 0],
-    ["shin_r", Math.max(0, -Math.sin(cycle)) * 40, 0, 0],
-    ["foot_r", -Math.max(0, -Math.sin(cycle)) * 20, 0, 0],
-  ]));
+  poses.push(
+    ...restPoses(skeleton, [
+      ['thigh_r', -hipSwing, 0, 0],
+      ['shin_r', Math.max(0, -Math.sin(cycle)) * 40, 0, 0],
+      ['foot_r', -Math.max(0, -Math.sin(cycle)) * 20, 0, 0],
+    ]),
+  );
 
   // Left arm swing.
-  poses.push(...restPoses(skeleton, [
-    ["upperarm_l", armSwing * 0.4, 0, 0],
-    ["forearm_l", Math.max(0, armSwing) * 0.3, 0, 0],
-  ]));
+  poses.push(
+    ...restPoses(skeleton, [
+      ['upperarm_l', armSwing * 0.4, 0, 0],
+      ['forearm_l', Math.max(0, armSwing) * 0.3, 0, 0],
+    ]),
+  );
 
   // Right arm swing.
-  poses.push(...restPoses(skeleton, [
-    ["upperarm_r", -armSwing * 0.4, 0, 0],
-    ["forearm_r", Math.max(0, -armSwing) * 0.3, 0, 0],
-  ]));
+  poses.push(
+    ...restPoses(skeleton, [
+      ['upperarm_r', -armSwing * 0.4, 0, 0],
+      ['forearm_r', Math.max(0, -armSwing) * 0.3, 0, 0],
+    ]),
+  );
 
   // Subtle spine counter-rotation.
-  poses.push(...restPoses(skeleton, [
-    ["spine_01", 0, hipSwing * 0.1, 0],
-    ["spine_02", 0, hipSwing * 0.05, 0],
-  ]));
+  poses.push(
+    ...restPoses(skeleton, [
+      ['spine_01', 0, hipSwing * 0.1, 0],
+      ['spine_02', 0, hipSwing * 0.05, 0],
+    ]),
+  );
 
   return {
-    kind: "walk",
+    kind: 'walk',
     confidence: 0.82,
     poses,
     reason: `procedural walk phase=${p.toFixed(2)} speed=${speed.toFixed(2)}`,
@@ -554,7 +557,7 @@ export function transitionTo(
 ): MotionPlan {
   return {
     ...to,
-    kind: "transition",
+    kind: 'transition',
     blendDuration: duration ?? config?.defaultBlendDuration ?? DEFAULT_CONFIG.defaultBlendDuration,
   };
 }
@@ -583,9 +586,9 @@ export function validateMotion(plan: MotionPlan, skeleton: BoneDef[]): Validatio
     const { minDeg, maxDeg } = bone.limits;
 
     const axes: Array<[number, number, number, string]> = [
-      [euler.x, minDeg.x, maxDeg.x, "X"],
-      [euler.y, minDeg.y, maxDeg.y, "Y"],
-      [euler.z, minDeg.z, maxDeg.z, "Z"],
+      [euler.x, minDeg.x, maxDeg.x, 'X'],
+      [euler.y, minDeg.y, maxDeg.y, 'Y'],
+      [euler.z, minDeg.z, maxDeg.z, 'Z'],
     ];
 
     for (const [val, min, max, axis] of axes) {
@@ -602,14 +605,24 @@ export function validateMotion(plan: MotionPlan, skeleton: BoneDef[]): Validatio
 
 // --- Minimal Vec3 / Quat math (zero-dependency) ---
 
-function add3(a: Vec3, b: Vec3): Vec3 { return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z }; }
-function sub3(a: Vec3, b: Vec3): Vec3 { return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }; }
-function scale3(v: Vec3, s: number): Vec3 { return { x: v.x * s, y: v.y * s, z: v.z * s }; }
-function dot3(a: Vec3, b: Vec3): number { return a.x * b.x + a.y * b.y + a.z * b.z; }
+function add3(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+}
+function sub3(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
+function scale3(v: Vec3, s: number): Vec3 {
+  return { x: v.x * s, y: v.y * s, z: v.z * s };
+}
+function dot3(a: Vec3, b: Vec3): number {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+}
 function cross3(a: Vec3, b: Vec3): Vec3 {
   return { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x };
 }
-function vecLength(v: Vec3): number { return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
+function vecLength(v: Vec3): number {
+  return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
 function normalize3(v: Vec3): Vec3 {
   const len = vecLength(v);
   return len < 1e-10 ? { x: 0, y: 0, z: 0 } : scale3(v, 1 / len);
@@ -620,7 +633,12 @@ function lerpVec3(a: Vec3, b: Vec3, t: number): Vec3 {
 }
 
 // Quat helpers (local, not exported to avoid collisions).
-interface Q { x: number; y: number; z: number; w: number }
+interface Q {
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+}
 
 function multiplyQuat(a: Q, b: Q): Q {
   return {
@@ -648,7 +666,7 @@ function quatToEulerDeg(q: Q): { x: number; y: number; z: number } {
 
   // Pitch (y)
   const sinp = 2 * (q.w * q.y - q.z * q.x);
-  const pitch = Math.abs(sinp) >= 1 ? Math.sign(sinp) * Math.PI / 2 : Math.asin(sinp);
+  const pitch = Math.abs(sinp) >= 1 ? (Math.sign(sinp) * Math.PI) / 2 : Math.asin(sinp);
 
   // Yaw (z)
   const siny = 2 * (q.w * q.z + q.x * q.y);
@@ -658,9 +676,13 @@ function quatToEulerDeg(q: Q): { x: number; y: number; z: number } {
   return { x: toDeg(roll), y: toDeg(pitch), z: toDeg(yaw) };
 }
 
-function toDeg(rad: number): number { return (rad * 180) / Math.PI; }
+function toDeg(rad: number): number {
+  return (rad * 180) / Math.PI;
+}
 
-function clamp(v: number, lo: number, hi: number): number { return v < lo ? lo : v > hi ? hi : v; }
+function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
 
 function chainLength(bone: BoneDef, _config: MotionCompilerConfig): number {
   return vecLength(bone.localPosition);
@@ -668,7 +690,10 @@ function chainLength(bone: BoneDef, _config: MotionCompilerConfig): number {
 
 // ─── Internal: rest-pose helper (existing, unchanged logic) ──────────────────
 
-function restPoses(skeleton: BoneDef[], rotations: Array<[string, number, number, number]>): BonePose[] {
+function restPoses(
+  skeleton: BoneDef[],
+  rotations: Array<[string, number, number, number]>,
+): BonePose[] {
   const byName = new Map(skeleton.map((b) => [b.name, b]));
   return rotations.flatMap(([name, x, y, z]) => {
     const bone = byName.get(name as BoneName);
@@ -680,7 +705,7 @@ function restPoses(skeleton: BoneDef[], rotations: Array<[string, number, number
 // ─── Internal: command parsing helpers ───────────────────────────────────────
 
 function extractNumber(text: string, key: string): number | null {
-  const re = new RegExp(`${key}\\s*[=:]?\\s*(-?\\d+\\.?\\d*)`, "i");
+  const re = new RegExp(`${key}\\s*[=:]?\\s*(-?\\d+\\.?\\d*)`, 'i');
   const m = text.match(re);
   return m ? parseFloat(m[1]) : null;
 }
@@ -703,13 +728,18 @@ export function compileLookAt(
 ): MotionPlan {
   const cfg = { ...DEFAULT_CONFIG, ...config };
   const poses = solveLookAt(skeleton, target, cfg);
-  return { kind: "lookAtCamera", confidence: 0.88, poses, reason: `lookAt (${target.x.toFixed(1)}, ${target.y.toFixed(1)}, ${target.z.toFixed(1)})` };
+  return {
+    kind: 'lookAtCamera',
+    confidence: 0.88,
+    poses,
+    reason: `lookAt (${target.x.toFixed(1)}, ${target.y.toFixed(1)}, ${target.z.toFixed(1)})`,
+  };
 }
 
 /** High-level IK entry point that produces a MotionPlan. */
 export function compileIKArm(
   skeleton: BoneDef[],
-  side: "l" | "r",
+  side: 'l' | 'r',
   target: Vec3,
   poleVector?: Vec3,
   config?: Partial<MotionCompilerConfig>,
@@ -721,13 +751,13 @@ export function compileIKArm(
     poleVector,
   };
   const poses = solveIK2Bone(chain, skeleton, cfg);
-  return { kind: "raiseHand", confidence: 0.92, poses, reason: `IK arm ${side}` };
+  return { kind: 'raiseHand', confidence: 0.92, poses, reason: `IK arm ${side}` };
 }
 
 /** High-level IK entry point for legs. */
 export function compileIKLeg(
   skeleton: BoneDef[],
-  side: "l" | "r",
+  side: 'l' | 'r',
   target: Vec3,
   poleVector?: Vec3,
   config?: Partial<MotionCompilerConfig>,
@@ -739,5 +769,5 @@ export function compileIKLeg(
     poleVector,
   };
   const poses = solveIK2Bone(chain, skeleton, cfg);
-  return { kind: "neutral", confidence: 0.92, poses, reason: `IK leg ${side}` };
+  return { kind: 'neutral', confidence: 0.92, poses, reason: `IK leg ${side}` };
 }
