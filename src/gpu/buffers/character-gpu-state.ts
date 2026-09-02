@@ -1,4 +1,4 @@
-import { HumanDefinition } from '../../core/schema/human-definition';
+﻿import { HumanDefinition } from '../../core/schema/human-definition.js';
 
 /**
  * GPU-resident character state manager. Keeps hot character state on the GPU:

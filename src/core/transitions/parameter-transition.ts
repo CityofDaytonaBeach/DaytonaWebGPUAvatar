@@ -1,7 +1,7 @@
-import { HumanDefinition, PrimitiveValue } from '../schema/human-definition';
+﻿import { HumanDefinition, PrimitiveValue } from '../schema/human-definition.js';
 
 // ---------------------------------------------------------------------------
-// TransitionCurve – all supported easing / interpolation curves
+// TransitionCurve â€“ all supported easing / interpolation curves
 // ---------------------------------------------------------------------------
 
 export type TransitionCurve =
@@ -50,7 +50,7 @@ export interface TransitionSpec {
 }
 
 // ---------------------------------------------------------------------------
-// TransitionSummary – snapshot of managed transitions
+// TransitionSummary â€“ snapshot of managed transitions
 // ---------------------------------------------------------------------------
 
 export interface TransitionSummary {
@@ -61,7 +61,7 @@ export interface TransitionSummary {
 }
 
 // ---------------------------------------------------------------------------
-// TransitionBenchmark – accuracy measurement
+// TransitionBenchmark â€“ accuracy measurement
 // ---------------------------------------------------------------------------
 
 export interface TransitionBenchmark {
@@ -247,7 +247,7 @@ export function transitionComplete(transition: ParameterTransition, now: number)
 }
 
 // ---------------------------------------------------------------------------
-// TransitionTimeline – manage multiple simultaneous transitions
+// TransitionTimeline â€“ manage multiple simultaneous transitions
 // ---------------------------------------------------------------------------
 
 export class TransitionTimeline {

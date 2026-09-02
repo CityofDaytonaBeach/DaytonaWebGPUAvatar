@@ -1,11 +1,11 @@
-import {
+﻿import {
   AnatomyConstraint,
   AnatomyDimensions,
   validateAnatomy,
-} from '../anatomy/parametric/parametric-anatomy';
-import { CharacterEvent, createEvent } from '../core/events/character-event';
-import { HumanDefinition } from '../core/schema/human-definition';
-import { CanonicalHuman } from '../geometry/canonical/canonical-human';
+} from '../anatomy/parametric/parametric-anatomy.js';
+import { CharacterEvent, createEvent } from '../core/events/character-event.js';
+import { HumanDefinition } from '../core/schema/human-definition.js';
+import { CanonicalHuman } from '../geometry/canonical/canonical-human.js';
 
 export type PerceptualIssueKind =
   | 'anatomy.proportion'
@@ -124,8 +124,8 @@ export interface VisualEvaluationHook {
 }
 
 /**
- * Collects multiple corrective requests and applies them atomically — all-or-
- * nothing — so a character is never left in a half-corrected state.
+ * Collects multiple corrective requests and applies them atomically â€” all-or-
+ * nothing â€” so a character is never left in a half-corrected state.
  */
 export class CorrectiveBatch {
   private requests: CharacterEvent[] = [];

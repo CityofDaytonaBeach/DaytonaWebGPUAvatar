@@ -1,7 +1,7 @@
-import { HumanDefinition } from '../../core/schema/human-definition';
-import { CanonicalHuman, RegionName } from '../../geometry/canonical/canonical-human';
+﻿import { HumanDefinition } from '../../core/schema/human-definition.js';
+import { CanonicalHuman, RegionName } from '../../geometry/canonical/canonical-human.js';
 
-// ─── Existing types (unchanged) ──────────────────────────────────────────────
+// â”€â”€â”€ Existing types (unchanged) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface SkinResidualSample {
   vertexId: number;
@@ -21,7 +21,7 @@ export interface SkinResidualField {
   strength: number;
 }
 
-// ─── New enums & types ───────────────────────────────────────────────────────
+// â”€â”€â”€ New enums & types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export enum SkinPreset {
   Porcelain = 'porcelain',
@@ -155,7 +155,7 @@ export const SKIN_PRESETS: Record<SkinPreset, SkinPresetProfile> = {
   },
 };
 
-// ─── Region material properties ──────────────────────────────────────────────
+// â”€â”€â”€ Region material properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface RegionSkinMaterial {
   roughness: number;
@@ -297,7 +297,7 @@ export const REGION_MATERIALS: Record<string, RegionSkinMaterial> = {
   },
 };
 
-// ─── Wrinkle & blemish types ─────────────────────────────────────────────────
+// â”€â”€â”€ Wrinkle & blemish types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface WrinkleMap {
   vertexId: number;
@@ -350,7 +350,7 @@ export interface PoreOptions {
   scales?: number;
 }
 
-// ─── GPU material export ─────────────────────────────────────────────────────
+// â”€â”€â”€ GPU material export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Flat GPU-uploadable skin material data.
@@ -378,7 +378,7 @@ export interface SkinMaterialExport {
   blemishMask: Float32Array;
 }
 
-// ─── Core noise primitives (deterministic, zero-dep) ─────────────────────────
+// â”€â”€â”€ Core noise primitives (deterministic, zero-dep) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function noise1D(seed: number, x: number): number {
   const v = Math.sin(seed * 127.1 + x * 311.7) * 43758.5453;
@@ -429,7 +429,7 @@ function fbm2D(
   return value / maxValue;
 }
 
-// ─── Seeded PRNG (xorshift32, deterministic) ─────────────────────────────────
+// â”€â”€â”€ Seeded PRNG (xorshift32, deterministic) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function xorshift32(state: number): number {
   state ^= state << 13;
@@ -447,14 +447,14 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-// ─── Legacy noise (kept for backward compatibility) ──────────────────────────
+// â”€â”€â”€ Legacy noise (kept for backward compatibility) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function noise(seed: number, a: number, b: number): number {
   const x = Math.sin(seed * 12.9898 + a * 78.233 + b * 37.719) * 43758.5453;
   return x - Math.floor(x);
 }
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function clamp(v: number, min: number, max: number): number {
   return v < min ? min : v > max ? max : v;
@@ -486,7 +486,7 @@ function lerpColor(
   return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 }
 
-// ─── Skin aging model ────────────────────────────────────────────────────────
+// â”€â”€â”€ Skin aging model â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Computes a composite aging state from definition parameters.
@@ -529,7 +529,7 @@ export function computeAgingState(
   return overrides ? { ...state, ...overrides } : state;
 }
 
-// ─── Pore detail generation ──────────────────────────────────────────────────
+// â”€â”€â”€ Pore detail generation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Multi-scale pore detail. Generates coarse (large pores),
@@ -578,7 +578,7 @@ export function generatePoreDetail(
   };
 }
 
-// ─── Wrinkle/fold map generation ─────────────────────────────────────────────
+// â”€â”€â”€ Wrinkle/fold map generation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Derives wrinkle depth and direction per vertex from expression intensity
@@ -632,7 +632,7 @@ export function generateWrinkleMap(
     });
 }
 
-// ─── Blemish system ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Blemish system â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Procedural blemish placement. Generates moles, freckles, scars, and liver
@@ -743,7 +743,7 @@ export function generateBlemishes(
   return blemishes;
 }
 
-// ─── Sub-surface scattering approximation ────────────────────────────────────
+// â”€â”€â”€ Sub-surface scattering approximation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Approximates per-vertex SSS scatter color and depth.
@@ -775,7 +775,7 @@ export function computeSSSApproximation(
   };
 }
 
-// ─── GPU material export ─────────────────────────────────────────────────────
+// â”€â”€â”€ GPU material export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Generates a flat Float32Array-based material export suitable for
@@ -913,7 +913,7 @@ export function exportSkinMaterial(
   };
 }
 
-// ─── Preset access ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Preset access â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Returns the immutable preset profile for a given SkinPreset. */
 export function getSkinPresetProfile(preset: SkinPreset): SkinPresetProfile {
@@ -925,7 +925,7 @@ export function getRegionSkinMaterial(region: RegionName): RegionSkinMaterial {
   return REGION_MATERIALS[region] ?? REGION_MATERIALS.torso;
 }
 
-// ─── Original API (preserved exactly) ────────────────────────────────────────
+// â”€â”€â”€ Original API (preserved exactly) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Procedural neural-skin residual stand-in. It is deterministic, bounded, and

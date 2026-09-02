@@ -1,6 +1,6 @@
-import { PropertyCategory } from '../../core/schema/property';
-import { PropertyRegistry } from '../../core/schema/registry';
-import { DependencyGraph } from './dependency-graph';
+﻿import { PropertyCategory } from '../../core/schema/property.js';
+import { PropertyRegistry } from '../../core/schema/registry.js';
+import { DependencyGraph } from './dependency-graph.js';
 
 export type AffectedSystemName =
   | 'Global'

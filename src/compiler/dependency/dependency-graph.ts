@@ -1,6 +1,6 @@
-import { PropertyRegistry } from '../../core/schema/registry';
-import { PropertyMeta } from '../../core/schema/property';
-import { HumanDefinition } from '../../core/schema/human-definition';
+﻿import { PropertyRegistry } from '../../core/schema/registry.js';
+import { PropertyMeta } from '../../core/schema/property.js';
+import { HumanDefinition } from '../../core/schema/human-definition.js';
 
 export type NodeExecutionType = 'cpu' | 'gpu';
 
@@ -25,7 +25,7 @@ export class DependencyNode {
 /**
  * Human Dependency Graph. Expressed as nodes (properties) and edges
  * (dependency -> dependent). When a property changes we traverse only its
- * descendants, marking exactly that set dirty — never rebuilding unrelated
+ * descendants, marking exactly that set dirty â€” never rebuilding unrelated
  * systems.
  */
 export class DependencyGraph {

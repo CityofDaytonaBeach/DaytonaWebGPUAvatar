@@ -1,5 +1,5 @@
-import { KernelKind } from '../compiler/delta/delta-compiler';
-import { PropertyCategory } from '../core/schema/property';
+﻿import { KernelKind } from '../compiler/delta/delta-compiler.js';
+import { PropertyCategory } from '../core/schema/property.js';
 
 export type SubsystemQuality = 'OFF' | 'LOW' | 'MED' | 'HIGH' | 'ULTRA';
 
@@ -125,7 +125,7 @@ export const LOD_SUBSYSTEMS: readonly PropertyCategory[] = [
 ];
 
 /**
- * Perceptual weighting functions. Face/eyes/skin weigh higher than body —
+ * Perceptual weighting functions. Face/eyes/skin weigh higher than body â€”
  * a human observer notices errors there first, so those subsystems deserve a
  * larger share of the quality budget.
  */
@@ -511,7 +511,7 @@ export class PerceptualLOD {
 
   /**
    * Build a set of kernels to execute given camera proximity and focus.
-   * Close face → face/eyes/skin high; distant full-body → reduce micro detail.
+   * Close face â†’ face/eyes/skin high; distant full-body â†’ reduce micro detail.
    */
   lodMask(distance: number, focusOn: 'face' | 'body' | 'hand' | 'none'): Set<KernelKind> {
     // Mirror the existing behavior but drive the mask from the current budget.

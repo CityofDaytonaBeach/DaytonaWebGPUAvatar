@@ -1,4 +1,4 @@
-import { HumanDefinition } from '../../core/schema/human-definition';
+﻿import { HumanDefinition } from '../../core/schema/human-definition.js';
 
 export type SemanticExpression =
   'neutral' | 'smile' | 'frown' | 'surprise' | 'anger' | 'sad' | 'serious' | 'thinking';

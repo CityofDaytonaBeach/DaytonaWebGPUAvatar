@@ -1,7 +1,7 @@
-import { IdentityImportance } from '../../core/schema/property';
-import { PropertyRegistry } from '../../core/schema/registry';
-import { HumanDefinition } from '../../core/schema/human-definition';
-import { CharacterEvent } from '../../core/events/character-event';
+﻿import { IdentityImportance } from '../../core/schema/property.js';
+import { PropertyRegistry } from '../../core/schema/registry.js';
+import { HumanDefinition } from '../../core/schema/human-definition.js';
+import { CharacterEvent } from '../../core/events/character-event.js';
 
 export interface IdentityBudget {
   /**

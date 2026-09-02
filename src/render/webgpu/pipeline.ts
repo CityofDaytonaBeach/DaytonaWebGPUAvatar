@@ -1,20 +1,20 @@
-import { WebGPURenderer, RenderPart } from './renderer';
-import { CharacterGpuState } from '../../gpu/buffers/character-gpu-state';
-import { GpuMorphDeform } from '../../gpu/kernels/gpu-morph-deform';
-import { SkinningKernel } from '../../gpu/kernels/skinning-kernel';
-import { buildInfluences } from '../../gpu/kernels/skin-mesh';
-import { combinedSkinMatrices } from '../../anatomy/skeleton/bone-matrix';
-import { BoneDef } from '../../anatomy/skeleton/skeleton';
+﻿import { WebGPURenderer, RenderPart } from './renderer.js';
+import { CharacterGpuState } from '../../gpu/buffers/character-gpu-state.js';
+import { GpuMorphDeform } from '../../gpu/kernels/gpu-morph-deform.js';
+import { SkinningKernel } from '../../gpu/kernels/skinning-kernel.js';
+import { buildInfluences } from '../../gpu/kernels/skin-mesh.js';
+import { combinedSkinMatrices } from '../../anatomy/skeleton/bone-matrix.js';
+import { BoneDef } from '../../anatomy/skeleton/skeleton.js';
 import {
   packSparseMorphs,
   setMorphWeights,
   PackedMorphBuffers,
-} from '../../gpu/morph/gpu-morph-buffers';
-import { CanonicalHuman } from '../../geometry/canonical/canonical-human';
-import { SparseMorphSet } from '../../geometry/morph/sparse-morph';
-import { MorphDriver } from '../../geometry/morph/morph-driver';
-import { HumanDefinition } from '../../core/schema/human-definition';
-import { BonePose } from '../../animation/skeleton/skeletal-animation';
+} from '../../gpu/morph/gpu-morph-buffers.js';
+import { CanonicalHuman } from '../../geometry/canonical/canonical-human.js';
+import { SparseMorphSet } from '../../geometry/morph/sparse-morph.js';
+import { MorphDriver } from '../../geometry/morph/morph-driver.js';
+import { HumanDefinition } from '../../core/schema/human-definition.js';
+import { BonePose } from '../../animation/skeleton/skeletal-animation.js';
 
 export interface WebGpuHumanPipelineOptions {
   device: GPUDevice;

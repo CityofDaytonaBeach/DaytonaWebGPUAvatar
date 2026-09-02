@@ -1,4 +1,4 @@
-import { KernelKind, KernelWork } from '../delta/delta-compiler';
+﻿import { KernelKind, KernelWork } from '../delta/delta-compiler.js';
 
 export type GraphNodeType = 'kernel' | 'feedback' | 'readback';
 

@@ -1,6 +1,6 @@
-import { CanonicalHuman, PartGeometry, IndexRange, RegionName } from './canonical-human';
-import { CanonicalTopology } from './canonical-topology';
-import { validateCanonicalTopology, CanonicalValidationIssue } from './canonical-validator';
+﻿import { CanonicalHuman, PartGeometry, IndexRange, RegionName } from './canonical-human.js';
+import { CanonicalTopology } from './canonical-topology.js';
+import { validateCanonicalTopology, CanonicalValidationIssue } from './canonical-validator.js';
 
 export interface CanonicalAdapterResult {
   ok: boolean;

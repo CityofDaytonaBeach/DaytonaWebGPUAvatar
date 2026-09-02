@@ -1,7 +1,7 @@
-import { AnatomyDimensions } from '../../anatomy/parametric/parametric-anatomy';
-import { BoneDef } from '../../anatomy/skeleton/skeleton';
-import { Vec3, vec3 } from '../../core/math/vec';
-import { RegionName } from '../../geometry/canonical/canonical-human';
+﻿import { AnatomyDimensions } from '../../anatomy/parametric/parametric-anatomy.js';
+import { BoneDef } from '../../anatomy/skeleton/skeleton.js';
+import { Vec3, vec3 } from '../../core/math/vec.js';
+import { RegionName } from '../../geometry/canonical/canonical-human.js';
 
 export type HumanSdfPrimitiveKind = 'sphere' | 'capsule';
 

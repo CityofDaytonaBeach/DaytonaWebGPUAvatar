@@ -1,4 +1,4 @@
-import { Quat, Vec3, IDENTITY_QUAT } from '../../core/math/vec';
+﻿import { Quat, Vec3, IDENTITY_QUAT } from '../../core/math/vec.js';
 
 export interface BonePose {
   name: string;

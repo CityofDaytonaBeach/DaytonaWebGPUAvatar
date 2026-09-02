@@ -1,6 +1,6 @@
-import { HumanDefinition } from '../../core/schema/human-definition';
-import { Vec3, vec3 } from '../../core/math/vec';
-import { CanonicalHuman, Vertex } from '../../geometry/canonical/canonical-human';
+﻿import { HumanDefinition } from '../../core/schema/human-definition.js';
+import { Vec3, vec3 } from '../../core/math/vec.js';
+import { CanonicalHuman, Vertex } from '../../geometry/canonical/canonical-human.js';
 
 export interface HairStrandPoint {
   position: Vec3;
@@ -333,7 +333,7 @@ export function strandColors(
 /** A single corner of a hair card (ribbon segment). */
 export interface HairCardVertex {
   position: Vec3;
-  /** UV: u across the ribbon width, v along strand length (0 root → 1 tip). */
+  /** UV: u across the ribbon width, v along strand length (0 root â†’ 1 tip). */
   uv: { u: number; v: number };
   strandId: number;
 }
@@ -351,7 +351,7 @@ export interface HairRenderMesh {
   positions: Float32Array;
   uvs: Float32Array;
   indices: Uint32Array;
-  /** Quad cards, one per strand segment (segments × strands). */
+  /** Quad cards, one per strand segment (segments Ã— strands). */
   cards: HairCard[];
   vertexCount: number;
   triangleCount: number;

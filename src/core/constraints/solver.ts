@@ -1,8 +1,8 @@
-export * from './types';
+﻿export * from './types.js';
 
-import { ConstraintProfile, ConstraintResult } from './types';
-import { PropertyRegistry } from '../schema/registry';
-import { HumanDefinition } from '../schema/human-definition';
+import { ConstraintProfile, ConstraintResult } from './types.js';
+import { PropertyRegistry } from '../schema/registry.js';
+import { HumanDefinition } from '../schema/human-definition.js';
 
 /**
  * Anatomical constraint solver. Prevents invalid humans by enforcing hard,
@@ -39,7 +39,7 @@ export class ConstraintSolver {
 
   /**
    * Validate the whole definition. Returns satisfaction and any messages.
-   * Never mutates — callers decide whether to accept a change.
+   * Never mutates â€” callers decide whether to accept a change.
    */
   validate(definition: HumanDefinition): ConstraintResult {
     const messages: string[] = [];

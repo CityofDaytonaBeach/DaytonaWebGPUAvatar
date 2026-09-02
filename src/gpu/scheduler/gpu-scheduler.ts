@@ -1,7 +1,7 @@
-import { KernelKind } from '../../compiler/delta/delta-compiler';
-import { HumanProfiler } from '../profiler/profiler';
+﻿import { KernelKind } from '../../compiler/delta/delta-compiler.js';
+import { HumanProfiler } from '../profiler/profiler.js';
 
-// ─── Existing types (kept for backwards compatibility) ────────────────────────
+// â”€â”€â”€ Existing types (kept for backwards compatibility) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type ScheduleDecision = 'execute' | 'reduce' | 'reuse' | 'defer' | 'skip';
 
@@ -15,7 +15,7 @@ export interface ScheduleItem {
   deadline: number;
 }
 
-// ─── New production types ─────────────────────────────────────────────────────
+// â”€â”€â”€ New production types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type SchedulerProfile = 'mobile' | 'desktop' | 'high-end';
 
@@ -79,7 +79,7 @@ export interface SchedulerTimestampQueryState {
   readBuffer: GPUBuffer | null;
 }
 
-// ─── Frame pacing presets ─────────────────────────────────────────────────────
+// â”€â”€â”€ Frame pacing presets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const FPS_PRESETS: Record<number, Partial<SchedulerConfig>> = {
   20: { frameBudgetMs: 50, profile: 'mobile' },
@@ -120,7 +120,7 @@ const DEFAULT_SCHEDULER_CONFIG: SchedulerConfig = {
   profile: 'desktop',
 };
 
-// ─── Priority queue (min-heap by priority descending, higher = more urgent) ───
+// â”€â”€â”€ Priority queue (min-heap by priority descending, higher = more urgent) â”€â”€â”€
 
 export class PriorityQueue<T> {
   private heap: Array<{ item: T; priority: number }> = [];
@@ -186,7 +186,7 @@ export class PriorityQueue<T> {
   }
 }
 
-// ─── Human GPU Scheduler ──────────────────────────────────────────────────────
+// â”€â”€â”€ Human GPU Scheduler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Human GPU Scheduler.
@@ -254,7 +254,7 @@ export class GpuScheduler {
     this.frameBudgetMs = this.config.frameBudgetMs;
   }
 
-  // ─── Timestamp-query integration ─────────────────────────────────────────
+  // â”€â”€â”€ Timestamp-query integration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /** Enable timestamp-query GPU timing with the given device. Call once at init. */
   enableTimestampQuery(device: GPUDevice): boolean {
@@ -339,7 +339,7 @@ export class GpuScheduler {
     }
   }
 
-  // ─── Core scheduling ─────────────────────────────────────────────────────
+  // â”€â”€â”€ Core scheduling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /** Make a decision for one schedule item each frame. */
   decide(item: ScheduleItem): ScheduleDecision {
@@ -409,7 +409,7 @@ export class GpuScheduler {
     return results;
   }
 
-  // ─── Adaptive quality scaling ────────────────────────────────────────────
+  // â”€â”€â”€ Adaptive quality scaling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /** Compute the effective quality factor when reducing. Accounts for measured load. */
   reduceQuality(item: ScheduleItem): number {
@@ -437,7 +437,7 @@ export class GpuScheduler {
     return this.adapt(measured);
   }
 
-  // ─── Frame pacing ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Frame pacing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /** Reconfigure the scheduler for a different FPS target. */
   setTargetFps(fps: number): void {
@@ -460,7 +460,7 @@ export class GpuScheduler {
     this.frameBudgetMs = this.config.frameBudgetMs;
   }
 
-  // ─── History & stats ─────────────────────────────────────────────────────
+  // â”€â”€â”€ History & stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private recordHistory(measuredMs: number): void {
     this.budgetHistory.push(measuredMs);
@@ -520,7 +520,7 @@ export class GpuScheduler {
   }
 }
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function nowMs(): number {
   if (typeof performance !== 'undefined' && typeof performance.now === 'function')

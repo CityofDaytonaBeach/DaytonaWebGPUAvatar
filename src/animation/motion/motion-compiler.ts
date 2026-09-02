@@ -1,8 +1,8 @@
-import { Vec3 } from '../../core/math/vec';
-import { BoneDef, BoneName } from '../../anatomy/skeleton/skeleton';
-import { BonePose, quatFromEulerDeg, nlerp } from '../skeleton/skeletal-animation';
+﻿import { Vec3 } from '../../core/math/vec.js';
+import { BoneDef, BoneName } from '../../anatomy/skeleton/skeleton.js';
+import { BonePose, quatFromEulerDeg, nlerp } from '../skeleton/skeletal-animation.js';
 
-// ─── Config ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface MotionCompilerConfig {
   /** Total IK arm chain length (metres). If 0, auto-measured from skeleton. */
@@ -28,7 +28,7 @@ const DEFAULT_CONFIG: MotionCompilerConfig = {
   walkStepPeriod: 0.55,
 };
 
-// ─── Existing exports (kept identical) ───────────────────────────────────────
+// â”€â”€â”€ Existing exports (kept identical) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type MotionKind =
   'raiseHand' | 'lookAtCamera' | 'neutral' | 'unknown' | 'gesture' | 'walk' | 'transition';
@@ -120,13 +120,13 @@ export class MotionCompiler {
   }
 }
 
-// ─── Backward-compatible free function ───────────────────────────────────────
+// â”€â”€â”€ Backward-compatible free function â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function compileMotionCommand(command: string, skeleton: BoneDef[]): MotionPlan {
   return MotionCompiler.compile(command, skeleton);
 }
 
-// ─── IK Solver ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ IK Solver â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface IKChain {
   /** Bone names from root to effector (inclusive). */
@@ -138,8 +138,8 @@ export interface IKChain {
 }
 
 /**
- * 2-bone analytical IK solver. Works on a two-segment chain (e.g. upperarm→forearm
- * or thigh→shin). Returns local-space rotation quaternions for each bone in the
+ * 2-bone analytical IK solver. Works on a two-segment chain (e.g. upperarmâ†’forearm
+ * or thighâ†’shin). Returns local-space rotation quaternions for each bone in the
  * chain (length 2). Fully deterministic, zero-allocation-friendly.
  */
 export function solveIK2Bone(
@@ -207,7 +207,7 @@ export function solveIK2Bone(
   ];
 }
 
-// ─── Look-At Solver ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Look-At Solver â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface LookAtParams {
   target: Vec3;
@@ -228,7 +228,7 @@ export function solveLookAt(
   const head = byName.get('head');
   if (!neck || !head) return [];
 
-  // Chain root is chest → neck → head. We approximate the "eye" position as
+  // Chain root is chest â†’ neck â†’ head. We approximate the "eye" position as
   // the world-space tip of the head bone.
   const chest = byName.get('chest');
   const chestWorld = chest ? chest.localPosition : { x: 0, y: 0, z: 0 };
@@ -265,7 +265,7 @@ export function solveLookAt(
   ];
 }
 
-// ─── Gesture Library ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Gesture Library â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type GestureName =
   'wave' | 'point' | 'thumbsUp' | 'crossArms' | 'hipHands' | 'shrug' | 'headNod' | 'headShake';
@@ -379,7 +379,7 @@ function gesturePoses(gesture: GestureName, skeleton: BoneDef[]): BonePose[] {
   }
 }
 
-// ─── Retargeting ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Retargeting â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface RetargetMapping {
   /** Source skeleton that produced the motion. */
@@ -418,10 +418,10 @@ export function retargetPoses(poses: BonePose[], mapping: RetargetMapping): Bone
   });
 }
 
-// ─── Walk / Locomotion ───────────────────────────────────────────────────────
+// â”€â”€â”€ Walk / Locomotion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
- * Procedural walk cycle. `phase` is 0…1 through one full stride (0 = contact,
+ * Procedural walk cycle. `phase` is 0â€¦1 through one full stride (0 = contact,
  * 0.5 = mid-stance). `speed` scales the cycle time.
  * Returns a full-body pose set for the given phase.
  */
@@ -508,11 +508,11 @@ export function compileWalk(
   };
 }
 
-// ─── Blend / Transition ──────────────────────────────────────────────────────
+// â”€â”€â”€ Blend / Transition â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Blend two MotionPlans together. Returns a new plan whose poses are
- * element-wise nlerp of `from` and `to` at blend weight `t` (0…1).
+ * element-wise nlerp of `from` and `to` at blend weight `t` (0â€¦1).
  */
 export function blendMotions(from: MotionPlan, to: MotionPlan, t: number): MotionPlan {
   const wt = clamp(t, 0, 1);
@@ -562,7 +562,7 @@ export function transitionTo(
   };
 }
 
-// ─── Motion Validation ───────────────────────────────────────────────────────
+// â”€â”€â”€ Motion Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ValidationResult {
   valid: boolean;
@@ -593,7 +593,7 @@ export function validateMotion(plan: MotionPlan, skeleton: BoneDef[]): Validatio
 
     for (const [val, min, max, axis] of axes) {
       if (val < min || val > max) {
-        violations.push(`${pose.name} ${axis}: ${val.toFixed(1)}° outside [${min}, ${max}]`);
+        violations.push(`${pose.name} ${axis}: ${val.toFixed(1)}Â° outside [${min}, ${max}]`);
       }
     }
   }
@@ -601,7 +601,7 @@ export function validateMotion(plan: MotionPlan, skeleton: BoneDef[]): Validatio
   return { valid: violations.length === 0, violations };
 }
 
-// ─── Internal helpers (all pure, deterministic) ──────────────────────────────
+// â”€â”€â”€ Internal helpers (all pure, deterministic) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // --- Minimal Vec3 / Quat math (zero-dependency) ---
 
@@ -688,7 +688,7 @@ function chainLength(bone: BoneDef, _config: MotionCompilerConfig): number {
   return vecLength(bone.localPosition);
 }
 
-// ─── Internal: rest-pose helper (existing, unchanged logic) ──────────────────
+// â”€â”€â”€ Internal: rest-pose helper (existing, unchanged logic) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function restPoses(
   skeleton: BoneDef[],
@@ -702,7 +702,7 @@ function restPoses(
   });
 }
 
-// ─── Internal: command parsing helpers ───────────────────────────────────────
+// â”€â”€â”€ Internal: command parsing helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function extractNumber(text: string, key: string): number | null {
   const re = new RegExp(`${key}\\s*[=:]?\\s*(-?\\d+\\.?\\d*)`, 'i');
@@ -718,7 +718,7 @@ function extractVec3(text: string): Vec3 | null {
   return null;
 }
 
-// ─── Public: look-at entry point ─────────────────────────────────────────────
+// â”€â”€â”€ Public: look-at entry point â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** High-level look-at that produces a MotionPlan. */
 export function compileLookAt(

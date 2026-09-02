@@ -1,9 +1,9 @@
-import { Human } from '../../human';
-import { EventSource } from '../../core/events/character-event';
-import { KernelKind } from '../../compiler/delta/delta-compiler';
-import { AffectedSystemName } from '../../compiler/dependency/affected-systems';
+﻿import { Human } from '../../human.js';
+import { EventSource } from '../../core/events/character-event.js';
+import { KernelKind } from '../../compiler/delta/delta-compiler.js';
+import { AffectedSystemName } from '../../compiler/dependency/affected-systems.js';
 
-// ─── Existing types (kept for backwards compatibility) ────────────────────────
+// â”€â”€â”€ Existing types (kept for backwards compatibility) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface LocalizedEditBenchmarkCase {
   name: string;
@@ -43,16 +43,16 @@ export interface GpuTimestampBenchmarkResult {
   cpuSummary: LocalizedEditBenchmarkSummary;
 }
 
-// ─── New production types ─────────────────────────────────────────────────────
+// â”€â”€â”€ New production types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface BenchmarkConfig {
   /** Number of full runs of the entire case list (default 10). */
   iterations: number;
   /** Warmup runs discarded before measurement begins (default 3). */
   warmupRuns: number;
-  /** Per-iteration hard timeout in ms — benchmark aborts if exceeded (default 30000). */
+  /** Per-iteration hard timeout in ms â€” benchmark aborts if exceeded (default 30000). */
   timeoutMs: number;
-  /** Target fps for frame-pacing simulation — null disables pacing (default null). */
+  /** Target fps for frame-pacing simulation â€” null disables pacing (default null). */
   targetFps: number | null;
   /** If true, force CPU-only path even when GPU timestamp-query is available. */
   cpuOnly: boolean;
@@ -123,7 +123,7 @@ export interface BenchmarkRegressionReport {
   baseline: RegressionBaseline;
 }
 
-// ─── Default cases ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Default cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const DEFAULT_LOCALIZED_EDIT_BENCHMARKS: LocalizedEditBenchmarkCase[] = [
   { name: 'nose width localized edit', changes: { 'face.nose.width': 0.9 }, source: 'automation' },
@@ -136,7 +136,7 @@ export const DEFAULT_LOCALIZED_EDIT_BENCHMARKS: LocalizedEditBenchmarkCase[] = [
   { name: 'hair cosmetic edit', changes: { 'hair.length': 0.7 }, source: 'automation' },
 ];
 
-// ─── Feature detection ────────────────────────────────────────────────────────
+// â”€â”€â”€ Feature detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface GpuFeatureStatus {
   timestampQuerySupported: boolean;
@@ -181,7 +181,7 @@ export function detectGpuFeatureStatus(device?: GPUDevice): GpuFeatureStatus {
   };
 }
 
-// ─── Statistical helpers (zero-dependency, deterministic) ─────────────────────
+// â”€â”€â”€ Statistical helpers (zero-dependency, deterministic) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function computeStats(values: readonly number[]): StatisticalSummary {
   if (values.length === 0) {
@@ -211,7 +211,7 @@ function computeStats(values: readonly number[]): StatisticalSummary {
   };
 }
 
-// ─── Memory tracking ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Memory tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function readPeakMemory(): { cpuBytes: number | null; gpuBytes: number | null } {
   let cpuBytes: number | null = null;
@@ -228,13 +228,13 @@ function readPeakMemory(): { cpuBytes: number | null; gpuBytes: number | null } 
   return { cpuBytes, gpuBytes };
 }
 
-// ─── Internal types ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Internal types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface TimestampCommandEncoder extends GPUCommandEncoder {
   writeTimestamp?: (querySet: GPUQuerySet, queryIndex: number) => void;
 }
 
-// ─── Single-run helpers (backwards-compatible) ────────────────────────────────
+// â”€â”€â”€ Single-run helpers (backwards-compatible) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function runLocalizedEditBenchmark(
   cases: readonly LocalizedEditBenchmarkCase[] = DEFAULT_LOCALIZED_EDIT_BENCHMARKS,
@@ -346,7 +346,7 @@ export async function runLocalizedEditGpuTimestampBenchmark(
   return { supported: true, cpuSummary: { baselineVertexCount, results } };
 }
 
-// ─── BenchmarkSuite: multi-iteration, statistical, CI-ready ───────────────────
+// â”€â”€â”€ BenchmarkSuite: multi-iteration, statistical, CI-ready â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export class BenchmarkSuite {
   private config: BenchmarkConfig;
@@ -543,7 +543,7 @@ export class BenchmarkSuite {
   }
 }
 
-// ─── Regression detection ─────────────────────────────────────────────────────
+// â”€â”€â”€ Regression detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const DEFAULT_REGRESSION_THRESHOLD = 0.2; // 20% slower = regression
 
@@ -611,7 +611,7 @@ export function detectRegressions(
   return { regressions, improvements, baseline };
 }
 
-// ─── CI-ready output formats ──────────────────────────────────────────────────
+// â”€â”€â”€ CI-ready output formats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Produces JUnit-compatible XML for CI systems (GitHub Actions, Jenkins, etc.). */
 export function toJUnitXml(
@@ -699,7 +699,7 @@ export function toMarkdownTable(
   const lines: string[] = [];
   lines.push('## Localized Edit Benchmark Results\n');
   lines.push(
-    `> Iterations: ${summary.config.iterations} (warmup: ${summary.config.warmupRuns}) · GPU ts: ${summary.gpuTimestampSupported ? 'yes' : 'no'} · Wall: ${(summary.totalWallTimeMs / 1000).toFixed(1)}s`,
+    `> Iterations: ${summary.config.iterations} (warmup: ${summary.config.warmupRuns}) Â· GPU ts: ${summary.gpuTimestampSupported ? 'yes' : 'no'} Â· Wall: ${(summary.totalWallTimeMs / 1000).toFixed(1)}s`,
   );
 
   if (summary.timedOut) {
@@ -708,7 +708,7 @@ export function toMarkdownTable(
 
   lines.push('');
   lines.push(
-    '| Case | CPU mean (ms) | CPU p95 (ms) | CPU σ (ms) | GPU mean (ms) | GPU p95 (ms) | Status |',
+    '| Case | CPU mean (ms) | CPU p95 (ms) | CPU Ïƒ (ms) | GPU mean (ms) | GPU p95 (ms) | Status |',
   );
   lines.push(
     '|------|---------------|--------------|------------|---------------|--------------|--------|',
@@ -748,7 +748,7 @@ export function exportBenchmarkResult(
   return toJsonSummary(summary, regressions);
 }
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function escapeXml(s: string): string {
   return s

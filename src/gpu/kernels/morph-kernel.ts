@@ -1,6 +1,6 @@
-import { SparseMorphSet } from '../../geometry/morph/sparse-morph';
-import { HumanDefinition } from '../../core/schema/human-definition';
-import { MorphDriver } from '../../geometry/morph/morph-driver';
+﻿import { SparseMorphSet } from '../../geometry/morph/sparse-morph.js';
+import { HumanDefinition } from '../../core/schema/human-definition.js';
+import { MorphDriver } from '../../geometry/morph/morph-driver.js';
 
 /**
  * SparseMorph / MorphAccumulation kernel.

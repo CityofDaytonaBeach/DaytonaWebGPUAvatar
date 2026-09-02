@@ -1,9 +1,9 @@
-import { BoneDef } from '../skeleton/skeleton';
-import { AnatomyDimensions } from '../parametric/parametric-anatomy';
-import { Vec3, vec3 } from '../../core/math/vec';
+﻿import { BoneDef } from '../skeleton/skeleton.js';
+import { AnatomyDimensions } from '../parametric/parametric-anatomy.js';
+import { Vec3, vec3 } from '../../core/math/vec.js';
 
 // ---------------------------------------------------------------------------
-// Types – existing
+// Types â€“ existing
 // ---------------------------------------------------------------------------
 
 export type InternalAnatomyMode = 'normal' | 'skeleton' | 'muscle' | 'anatomy' | 'transparentSkin';
@@ -26,7 +26,7 @@ export interface InternalAnatomyView {
 }
 
 // ---------------------------------------------------------------------------
-// Types – new: organ system modes
+// Types â€“ new: organ system modes
 // ---------------------------------------------------------------------------
 
 export type OrganSystemMode = 'skeletal' | 'muscular' | 'circulatory' | 'nervous';
@@ -39,7 +39,7 @@ export const ORGAN_SYSTEM_COLORS: Record<OrganSystemMode, [number, number, numbe
 };
 
 // ---------------------------------------------------------------------------
-// Types – rendering data (GPU-uploadable flat arrays)
+// Types â€“ rendering data (GPU-uploadable flat arrays)
 // ---------------------------------------------------------------------------
 
 export interface InternalAnatomyRenderData {
@@ -50,7 +50,7 @@ export interface InternalAnatomyRenderData {
 }
 
 // ---------------------------------------------------------------------------
-// Types – volume estimation
+// Types â€“ volume estimation
 // ---------------------------------------------------------------------------
 
 export interface PrimitiveVolume {
@@ -60,7 +60,7 @@ export interface PrimitiveVolume {
 }
 
 // ---------------------------------------------------------------------------
-// Types – joint visualization
+// Types â€“ joint visualization
 // ---------------------------------------------------------------------------
 
 export type JointMarkerShape = 'sphere' | 'cone';
@@ -74,7 +74,7 @@ export interface JointVisualization {
 }
 
 // ---------------------------------------------------------------------------
-// Types – fracture visualization
+// Types â€“ fracture visualization
 // ---------------------------------------------------------------------------
 
 export interface BoneFracture {
@@ -90,7 +90,7 @@ export interface FractureVisualization {
 }
 
 // ---------------------------------------------------------------------------
-// Types – muscle activation
+// Types â€“ muscle activation
 // ---------------------------------------------------------------------------
 
 export interface MuscleActivation {
@@ -99,7 +99,7 @@ export interface MuscleActivation {
 }
 
 // ---------------------------------------------------------------------------
-// Types – heatmap overlay
+// Types â€“ heatmap overlay
 // ---------------------------------------------------------------------------
 
 export interface HeatmapSample {

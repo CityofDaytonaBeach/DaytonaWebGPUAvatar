@@ -1,6 +1,6 @@
-import { Quat, Vec3, multiplyMatrices } from '../../core/math/vec';
-import { BoneDef } from './skeleton';
-import { BonePose } from '../../animation/skeleton/skeletal-animation';
+﻿import { Quat, Vec3, multiplyMatrices } from '../../core/math/vec.js';
+import { BoneDef } from './skeleton.js';
+import { BonePose } from '../../animation/skeleton/skeletal-animation.js';
 
 /**
  * Forward-kinematics + skin-matrix construction for the parametric skeleton.

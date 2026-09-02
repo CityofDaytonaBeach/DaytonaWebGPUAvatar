@@ -1,5 +1,5 @@
-import { CharacterEvent, applyEventToDefinition } from '../events/character-event';
-import { HumanDefinition } from '../schema/human-definition';
+﻿import { CharacterEvent, applyEventToDefinition } from '../events/character-event.js';
+import { HumanDefinition } from '../schema/human-definition.js';
 
 export interface Snapshot {
   atEventIndex: number;

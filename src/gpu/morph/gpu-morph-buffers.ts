@@ -1,9 +1,9 @@
-import { SparseMorph } from '../../geometry/canonical/canonical-human';
+﻿import { SparseMorph } from '../../geometry/canonical/canonical-human.js';
 
 export interface GpuMorphLayout {
   /** Total number of (index,dx,dy,dz) entries across all morphs. */
   deltaCount: number;
-  /** Per-morph: { weightByteOffset, rangeByteOffset } — see pack(). */
+  /** Per-morph: { weightByteOffset, rangeByteOffset } â€” see pack(). */
   morphs: Array<{ name: string }>;
   // Flat delta array is (u32 index, f32 dx, f32 dy, f32 dz) -> 4 x u32 slots.
   deltaArrayBytes: number;
@@ -28,7 +28,7 @@ type SparseMorphList = ReadonlyArray<SparseMorph>;
  *
  * Each morph's deltas are sorted by vertex id so a per-vertex gather kernel can
  * binary-search. Deltas are stored as 4-component quads (index + dx,dy,dz) for
- * ideal storage alignment. This is a lossless compact representation — only the
+ * ideal storage alignment. This is a lossless compact representation â€” only the
  * affected vertices of each morph appear, never the whole mesh.
  */
 export function packSparseMorphs(morphs: SparseMorphList): PackedMorphBuffers {
@@ -58,7 +58,7 @@ export function packSparseMorphs(morphs: SparseMorphList): PackedMorphBuffers {
     deltaPacked[i * 4 + 3] = f32bits(q.dz);
   }
 
-  // morphStruct: per morph { weight..., offset:u32, count:u32 } — 4 u32 slots.
+  // morphStruct: per morph { weight..., offset:u32, count:u32 } â€” 4 u32 slots.
   // Slots: [0]=weight bits(padded), [1]=count, [2]=offset, [3]=unused padding.
   const morphStruct = new Uint32Array(morphOrder.length * 4);
   for (let i = 0; i < morphOrder.length; i++) {

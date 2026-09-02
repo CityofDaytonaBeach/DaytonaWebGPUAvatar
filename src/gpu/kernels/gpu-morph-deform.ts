@@ -1,4 +1,4 @@
-import { MORPH_COMPUTE_WGSL } from '../../render/wgsl/morph-wgsl';
+﻿import { MORPH_COMPUTE_WGSL } from '../../render/wgsl/morph-wgsl.js';
 
 const BYTES_PER_META = 16; // vec4f morph meta entry
 

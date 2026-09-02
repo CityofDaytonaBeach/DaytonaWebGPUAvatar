@@ -1,9 +1,9 @@
-import { buildBoneMatrices, combinedSkinMatrices } from '../anatomy/skeleton/bone-matrix';
-import { BoneDef } from '../anatomy/skeleton/skeleton';
-import { BonePose } from '../animation/skeleton/skeletal-animation';
-import { CharacterEvent } from '../core/events/character-event';
-import { Vec3, vec3 } from '../core/math/vec';
-import { CanonicalHuman, RegionName } from '../geometry/canonical/canonical-human';
+﻿import { buildBoneMatrices, combinedSkinMatrices } from '../anatomy/skeleton/bone-matrix.js';
+import { BoneDef } from '../anatomy/skeleton/skeleton.js';
+import { BonePose } from '../animation/skeleton/skeletal-animation.js';
+import { CharacterEvent } from '../core/events/character-event.js';
+import { Vec3, vec3 } from '../core/math/vec.js';
+import { CanonicalHuman, RegionName } from '../geometry/canonical/canonical-human.js';
 
 export type AttachmentKind = 'wearable' | 'tattoo' | 'piercing' | 'generic';
 

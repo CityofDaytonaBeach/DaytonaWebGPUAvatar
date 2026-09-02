@@ -1,4 +1,4 @@
-import { HumanDefinition } from '../../core/schema/human-definition';
+﻿import { HumanDefinition } from '../../core/schema/human-definition.js';
 
 /**
  * Concrete, measured body dimensions resolved from the semantic Human

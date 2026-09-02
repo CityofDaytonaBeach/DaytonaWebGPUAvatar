@@ -1,11 +1,11 @@
-import { SKIN_COMPUTE_WGSL } from '../../render/wgsl/skin-wgsl';
-import { SkinInfluences } from './skin-mesh';
+﻿import { SKIN_COMPUTE_WGSL } from '../../render/wgsl/skin-wgsl.js';
+import { SkinInfluences } from './skin-mesh.js';
 
 /**
  * Dispatches the GPU skinning compute pass. Reads GPU-resident positions (the
  * morph-deformed working buffer), per-vertex bone influences, and a skin matrix
  * buffer; writes skinned positions a renderer can bind. At the rest pose the
- * skin matrices are identity, so output equals input — animation alone moves
+ * skin matrices are identity, so output equals input â€” animation alone moves
  * the vertices bound to rotated bones.
  */
 export class SkinningKernel {

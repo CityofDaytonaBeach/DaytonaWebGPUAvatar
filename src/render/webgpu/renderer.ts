@@ -1,4 +1,4 @@
-import { HUMAN_PARAM_STRUCT } from '../wgsl/shaders';
+﻿import { HUMAN_PARAM_STRUCT } from '../wgsl/shaders.js';
 
 /**
  * Full WGSL program for the human renderer (single module so vertex/fragment

@@ -1,13 +1,13 @@
-import { HumanAttachment } from '../../attachments/attachment-system';
-import { Vec3, vec3 } from '../../core/math/vec';
+﻿import { HumanAttachment } from '../../attachments/attachment-system.js';
+import { Vec3, vec3 } from '../../core/math/vec.js';
 import {
   CanonicalHuman,
   MorphDelta,
   RegionName,
   Vertex,
-} from '../../geometry/canonical/canonical-human';
+} from '../../geometry/canonical/canonical-human.js';
 
-// ─── Existing types (unchanged) ──────────────────────────────────────────────
+// â”€â”€â”€ Existing types (unchanged) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface TattooDecalSample {
   vertexId: number;
@@ -30,7 +30,7 @@ export interface TattooDecalOptions {
   defaultColor?: [number, number, number];
 }
 
-// ─── New types ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ New types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type TattooBlendMode = 'normal' | 'multiply' | 'overlay' | 'screen';
 
@@ -77,7 +77,7 @@ export interface TattooGPUExport {
   vertexCount: number;
 }
 
-// ─── Falloff curve functions ─────────────────────────────────────────────────
+// â”€â”€â”€ Falloff curve functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const FALLOFF_CURVES: Record<TattooFalloffCurve, (t: number) => number> = {
   linear: (t) => 1 - t,
@@ -96,7 +96,7 @@ const FALLOFF_CURVES: Record<TattooFalloffCurve, (t: number) => number> = {
   },
 };
 
-// ─── Blend mode functions ────────────────────────────────────────────────────
+// â”€â”€â”€ Blend mode functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function blendNormal(base: number, decal: number, alpha: number): number {
   return base + (decal - base) * alpha;
@@ -129,7 +129,7 @@ function applyBlend(mode: TattooBlendMode, base: number, decal: number, alpha: n
   }
 }
 
-// ─── Existing project functions (unchanged API, extended internals) ───────────
+// â”€â”€â”€ Existing project functions (unchanged API, extended internals) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Project a tattoo attachment to stable region vertices as a decal sample set. */
 export function projectTattooDecal(
@@ -172,7 +172,7 @@ export function projectTattooDecals(
   });
 }
 
-// ─── UV-space decal projection ───────────────────────────────────────────────
+// â”€â”€â”€ UV-space decal projection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Place a decal in UV space rather than 3D position. Returns decal samples for
@@ -214,7 +214,7 @@ export function projectUVDecal(
   return { id: attachment.id, region, center: center3D, radius, samples };
 }
 
-// ─── Opacity mapping ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Opacity mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Apply a custom opacity map over existing decal samples. The map receives
@@ -287,7 +287,7 @@ export function projectTattooDecalExtended(
   };
 }
 
-// ─── Normal map generation ───────────────────────────────────────────────────
+// â”€â”€â”€ Normal map generation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Generate a per-vertex normal overlay from decal samples. Positive
@@ -342,7 +342,7 @@ export function accumulateNormalOverlays(
   return { normals, strengths, vertexCount };
 }
 
-// ─── Vertex color baking ─────────────────────────────────────────────────────
+// â”€â”€â”€ Vertex color baking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Bake a single decal onto a pre-existing vertex color buffer.
@@ -386,7 +386,7 @@ export function bakeDecalToNewBuffer(
   return { colors, mask, vertexCount };
 }
 
-// ─── Multi-decal blending ────────────────────────────────────────────────────
+// â”€â”€â”€ Multi-decal blending â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Blend multiple decals onto a single vertex color buffer, processing decals
@@ -407,7 +407,7 @@ export function blendMultipleDecals(
   return { colors, mask, vertexCount };
 }
 
-// ─── Deformable decal support ────────────────────────────────────────────────
+// â”€â”€â”€ Deformable decal support â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Re-project decal samples after morph deltas are applied. For each sample,
@@ -466,7 +466,7 @@ export function reprojectDecalsWithMorph(
   return decals.map((d) => reprojectDecalWithMorph(d, canonical, deltas));
 }
 
-// ─── GPU-ready data export ───────────────────────────────────────────────────
+// â”€â”€â”€ GPU-ready data export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Export baked vertex colors, normal overlay, and strengths as flat
@@ -508,7 +508,7 @@ export function exportNormalOverlayBuffer(
   return accumulateNormalOverlays(decals, canonical).normals;
 }
 
-// ─── TattooDecalSystem ───────────────────────────────────────────────────────
+// â”€â”€â”€ TattooDecalSystem â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Manages a collection of decals, projects them from attachments, handles
@@ -692,7 +692,7 @@ export class TattooDecalSystem {
   }
 }
 
-// ─── Internal helpers ────────────────────────────────────────────────────────
+// â”€â”€â”€ Internal helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function regionCentroid(vertices: Vertex[]): Vec3 {
   let x = 0,

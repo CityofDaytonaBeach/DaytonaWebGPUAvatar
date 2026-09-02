@@ -1,56 +1,56 @@
-// Daytona WebGPU Avatar — public SDK surface.
+﻿// Daytona WebGPU Avatar â€” public SDK surface.
 
-export { Human } from './human';
-export type { HumanCreateOptions, HumanModifyResult } from './human';
+export { Human } from './human.js';
+export type { HumanCreateOptions, HumanModifyResult } from './human.js';
 
 // Core
-export { HumanDefinition } from './core/schema/human-definition';
+export { HumanDefinition } from './core/schema/human-definition.js';
 export {
   PropertyRegistry,
   makePropertyId,
   propertyCategory,
   alignUp,
-} from './core/schema/registry';
-export type { PropertyDescriptor } from './core/schema/registry';
-export { DEFAULT_PROPERTY_DESCRIPTORS, createDefaultRegistry } from './core/schema/descriptors';
+} from './core/schema/registry.js';
+export type { PropertyDescriptor } from './core/schema/registry.js';
+export { DEFAULT_PROPERTY_DESCRIPTORS, createDefaultRegistry } from './core/schema/descriptors.js';
 export {
   generateHumanParamsWgsl,
   validateWgslLayout,
   wgslFieldName,
   wgslLayoutFields,
-} from './core/schema/gpu-layout';
+} from './core/schema/gpu-layout.js';
 export type {
   WgslLayoutField,
   WgslLayoutValidationIssue,
   WgslLayoutValidationResult,
-} from './core/schema/gpu-layout';
+} from './core/schema/gpu-layout.js';
 export {
   generateHumanDefinitionJsonSchema,
   validateHumanDefinitionRecord,
-} from './core/schema/json-schema';
+} from './core/schema/json-schema.js';
 export type {
   HumanDefinitionJsonSchema,
   JsonSchemaProperty,
   SchemaValidationIssue,
   SchemaValidationResult,
-} from './core/schema/json-schema';
+} from './core/schema/json-schema.js';
 export {
   PropertyCategory,
   PersistenceType,
   IdentityImportance,
   PROPERTY_CATEGORIES,
-} from './core/schema/property';
-export type { PropertyMeta, PropertyType } from './core/schema/property';
+} from './core/schema/property.js';
+export type { PropertyMeta, PropertyType } from './core/schema/property.js';
 
 // Events & timeline
-export { createEvent, applyEventToDefinition } from './core/events/character-event';
+export { createEvent, applyEventToDefinition } from './core/events/character-event.js';
 export type {
   CharacterEvent,
   CharacterEventType,
   EventSource,
-} from './core/events/character-event';
-export { CharacterTimeline } from './core/timeline/character-timeline';
-export type { Snapshot } from './core/timeline/character-timeline';
+} from './core/events/character-event.js';
+export { CharacterTimeline } from './core/timeline/character-timeline.js';
+export type { Snapshot } from './core/timeline/character-timeline.js';
 export {
   createParameterTransition,
   sampleTransition,
@@ -59,7 +59,7 @@ export {
   replayTransition,
   verifyTransitionDeterminism,
   validateTransitionDeterminism,
-} from './core/transitions/parameter-transition';
+} from './core/transitions/parameter-transition.js';
 export type {
   ParameterTransition,
   TransitionCurve,
@@ -68,55 +68,58 @@ export type {
   OvershootConfig,
   TransitionSummary,
   TransitionBenchmark,
-} from './core/transitions/parameter-transition';
+} from './core/transitions/parameter-transition.js';
 
 // Constraints
-export { ConstraintSolver, CONSTRAINT_PROFILES } from './core/constraints/solver';
-export type { ConstraintProfile, ConstraintResult } from './core/constraints/types';
+export { ConstraintSolver, CONSTRAINT_PROFILES } from './core/constraints/solver.js';
+export type { ConstraintProfile, ConstraintResult } from './core/constraints/types.js';
 
 // Math
-export { vec3, IDENTITY_QUAT, identityMatrix, multiplyMatrices } from './core/math/vec';
-export type { Vec3, Vec4, Quat } from './core/math/vec';
-export { DependencyGraph } from './compiler/dependency/dependency-graph';
-export type { DependencyNode } from './compiler/dependency/dependency-graph';
+export { vec3, IDENTITY_QUAT, identityMatrix, multiplyMatrices } from './core/math/vec.js';
+export type { Vec3, Vec4, Quat } from './core/math/vec.js';
+export { DependencyGraph } from './compiler/dependency/dependency-graph.js';
+export type { DependencyNode } from './compiler/dependency/dependency-graph.js';
 export {
   affectedSystemsForChange,
   systemForCategory,
-} from './compiler/dependency/affected-systems';
-export type { AffectedSystem, AffectedSystemName } from './compiler/dependency/affected-systems';
-export { DeltaCompiler, CATEGORY_TO_KERNEL } from './compiler/delta/delta-compiler';
+} from './compiler/dependency/affected-systems.js';
+export type { AffectedSystem, AffectedSystemName } from './compiler/dependency/affected-systems.js';
+export { DeltaCompiler, CATEGORY_TO_KERNEL } from './compiler/delta/delta-compiler.js';
 export type {
   DeltaVertexRangeSource,
   KernelWork,
   KernelKind,
-} from './compiler/delta/delta-compiler';
-export { DirtyRegionTracker } from './compiler/delta/dirty-regions';
-export { ComputeGraph } from './compiler/compute/compute-graph';
-export type { GraphNode } from './compiler/compute/compute-graph';
+} from './compiler/delta/delta-compiler.js';
+export { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
+export { ComputeGraph } from './compiler/compute/compute-graph.js';
+export type { GraphNode } from './compiler/compute/compute-graph.js';
 
 // Anatomy
-export { defaultSkeleton, placeSkeletonFromDefinition } from './anatomy/skeleton/skeleton';
-export type { BoneDef, BoneName, JointLimits } from './anatomy/skeleton/skeleton';
+export { defaultSkeleton, placeSkeletonFromDefinition } from './anatomy/skeleton/skeleton.js';
+export type { BoneDef, BoneName, JointLimits } from './anatomy/skeleton/skeleton.js';
 export {
   resolveAnatomy,
   validateAnatomy,
   anatomySatisfaction,
-} from './anatomy/parametric/parametric-anatomy';
-export type { AnatomyDimensions, AnatomyConstraint } from './anatomy/parametric/parametric-anatomy';
+} from './anatomy/parametric/parametric-anatomy.js';
+export type {
+  AnatomyDimensions,
+  AnatomyConstraint,
+} from './anatomy/parametric/parametric-anatomy.js';
 export {
   buildBoneMatrices,
   combinedSkinMatrices,
   composeMatrix,
   invertMatrix,
-} from './anatomy/skeleton/bone-matrix';
+} from './anatomy/skeleton/bone-matrix.js';
 export {
   buildInfluences,
   skinMeshCPU,
   skinNormalsCPU,
   normalizeWeights,
   MAX_INFLUENCES,
-} from './gpu/kernels/skin-mesh';
-export type { SkinInfluences } from './gpu/kernels/skin-mesh';
+} from './gpu/kernels/skin-mesh.js';
+export type { SkinInfluences } from './gpu/kernels/skin-mesh.js';
 export {
   buildInternalAnatomyView,
   buildOrganSystemView,
@@ -129,7 +132,7 @@ export {
   applyMuscleActivation,
   applyHeatmapOverlay,
   buildAnatomyRenderPipeline,
-} from './anatomy/internal/internal-anatomy';
+} from './anatomy/internal/internal-anatomy.js';
 export type {
   InternalAnatomyMode,
   InternalAnatomyPrimitive,
@@ -145,14 +148,14 @@ export type {
   MuscleActivation,
   HeatmapOverlay,
   HeatmapSample,
-} from './anatomy/internal/internal-anatomy';
+} from './anatomy/internal/internal-anatomy.js';
 
 // Identity
-export { IdentitySolver } from './identity/solver/identity-solver';
-export type { IdentityBudget, IdentityChangeGate } from './identity/solver/identity-solver';
+export { IdentitySolver } from './identity/solver/identity-solver.js';
+export type { IdentityBudget, IdentityChangeGate } from './identity/solver/identity-solver.js';
 
 // Geometry
-export { CanonicalHuman, generateBlockHuman } from './geometry/canonical/canonical-human';
+export { CanonicalHuman, generateBlockHuman } from './geometry/canonical/canonical-human.js';
 export type {
   RegionName,
   Vertex,
@@ -160,44 +163,44 @@ export type {
   SparseMorph,
   PartGeometry,
   PartKind,
-} from './geometry/canonical/canonical-human';
+} from './geometry/canonical/canonical-human.js';
 export {
   REQUIRED_CANONICAL_PARTS,
   REQUIRED_CANONICAL_REGIONS,
   validateCanonicalHuman,
   validateCanonicalTopology,
-} from './geometry/canonical/canonical-validator';
+} from './geometry/canonical/canonical-validator.js';
 export type {
   CanonicalValidationIssue,
   CanonicalValidationReport,
-} from './geometry/canonical/canonical-validator';
+} from './geometry/canonical/canonical-validator.js';
 export type {
   CanonicalTopology,
   CanonicalTopologyPart,
   CanonicalTopologyVertex,
-} from './geometry/canonical/canonical-topology';
+} from './geometry/canonical/canonical-topology.js';
 export {
   adaptCanonicalTopologyAsset,
   CanonicalTopologyAdapter,
-} from './geometry/canonical/canonical-adapter';
+} from './geometry/canonical/canonical-adapter.js';
 export type {
   CanonicalAdapterResult,
   CanonicalAssetAdapter,
-} from './geometry/canonical/canonical-adapter';
-export { SparseMorphSet } from './geometry/morph/sparse-morph';
-export { MorphDriver } from './geometry/morph/morph-driver';
+} from './geometry/canonical/canonical-adapter.js';
+export { SparseMorphSet } from './geometry/morph/sparse-morph.js';
+export { MorphDriver } from './geometry/morph/morph-driver.js';
 
 // GPU
-export { createDeviceAndProfile } from './gpu/device/capabilities';
-export type { DeviceCapabilities, DeviceProfile } from './gpu/device/capabilities';
-export { CharacterGpuState } from './gpu/buffers/character-gpu-state';
-export { MorphKernel } from './gpu/kernels/morph-kernel';
-export { GpuMorphDeform } from './gpu/kernels/gpu-morph-deform';
-export { packSparseMorphs, setMorphWeights } from './gpu/morph/gpu-morph-buffers';
-export type { PackedMorphBuffers, GpuMorphLayout } from './gpu/morph/gpu-morph-buffers';
-export { HumanProfiler, countDirtyVertices } from './gpu/profiler/profiler';
-export type { FrameMetrics } from './gpu/profiler/profiler';
-export { GpuScheduler } from './gpu/scheduler/gpu-scheduler';
+export { createDeviceAndProfile } from './gpu/device/capabilities.js';
+export type { DeviceCapabilities, DeviceProfile } from './gpu/device/capabilities.js';
+export { CharacterGpuState } from './gpu/buffers/character-gpu-state.js';
+export { MorphKernel } from './gpu/kernels/morph-kernel.js';
+export { GpuMorphDeform } from './gpu/kernels/gpu-morph-deform.js';
+export { packSparseMorphs, setMorphWeights } from './gpu/morph/gpu-morph-buffers.js';
+export type { PackedMorphBuffers, GpuMorphLayout } from './gpu/morph/gpu-morph-buffers.js';
+export { HumanProfiler, countDirtyVertices } from './gpu/profiler/profiler.js';
+export type { FrameMetrics } from './gpu/profiler/profiler.js';
+export { GpuScheduler } from './gpu/scheduler/gpu-scheduler.js';
 export type {
   ScheduleDecision,
   ScheduleItem,
@@ -206,30 +209,38 @@ export type {
   SchedulerReport,
   SchedulerProfile,
   PriorityQueue,
-} from './gpu/scheduler/gpu-scheduler';
+} from './gpu/scheduler/gpu-scheduler.js';
 
 // Render
-export { placeholderShaders, HUMAN_PARAM_STRUCT, buildShaderModule } from './render/wgsl/shaders';
-export type { HumanRendererShaders } from './render/wgsl/shaders';
-export { WebGPURenderer, HUMAN_RENDER_WGSL, buildCameraMatrices } from './render/webgpu/renderer';
-export type { CameraMatrices, RenderPart } from './render/webgpu/renderer';
-export { WebGpuHumanPipeline } from './render/webgpu/pipeline';
-export type { WebGpuHumanPipelineOptions } from './render/webgpu/pipeline';
+export {
+  placeholderShaders,
+  HUMAN_PARAM_STRUCT,
+  buildShaderModule,
+} from './render/wgsl/shaders.js';
+export type { HumanRendererShaders } from './render/wgsl/shaders.js';
+export {
+  WebGPURenderer,
+  HUMAN_RENDER_WGSL,
+  buildCameraMatrices,
+} from './render/webgpu/renderer.js';
+export type { CameraMatrices, RenderPart } from './render/webgpu/renderer.js';
+export { WebGpuHumanPipeline } from './render/webgpu/pipeline.js';
+export type { WebGpuHumanPipelineOptions } from './render/webgpu/pipeline.js';
 export {
   WebGL2HumanRenderer,
   buildWebGL2RenderParts,
   webglPartColor,
-} from './render/webgl2/renderer';
-export type { WebGL2RenderPart } from './render/webgl2/renderer';
-export { MORPH_COMPUTE_WGSL } from './render/wgsl/morph-wgsl';
+} from './render/webgl2/renderer.js';
+export type { WebGL2RenderPart } from './render/webgl2/renderer.js';
+export { MORPH_COMPUTE_WGSL } from './render/wgsl/morph-wgsl.js';
 
 // Animation
 export {
   SkeletalAnimation,
   sampleChannel,
   quatFromEulerDeg as quatFromEuler,
-} from './animation/skeleton/skeletal-animation';
-export type { BonePose, AnimationChannel } from './animation/skeleton/skeletal-animation';
+} from './animation/skeleton/skeletal-animation.js';
+export type { BonePose, AnimationChannel } from './animation/skeleton/skeletal-animation.js';
 export {
   MotionCompiler,
   compileMotionCommand,
@@ -243,26 +254,26 @@ export {
   transitionTo,
   retargetPoses,
   validateMotion,
-} from './animation/motion/motion-compiler';
+} from './animation/motion/motion-compiler.js';
 export type {
   MotionKind,
   MotionPlan,
   MotionCompilerConfig,
   IKChain,
   GestureName,
-} from './animation/motion/motion-compiler';
-export { FacialExpressionSystem } from './animation/facial/facial-expression';
-export type { SemanticExpression } from './animation/facial/facial-expression';
-export { SpeechSolver, simpleTTS } from './animation/speech/speech-solver';
-export type { SpeechTrack, Phoneme, Viseme } from './animation/speech/speech-solver';
+} from './animation/motion/motion-compiler.js';
+export { FacialExpressionSystem } from './animation/facial/facial-expression.js';
+export type { SemanticExpression } from './animation/facial/facial-expression.js';
+export { SpeechSolver, simpleTTS } from './animation/speech/speech-solver.js';
+export type { SpeechTrack, Phoneme, Viseme } from './animation/speech/speech-solver.js';
 
 // Attachments
-export { AttachmentSystem } from './attachments/attachment-system';
+export { AttachmentSystem } from './attachments/attachment-system.js';
 export type {
   HumanAttachment,
   AttachmentAnchor,
   AttachmentKind,
-} from './attachments/attachment-system';
+} from './attachments/attachment-system.js';
 
 // Surface
 export {
@@ -276,7 +287,7 @@ export {
   strandColors,
   HairSim,
   HAIR_LOD_BUDGETS,
-} from './surface/hair/strand-hair';
+} from './surface/hair/strand-hair.js';
 export type {
   StrandHairGeometry,
   HairStrand,
@@ -297,7 +308,7 @@ export type {
   HairRenderMesh,
   HairMeshOptions,
   HairSimulationOptions,
-} from './surface/hair/strand-hair';
+} from './surface/hair/strand-hair.js';
 export {
   HumanSdfField,
   buildHumanSdfField,
@@ -311,7 +322,7 @@ export {
   segmentSegmentClosest,
   sphereSphereDistance,
   capsuleBoxDistance,
-} from './physics/sdf/human-sdf';
+} from './physics/sdf/human-sdf.js';
 export type {
   HumanSdfPrimitive,
   HumanSdfPrimitiveKind,
@@ -323,7 +334,7 @@ export type {
   HumanSdfNearestSample,
   HumanSdfPredictResult,
   SdfCollisionConfig,
-} from './physics/sdf/human-sdf';
+} from './physics/sdf/human-sdf.js';
 export {
   createTorsoCloth,
   stepCloth,
@@ -337,7 +348,7 @@ export {
   clothRestLengthsToGPUBuffer,
   meshToGPULayout,
   meshFromGPULayout,
-} from './physics/cloth/cloth-sim';
+} from './physics/cloth/cloth-sim.js';
 export type {
   ClothMesh,
   ClothParticle,
@@ -345,7 +356,7 @@ export type {
   ClothStepOptions,
   ClothWindConfig,
   ClothSimConfig,
-} from './physics/cloth/cloth-sim';
+} from './physics/cloth/cloth-sim.js';
 export {
   generateSkinResiduals,
   applySkinResidualColor,
@@ -359,7 +370,7 @@ export {
   getSkinPresetProfile,
   SKIN_PRESETS,
   REGION_MATERIALS,
-} from './surface/skin/neural-skin';
+} from './surface/skin/neural-skin.js';
 export type {
   SkinResidualField,
   SkinResidualSample,
@@ -375,7 +386,7 @@ export type {
   AgingState,
   PoreDetail,
   PoreOptions,
-} from './surface/skin/neural-skin';
+} from './surface/skin/neural-skin.js';
 export {
   projectTattooDecal,
   projectTattooDecals,
@@ -393,7 +404,7 @@ export {
   exportVertexColorBuffer,
   exportNormalOverlayBuffer,
   TattooDecalSystem,
-} from './surface/tattoo/tattoo-decal';
+} from './surface/tattoo/tattoo-decal.js';
 export type {
   TattooDecal,
   TattooDecalSample,
@@ -406,7 +417,7 @@ export type {
   TattooBakedVertexColors,
   TattooBakedNormalOverlay,
   TattooGPUExport,
-} from './surface/tattoo/tattoo-decal';
+} from './surface/tattoo/tattoo-decal.js';
 export {
   generateGarment,
   generateGarments,
@@ -418,7 +429,7 @@ export {
   applyWrinkles,
   generateGarmentLODs,
   selectLOD,
-} from './surface/clothing/garment';
+} from './surface/clothing/garment.js';
 export type {
   GarmentKind,
   GarmentMesh,
@@ -428,14 +439,14 @@ export type {
   GarmentPhysicsMesh,
   GarmentLODMesh,
   GarmentLODLevel,
-} from './surface/clothing/garment';
+} from './surface/clothing/garment.js';
 export {
   validatePerceptualHuman,
   CorrectiveBatch,
   ValidationCache,
   PerceptualValidator,
   NEUTRAL_ARM_SPAN_RATIO,
-} from './validation/perceptual-validator';
+} from './validation/perceptual-validator.js';
 export type {
   PerceptualIssue,
   PerceptualIssueKind,
@@ -445,7 +456,7 @@ export type {
   ValidationSeverity,
   PerceptualRenderedFrame,
   VisualEvaluationHook,
-} from './validation/perceptual-validator';
+} from './validation/perceptual-validator.js';
 
 // LOD
 export {
@@ -460,7 +471,7 @@ export {
   BudgetAllocator,
   snapLevel,
   budgetForDistance,
-} from './lod';
+} from './lod/index.js';
 export type {
   SubsystemQuality,
   PerceptualScore,
@@ -469,11 +480,11 @@ export type {
   BudgetAllocatorConfig,
   LODStats,
   LODReport,
-} from './lod';
+} from './lod/index.js';
 
 // AI
-export { DeterministicPromptInterpreter, intentToEvent } from './ai/prompt/interpreter';
-export type { PromptInterpreter, Intent, IntentType } from './ai/prompt/interpreter';
+export { DeterministicPromptInterpreter, intentToEvent } from './ai/prompt/interpreter.js';
+export type { PromptInterpreter, Intent, IntentType } from './ai/prompt/interpreter.js';
 
 // Formats
 export {
@@ -486,12 +497,12 @@ export {
   DEFAULT_TOPOLOGY_REF,
   DEFAULT_SCHEMA_VERSION,
   DEFAULT_PACKAGE_MIGRATIONS,
-} from './formats/human/human-package';
+} from './formats/human/human-package.js';
 export type {
   HumanPackageDocument,
   HumanPackageHeader,
   HumanPackageMigration,
-} from './formats/human/human-package';
+} from './formats/human/human-package.js';
 
 // Production diagnostics / benchmarks
 export {
@@ -505,7 +516,7 @@ export {
   toJsonSummary,
   toMarkdownTable,
   exportBenchmarkResult,
-} from './testing/performance/localized-edit-benchmark';
+} from './testing/performance/localized-edit-benchmark.js';
 export type {
   GpuTimestampBenchmarkOptions,
   GpuTimestampBenchmarkResult,
@@ -518,11 +529,11 @@ export type {
   GpuFeatureStatus,
   RegressionBaseline,
   BenchmarkRegressionReport,
-} from './testing/performance/localized-edit-benchmark';
+} from './testing/performance/localized-edit-benchmark.js';
 
 // Roadmap / production tracking
-export { START_MD_PHASES, PHASE_STATUSES, phaseReport } from './roadmap/phase-report';
-export type { PhaseMilestone, PhaseReport, PhaseStatus } from './roadmap/phase-report';
+export { START_MD_PHASES, PHASE_STATUSES, phaseReport } from './roadmap/phase-report.js';
+export type { PhaseMilestone, PhaseReport, PhaseStatus } from './roadmap/phase-report.js';
 
 export const CAPABILITY_STATUSES = ['IMPLEMENTED', 'PARTIAL', 'PROTOTYPE', 'PLANNED'] as const;
 export type CapabilityStatus = (typeof CAPABILITY_STATUSES)[number];

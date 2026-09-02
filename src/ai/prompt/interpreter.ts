@@ -1,4 +1,4 @@
-import { CharacterEvent, createEvent, EventSource } from '../../core/events/character-event';
+﻿import { CharacterEvent, createEvent, EventSource } from '../../core/events/character-event.js';
 
 export type IntentType =
   | 'appearance.modify'
@@ -28,7 +28,7 @@ export interface PromptInterpreter {
 
 /**
  * Deterministic v0.1 prompt interpreter. Natural language NEVER writes
- * vertices — it only produces structured intents that flow through the normal
+ * vertices â€” it only produces structured intents that flow through the normal
  * event + constraint + dependency pipeline. The engine, not the AI, decides
  * whether changes are valid.
  */

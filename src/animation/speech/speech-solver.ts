@@ -1,4 +1,4 @@
-import { HumanDefinition } from '../../core/schema/human-definition';
+﻿import { HumanDefinition } from '../../core/schema/human-definition.js';
 
 export type Viseme = 'sil' | 'aa' | 'ee' | 'ih' | 'oh' | 'oo' | 'mm' | 'll' | 'th' | 'ss' | 'kk';
 

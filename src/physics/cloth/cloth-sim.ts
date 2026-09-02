@@ -1,5 +1,5 @@
-import { HumanSdfField } from '../sdf/human-sdf';
-import { Vec3, vec3 } from '../../core/math/vec';
+﻿import { HumanSdfField } from '../sdf/human-sdf.js';
+import { Vec3, vec3 } from '../../core/math/vec.js';
 
 export interface ClothParticle {
   position: Vec3;

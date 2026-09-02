@@ -1,5 +1,5 @@
-import { CanonicalHuman } from '../../geometry/canonical/canonical-human';
-import { buildCameraMatrices } from '../webgpu/renderer';
+﻿import { CanonicalHuman } from '../../geometry/canonical/canonical-human.js';
+import { buildCameraMatrices } from '../webgpu/renderer.js';
 
 export interface WebGL2RenderPart {
   name: string;

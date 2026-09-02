@@ -1,4 +1,4 @@
-import { CanonicalHuman, RegionName } from '../../geometry/canonical/canonical-human';
+﻿import { CanonicalHuman, RegionName } from '../../geometry/canonical/canonical-human.js';
 
 export interface FrameMetrics {
   frameTimeMs: number;
@@ -69,7 +69,7 @@ export class HumanProfiler {
       `draws ${m.drawCalls}`,
       `morph ${m.morphDeltaProcessed}`,
       `dirty [${m.dirtyRegions.join(',')}]`,
-    ].join(' · ');
+    ].join(' Â· ');
   }
 }
 

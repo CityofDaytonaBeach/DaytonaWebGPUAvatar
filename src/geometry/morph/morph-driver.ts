@@ -1,5 +1,5 @@
-import { PropertyRegistry } from '../../core/schema/registry';
-import { HumanDefinition } from '../../core/schema/human-definition';
+﻿import { PropertyRegistry } from '../../core/schema/registry.js';
+import { HumanDefinition } from '../../core/schema/human-definition.js';
 
 /**
  * Maps semantic property values into morph weights that drive the GPU/CPU

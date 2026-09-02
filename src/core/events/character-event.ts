@@ -1,4 +1,4 @@
-import { HumanDefinition, PrimitiveValue } from '../schema/human-definition';
+﻿import { HumanDefinition, PrimitiveValue } from '../schema/human-definition.js';
 
 export type EventSource =
   'ai' | 'ui' | 'automation' | 'simulation' | 'external' | 'api' | 'developer';

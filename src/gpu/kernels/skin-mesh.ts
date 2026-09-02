@@ -1,5 +1,5 @@
-import { CanonicalHuman } from '../../geometry/canonical/canonical-human';
-import { BoneDef } from '../../anatomy/skeleton/skeleton';
+﻿import { CanonicalHuman } from '../../geometry/canonical/canonical-human.js';
+import { BoneDef } from '../../anatomy/skeleton/skeleton.js';
 
 /** Maximum number of bone influences per vertex (GPU kernel matches this). */
 export const MAX_INFLUENCES = 4;

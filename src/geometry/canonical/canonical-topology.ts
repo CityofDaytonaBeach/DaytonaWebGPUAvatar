@@ -1,4 +1,4 @@
-import { RegionName, PartKind } from './canonical-human';
+﻿import { RegionName, PartKind } from './canonical-human.js';
 
 export interface CanonicalTopologyVertex {
   id: number;

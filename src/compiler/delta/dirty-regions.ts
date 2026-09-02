@@ -1,6 +1,6 @@
-import { PropertyCategory } from '../../core/schema/property';
-import { PROPERTY_CATEGORIES } from '../../core/schema/property';
-import { PropertyRegistry } from '../../core/schema/registry';
+﻿import { PropertyCategory } from '../../core/schema/property.js';
+import { PROPERTY_CATEGORIES } from '../../core/schema/property.js';
+import { PropertyRegistry } from '../../core/schema/registry.js';
 
 export type DirtyGranularity = 'character' | 'system' | 'region' | 'vertex';
 

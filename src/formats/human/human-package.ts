@@ -1,4 +1,4 @@
-import { HumanDefinition } from '../../core/schema/human-definition';
+﻿import { HumanDefinition } from '../../core/schema/human-definition.js';
 
 /** Deterministic JSON package for persisted HDL state. */
 

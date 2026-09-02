@@ -1,9 +1,9 @@
-import { AnatomyDimensions } from '../../anatomy/parametric/parametric-anatomy';
-import { HumanAttachment } from '../../attachments/attachment-system';
-import { Vec3, vec3 } from '../../core/math/vec';
+﻿import { AnatomyDimensions } from '../../anatomy/parametric/parametric-anatomy.js';
+import { HumanAttachment } from '../../attachments/attachment-system.js';
+import { Vec3, vec3 } from '../../core/math/vec.js';
 
 // ---------------------------------------------------------------------------
-// Public types – existing (unchanged)
+// Public types â€“ existing (unchanged)
 // ---------------------------------------------------------------------------
 
 export type GarmentKind = 'shirt' | 'sleeve' | 'generic' | 'pants' | 'jacket' | 'hat' | 'shoes';
@@ -27,7 +27,7 @@ export interface GarmentOptions {
 }
 
 // ---------------------------------------------------------------------------
-// Public types – new render / physics / LOD interfaces
+// Public types â€“ new render / physics / LOD interfaces
 // ---------------------------------------------------------------------------
 
 /** Flat, GPU-ready mesh: interleaved attribute arrays for direct WebGPU buffer upload. */
@@ -64,7 +64,7 @@ export interface GarmentPhysicsMesh {
   kind: GarmentKind;
   particles: ClothParticle[];
   constraints: ClothConstraint[];
-  /** Mapping from render-mesh triangle index → particle triple. */
+  /** Mapping from render-mesh triangle index â†’ particle triple. */
   triangleParticleMap: [number, number, number][];
   gravity: Vec3;
   damping: number;
@@ -836,7 +836,7 @@ function makeShoes(
 // Internal: geometry utilities
 // ---------------------------------------------------------------------------
 
-/** Subdivide a single quad into segments×segments smaller quads with bilinear UV. */
+/** Subdivide a single quad into segmentsÃ—segments smaller quads with bilinear UV. */
 function subdividedQuad(
   verts: GarmentVertex[],
   indexOut: number[],
@@ -910,7 +910,7 @@ function pseudoHash(n: number): number {
 // Internal: LOD decimation
 // ---------------------------------------------------------------------------
 
-/** Decimate a render mesh by keeping fraction of vertices (nearest‑to‑grid). */
+/** Decimate a render mesh by keeping fraction of vertices (nearestâ€‘toâ€‘grid). */
 function decimateRenderMesh(mesh: GarmentRenderMesh, fraction: number): GarmentRenderMesh {
   const keepCount = Math.max(4, Math.floor(mesh.vertexCount * fraction));
   const gridStep = Math.ceil(Math.sqrt(keepCount));

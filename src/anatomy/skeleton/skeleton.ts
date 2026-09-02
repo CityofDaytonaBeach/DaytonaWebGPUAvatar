@@ -1,5 +1,5 @@
-import { Quat, IDENTITY_QUAT, Vec3 } from '../../core/math/vec';
-import { AnatomyDimensions } from '../parametric/parametric-anatomy';
+﻿import { Quat, IDENTITY_QUAT, Vec3 } from '../../core/math/vec.js';
+import { AnatomyDimensions } from '../parametric/parametric-anatomy.js';
 
 export type BoneName =
   | 'root'
@@ -37,7 +37,7 @@ export interface BoneDef {
   limits?: JointLimits;
 }
 
-/** Parametric default human skeleton (v0.1 — T-pose, 21 joints). */
+/** Parametric default human skeleton (v0.1 â€” T-pose, 21 joints). */
 export function defaultSkeleton(): BoneDef[] {
   return [
     {

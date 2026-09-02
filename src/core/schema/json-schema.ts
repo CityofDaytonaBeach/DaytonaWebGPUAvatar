@@ -1,5 +1,5 @@
-import { PropertyMeta, PropertyType } from './property';
-import { PropertyRegistry } from './registry';
+﻿import { PropertyMeta, PropertyType } from './property.js';
+import { PropertyRegistry } from './registry.js';
 
 export interface JsonSchemaProperty {
   type: 'number' | 'integer' | 'boolean';

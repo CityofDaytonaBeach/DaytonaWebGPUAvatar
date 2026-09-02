@@ -1,5 +1,5 @@
-import { PropertyDescriptor, PropertyRegistry } from './registry';
-import { PropertyCategory, PersistenceType, IdentityImportance } from './property';
+﻿import { PropertyDescriptor, PropertyRegistry } from './registry.js';
+import { PropertyCategory, PersistenceType, IdentityImportance } from './property.js';
 
 const G = PropertyCategory.Global;
 const ID = PropertyCategory.Identity;
@@ -16,7 +16,7 @@ const EX = PropertyCategory.Expression;
  *
  * This is intentionally a representative subset to keep the first release
  * tractable while exercising the full schema pipeline (identity, anatomy,
- * performance, dependencies, GPU layout). Extend descriptors freely — the
+ * performance, dependencies, GPU layout). Extend descriptors freely â€” the
  * registry derives ids, offsets, defaults and dirty masks automatically.
  */
 export const DEFAULT_PROPERTY_DESCRIPTORS: PropertyDescriptor[] = [
@@ -493,7 +493,7 @@ export const DEFAULT_PROPERTY_DESCRIPTORS: PropertyDescriptor[] = [
     animationCapable: true,
   },
 
-  // ---- Expression (performance type — never identity) ----
+  // ---- Expression (performance type â€” never identity) ----
   {
     path: 'expression.blinkLeft',
     type: 'f32',

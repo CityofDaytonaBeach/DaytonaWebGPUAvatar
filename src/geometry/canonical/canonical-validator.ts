@@ -1,9 +1,9 @@
-import { RegionName } from './canonical-human';
+﻿import { RegionName } from './canonical-human.js';
 import {
   CanonicalTopology,
   CanonicalTopologyPart,
   CanonicalTopologyVertex,
-} from './canonical-topology';
+} from './canonical-topology.js';
 
 export interface CanonicalValidationIssue {
   code: string;

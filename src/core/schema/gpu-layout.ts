@@ -1,5 +1,5 @@
-import { PropertyMeta, PropertyType } from './property';
-import { alignUp, PropertyRegistry } from './registry';
+﻿import { PropertyMeta, PropertyType } from './property.js';
+import { alignUp, PropertyRegistry } from './registry.js';
 
 export interface WgslLayoutField {
   path: string;

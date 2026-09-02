@@ -1,4 +1,4 @@
-import { Vec3 } from '../../core/math/vec';
+﻿import { Vec3 } from '../../core/math/vec.js';
 
 export type RegionName =
   | 'head'
@@ -73,7 +73,7 @@ export interface IndexRange {
  *
  * All normal humans derive from ONE compatible canonical topology. This v0.2
  * implementation procedurally generates the body (block human) PLUS separable
- * detail parts — sclera/iris eyes, upper/lower teeth, tongue, mouth cavity —
+ * detail parts â€” sclera/iris eyes, upper/lower teeth, tongue, mouth cavity â€”
  * each with stable per-part vertex ranges, region tags and surface UVs.
  *
  * The body and each part are addressable as sub-meshes of a single global
@@ -141,7 +141,7 @@ export class CanonicalHuman {
     this.vertices = vertices;
     this.indices = Uint32Array.from(indices);
 
-    // Build regional ranges (aggregate) — body regions plus detail parts.
+    // Build regional ranges (aggregate) â€” body regions plus detail parts.
     const region: Record<string, IndexRange> = {};
     for (let i = 0; i < this.vertices.length; i++) {
       const r = this.vertices[i].region;

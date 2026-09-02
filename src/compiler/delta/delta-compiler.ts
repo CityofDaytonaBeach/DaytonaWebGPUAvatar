@@ -1,7 +1,7 @@
-import { DependencyGraph } from '../dependency/dependency-graph';
-import { PropertyRegistry } from '../../core/schema/registry';
-import { PropertyCategory } from '../../core/schema/property';
-import { IndexRange, RegionName } from '../../geometry/canonical/canonical-human';
+﻿import { DependencyGraph } from '../dependency/dependency-graph.js';
+import { PropertyRegistry } from '../../core/schema/registry.js';
+import { PropertyCategory } from '../../core/schema/property.js';
+import { IndexRange, RegionName } from '../../geometry/canonical/canonical-human.js';
 
 export type KernelKind =
   | 'SparseMorph'

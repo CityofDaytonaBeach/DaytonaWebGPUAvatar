@@ -1,11 +1,11 @@
-import {
+﻿import {
   PropertyMeta,
   PropertyType,
   PropertyCategory,
   PersistenceType,
   IdentityImportance,
   PROPERTY_CATEGORIES,
-} from './property';
+} from './property.js';
 
 /**
  * PropertyDescriptor declares a schema property. The registry assigns it a

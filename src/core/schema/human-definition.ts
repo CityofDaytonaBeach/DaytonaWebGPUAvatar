@@ -1,10 +1,10 @@
-import { PropertyRegistry } from './registry';
+﻿import { PropertyRegistry } from './registry.js';
 
 export type PrimitiveValue = number;
 
 /**
  * A versioned Human Definition (HDL). This is the persistent source-of-truth
- * structured state of a character. It holds only semantic parameter values —
+ * structured state of a character. It holds only semantic parameter values â€”
  * never final mesh geometry. All modifications are recorded transactionally so
  * the definition can be reconstructed deterministically from events.
  */

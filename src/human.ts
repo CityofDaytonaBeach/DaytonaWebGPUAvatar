@@ -1,84 +1,90 @@
-import { PropertyRegistry } from './core/schema/registry';
-import { createDefaultRegistry } from './core/schema/descriptors';
-import { HumanDefinition } from './core/schema/human-definition';
+﻿import { PropertyRegistry } from './core/schema/registry.js';
+import { createDefaultRegistry } from './core/schema/descriptors.js';
+import { HumanDefinition } from './core/schema/human-definition.js';
 import {
   CharacterEvent,
   createEvent,
   applyEventToDefinition,
   EventSource,
-} from './core/events/character-event';
-import { CharacterTimeline, Snapshot } from './core/timeline/character-timeline';
-import { ConstraintSolver, ConstraintProfile } from './core/constraints/solver';
-import { DependencyGraph } from './compiler/dependency/dependency-graph';
-import { DeltaCompiler, KernelWork } from './compiler/delta/delta-compiler';
-import { AffectedSystem, affectedSystemsForChange } from './compiler/dependency/affected-systems';
-import { DirtyRegionTracker } from './compiler/delta/dirty-regions';
-import { IdentitySolver } from './identity/solver/identity-solver';
-import { CanonicalHuman, RegionName } from './geometry/canonical/canonical-human';
-import { SparseMorphSet } from './geometry/morph/sparse-morph';
-import { MorphDriver } from './geometry/morph/morph-driver';
-import { MorphKernel } from './gpu/kernels/morph-kernel';
-import { HumanProfiler, countDirtyVertices } from './gpu/profiler/profiler';
-import { FacialExpressionSystem, SemanticExpression } from './animation/facial/facial-expression';
-import { SpeechSolver, simpleTTS } from './animation/speech/speech-solver';
-import { SemanticLOD, PerceptualLOD } from './lod';
-import { DeterministicPromptInterpreter, Intent, intentToEvent } from './ai/prompt/interpreter';
-import { WebGpuHumanPipeline } from './render/webgpu/pipeline';
+} from './core/events/character-event.js';
+import { CharacterTimeline, Snapshot } from './core/timeline/character-timeline.js';
+import { ConstraintSolver, ConstraintProfile } from './core/constraints/solver.js';
+import { DependencyGraph } from './compiler/dependency/dependency-graph.js';
+import { DeltaCompiler, KernelWork } from './compiler/delta/delta-compiler.js';
+import {
+  AffectedSystem,
+  affectedSystemsForChange,
+} from './compiler/dependency/affected-systems.js';
+import { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
+import { IdentitySolver } from './identity/solver/identity-solver.js';
+import { CanonicalHuman, RegionName } from './geometry/canonical/canonical-human.js';
+import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
+import { MorphDriver } from './geometry/morph/morph-driver.js';
+import { MorphKernel } from './gpu/kernels/morph-kernel.js';
+import { HumanProfiler, countDirtyVertices } from './gpu/profiler/profiler.js';
+import {
+  FacialExpressionSystem,
+  SemanticExpression,
+} from './animation/facial/facial-expression.js';
+import { SpeechSolver, simpleTTS } from './animation/speech/speech-solver.js';
+import { SemanticLOD, PerceptualLOD } from './lod/index.js';
+import { DeterministicPromptInterpreter, Intent, intentToEvent } from './ai/prompt/interpreter.js';
+import { WebGpuHumanPipeline } from './render/webgpu/pipeline.js';
 import {
   resolveAnatomy,
   AnatomyDimensions,
   validateAnatomy,
   anatomySatisfaction,
-} from './anatomy/parametric/parametric-anatomy';
-import { placeSkeletonFromDefinition, BoneDef } from './anatomy/skeleton/skeleton';
-import { combinedSkinMatrices } from './anatomy/skeleton/bone-matrix';
+} from './anatomy/parametric/parametric-anatomy.js';
+import { placeSkeletonFromDefinition, BoneDef } from './anatomy/skeleton/skeleton.js';
+import { combinedSkinMatrices } from './anatomy/skeleton/bone-matrix.js';
 import {
   SkeletalAnimation,
   AnimationChannel,
   BonePose,
-} from './animation/skeleton/skeletal-animation';
-import { buildInfluences, skinMeshCPU, skinNormalsCPU } from './gpu/kernels/skin-mesh';
+} from './animation/skeleton/skeletal-animation.js';
+import { buildInfluences, skinMeshCPU, skinNormalsCPU } from './gpu/kernels/skin-mesh.js';
 import {
   AttachmentSystem,
   HumanAttachment,
   AttachmentAnchor,
-} from './attachments/attachment-system';
+} from './attachments/attachment-system.js';
 import {
   generateStrandHair,
   StrandHairGeometry,
   StrandHairOptions,
-} from './surface/hair/strand-hair';
-import { buildHumanSdfField, HumanSdfField } from './physics/sdf/human-sdf';
+} from './surface/hair/strand-hair.js';
+import { buildHumanSdfField, HumanSdfField } from './physics/sdf/human-sdf.js';
 import {
   ClothMesh,
   ClothStepOptions,
   createTorsoCloth,
   simulateCloth,
-} from './physics/cloth/cloth-sim';
+} from './physics/cloth/cloth-sim.js';
 import {
   generateSkinResiduals,
   SkinResidualField,
   SkinResidualOptions,
-} from './surface/skin/neural-skin';
-import { MotionCompiler, MotionPlan } from './animation/motion/motion-compiler';
+} from './surface/skin/neural-skin.js';
+import { MotionCompiler, MotionPlan } from './animation/motion/motion-compiler.js';
 import {
   PerceptualValidationReport,
   validatePerceptualHuman,
-} from './validation/perceptual-validator';
-import { projectTattooDecals, TattooDecal } from './surface/tattoo/tattoo-decal';
-import { generateGarments, GarmentMesh } from './surface/clothing/garment';
+} from './validation/perceptual-validator.js';
+import { projectTattooDecals, TattooDecal } from './surface/tattoo/tattoo-decal.js';
+import { generateGarments, GarmentMesh } from './surface/clothing/garment.js';
 import {
   buildInternalAnatomyView,
   InternalAnatomyMode,
   InternalAnatomyView,
-} from './anatomy/internal/internal-anatomy';
+} from './anatomy/internal/internal-anatomy.js';
 import {
   createParameterTransition,
   ParameterTransition,
   sampleTransition,
   transitionComplete,
   TransitionCurve,
-} from './core/transitions/parameter-transition';
+} from './core/transitions/parameter-transition.js';
 
 export interface HumanCreateOptions {
   registry?: PropertyRegistry;

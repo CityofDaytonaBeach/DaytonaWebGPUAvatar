@@ -1,4 +1,9 @@
-import { CanonicalHuman, RegionName, SparseMorph, MorphDelta } from '../canonical/canonical-human';
+﻿import {
+  CanonicalHuman,
+  RegionName,
+  SparseMorph,
+  MorphDelta,
+} from '../canonical/canonical-human.js';
 
 /**
  * Sparse Morph Set.
