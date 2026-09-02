@@ -9,6 +9,7 @@ export type BoneName =
   | 'chest'
   | 'neck'
   | 'head'
+  | 'jaw'
   | 'clavicle_l'
   | 'clavicle_r'
   | 'upperarm_l'
@@ -80,6 +81,12 @@ export function defaultSkeleton(): BoneDef[] {
       name: 'head',
       parent: 'neck',
       localPosition: { x: 0, y: 0.16, z: 0 },
+      restRotation: IDENTITY_QUAT,
+    },
+    {
+      name: 'jaw',
+      parent: 'head',
+      localPosition: { x: 0, y: -0.14, z: 0.05 },
       restRotation: IDENTITY_QUAT,
     },
     {
@@ -204,6 +211,7 @@ export function placeSkeletonFromDefinition(d: AnatomyDimensions): BoneDef[] {
   set('chest', 0, chestLen, 0);
   set('neck', 0, neckHeight, 0);
   set('head', 0, headHeight, 0);
+  set('jaw', 0, -headHeight * 0.35, headHeight * 0.2);
   set('clavicle_l', -d.shoulderHalfWidth * 0.92, chestLen, 0);
   set('clavicle_r', d.shoulderHalfWidth * 0.92, chestLen, 0);
   set('upperarm_l', -d.upperarmLength * 0.35, 0, 0);

@@ -54,7 +54,10 @@ describe('parametric anatomy solver', () => {
     const chest = bones.find((b) => b.name === 'chest')!.localPosition;
     expect(pelvis.y).toBeCloseTo(d.hipHeight, 2);
     expect(chest.y).toBeGreaterThan(0);
-    expect(bones.length).toBe(21);
+    expect(bones.length).toBe(22);
+    // Jaw bone (P15 facial skinned connection) hangs below the head.
+    const jaw = bones.find((b) => b.name === 'jaw')!.localPosition;
+    expect(jaw.y).toBeLessThan(0);
     // Shoulders widen with shoulderWidth.
     const cv = bones.find((b) => b.name === 'clavicle_r')!.localPosition;
     expect(cv.x).toBeCloseTo(d.shoulderHalfWidth * 0.92, 2);

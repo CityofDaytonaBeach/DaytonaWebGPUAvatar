@@ -277,6 +277,19 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
 
   private skinWeights(region: RegionName): Record<string, number> {
     if (region === 'neck') return { [this.neckBone]: 1.0 };
+    // Facial skinned connection (P15): lower-face regions blend head↔jaw so
+    // jaw rotation visibly deforms lips/chin while the upper face stays rigid.
+    if (region === 'jaw_left' || region === 'jaw_right' || region === 'chin') {
+      return { [this.headBone]: 0.45, jaw: 0.55 };
+    }
+    if (
+      region === 'upper_lip' ||
+      region === 'lower_lip' ||
+      region === 'mouth_corner_left' ||
+      region === 'mouth_corner_right'
+    ) {
+      return { [this.headBone]: 0.6, jaw: 0.4 };
+    }
     return { [this.headBone]: 1.0 };
   }
 

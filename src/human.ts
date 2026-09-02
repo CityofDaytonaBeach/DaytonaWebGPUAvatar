@@ -21,6 +21,7 @@ import { CanonicalHuman, RegionName } from './geometry/canonical/canonical-human
 import type { CanonicalHumanProvider } from './geometry/canonical/canonical-provider.js';
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { MorphDriver } from './geometry/morph/morph-driver.js';
+import type { MorphCorrectiveWeight } from './geometry/morph/morph-driver.js';
 import { MorphKernel } from './gpu/kernels/morph-kernel.js';
 import { HumanShapeSpace } from './anatomy/shape-space/human-shape-space.js';
 import { CorrectiveShapeSolver } from './anatomy/shape-space/shape-corrective-solver.js';
@@ -120,6 +121,7 @@ const DEFAULT_BONE_NAMES = [
   'chest',
   'neck',
   'head',
+  'jaw',
   'clavicle_l',
   'clavicle_r',
   'upperarm_l',
@@ -164,7 +166,7 @@ export class Human {
   private correctives!: CorrectiveShapeSolver;
   private correctiveMorphInputs: Array<{
     name: string;
-    inputs: Array<{ property: string; influence?: (c: number) => number }>;
+    inputs: MorphCorrectiveWeight['inputs'];
   }> = [];
   /** Vertex ids affected by the shape bases currently contributing (P17). */
   private currentAffectedVertices = new Set<number>();
@@ -206,6 +208,7 @@ export class Human {
     this.registerShapeMorphsInDriver();
 
     this.registerCanonicalMorphs();
+    this.registerPoseCorrectives();
     this.device = opts.device ?? null;
     const skeleton = this.parametricSkeleton();
     if (opts.device) {
@@ -246,6 +249,35 @@ export class Human {
     for (const { name, inputs } of this.correctiveMorphInputs) {
       this.morphDriver.registerCorrective(name, inputs);
     }
+  }
+
+  /**
+   * Pose/skeleton correctives (P15): bone-driven morphs reach the GPU/CPU morph
+   * pipeline exactly like property shapes. The supply of pose comes from the
+   * current skeleton deflection via MorphDriver.setPose(), which Human.setPose()
+   * refreshes each time the character is posed.
+   */
+  private registerPoseCorrectives(): void {
+    // Pure bone source: when the head tilts back (roll about the head's z axis a
+    // long way from neutral), the chin/lower-face region is pulled toward the
+    // neck to keep the mouth roughly level (joint-volume preservation).
+    this.morphs.add('poseHeadTiltChin', 'chin', (vx, vy) => {
+      const lift = vy > 1.7 ? 1 : 0;
+      return { dx: vx * 0.06, dy: -lift * 0.05, dz: lift * -0.05 };
+    });
+    this.morphDriver.registerBone('poseHeadTiltChin', 'head', 'z', 0, 30);
+
+    // Property × bone corrective: jaw-open activation is amplified (product) only
+    // when the head also nods forward about its x axis — a combination corrective
+    // that blends a shape property with a skeletal pose factor.
+    this.morphs.add('poseJawTiltCorrective', 'lower_lip', (_vx, vy, _vz) => {
+      const lift = vy > 1.7 ? 1 : 0;
+      return { dx: 0, dy: -lift * 0.08, dz: lift * 0.12 };
+    });
+    this.morphDriver.registerCorrective('poseJawTiltCorrective', [
+      { property: 'expression.jawOpen' },
+      { boneName: 'head', axis: 'x', neutralDeg: 0, spanDeg: 25 },
+    ]);
   }
 
   /**
@@ -451,6 +483,9 @@ export class Human {
    */
   setPose(poses: BonePose[]): void {
     this.currentPose = poses;
+    // Feed pose into the morph driver so bone-driven (pose) correctives evaluate
+    // from the current skeleton deflection (P15).
+    this.morphDriver.setPose(this.parametricSkeleton(), poses);
     if (this.gpu) this.gpu.setPose(poses);
   }
 

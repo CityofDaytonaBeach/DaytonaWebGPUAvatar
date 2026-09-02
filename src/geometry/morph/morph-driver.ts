@@ -1,18 +1,64 @@
 ﻿import { PropertyRegistry } from '../../core/schema/registry.js';
 import { HumanDefinition } from '../../core/schema/human-definition.js';
+import type { Quat } from '../../core/math/vec.js';
+import type { BoneDef } from '../../anatomy/skeleton/skeleton.js';
+import type { BonePose } from '../../animation/skeleton/skeletal-animation.js';
+
+function quatMul(a: Quat, b: Quat): Quat {
+  return {
+    x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+    y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+    z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+    w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+  };
+}
+function quatConjugate(q: Quat): Quat {
+  return { x: -q.x, y: -q.y, z: -q.z, w: q.w };
+}
+/** Deflection angle (degrees) of a quaternion relative to a reference about an axis. */
+function decoupleAngle(q: Quat, rest: Quat, axis: 'x' | 'y' | 'z'): number {
+  const rel = quatMul(q, quatConjugate(rest));
+  const w = Math.max(-1, Math.min(1, rel.w));
+  const half = Math.acos(w);
+  let sign = 1;
+  if (axis === 'x') sign = rel.x >= 0 ? 1 : -1;
+  else if (axis === 'y') sign = rel.y >= 0 ? 1 : -1;
+  else sign = rel.z >= 0 ? 1 : -1;
+  return (2 * half * sign * 180) / Math.PI;
+}
+
+/** A bone-driven weight source: a coefficient from a bone's world rotation angle. */
+export interface MorphBoneWeight {
+  kind: 'bone';
+  boneName: string;
+  /** Local axis of the bone about which the angle is measured ('x'|'y'|'z'). */
+  axis: 'x' | 'y' | 'z';
+  /** Rest angle (degrees) that counts as neutral (0 coefficient). */
+  neutralDeg: number;
+  /** Full-span angle (degrees) that maps to +/-1 (signed by deviation direction). */
+  spanDeg: number;
+}
 
 /**
  * A corrective morph is driven by the continuous product of several shaped
  * coefficients rather than a single property. This is how combination correctives
- * (e.g. wide jaw + wide mouth) flow through the existing sparse morph pipeline.
+ * (e.g. wide jaw + wide mouth) and pose/skeleton correctives (e.g. jaw open under
+ * head tilt) flow through the existing sparse morph pipeline.
  */
 export interface MorphCorrectiveWeight {
   kind: 'corrective';
-  /** One entry per contributing property; the activation is their product. */
-  inputs: Array<{ property: string; influence?: (c: number) => number }>;
+  /**
+   * One entry per contributing factor (a property value or a bone deflection);
+   * the activation is their product. Bone factors let pose feed the morph
+   * pipeline (P15 pose correctives).
+   */
+  inputs: Array<
+    | { property: string; influence?: (c: number) => number }
+    | Omit<MorphBoneWeight, 'kind'>
+  >;
 }
 
-export type MorphWeightSource = string | MorphCorrectiveWeight;
+export type MorphWeightSource = string | MorphCorrectiveWeight | MorphBoneWeight;
 
 /** Identity-shaped coefficient from a property value (mirrors ShapeCoefficientSolver). */
 function coefficientFor(value: number, min: number, max: number, def: number): number {
@@ -36,9 +82,12 @@ function coefficientFor(value: number, min: number, max: number, def: number): n
  *   - default == 0 : value scaled into the property's (min,max) as 0..1
  */
 export class MorphDriver {
-  /** morphName -> weight source (a property path, or a corrective combination). */
-  private morphToProperty = new Map<string, string | MorphCorrectiveWeight>();
+  /** morphName -> weight source (a property path, a corrective combination, or a bone). */
+  private morphToProperty = new Map<string, MorphWeightSource>();
   private properties = new Set<string>();
+  /** Current skeleton + pose, used to evaluate bone-driven sources. */
+  private bones: BoneDef[] = [];
+  private poses = new Map<string, BonePose>();
 
   constructor(private registry: PropertyRegistry) {
     this.register('face.nose.width', 'noseWidth');
@@ -84,19 +133,40 @@ export class MorphDriver {
   }
 
   /**
+   * Register a bone-driven (pose) morph: its weight is the deflection coefficient
+   * of the named bone about `axis` relative to rest. Pose is supplied via setPose().
+   */
+  registerBone(name: string, boneName: string, axis: 'x' | 'y' | 'z', neutralDeg: number, spanDeg: number): void {
+    this.morphToProperty.set(name, { kind: 'bone', boneName, axis, neutralDeg, spanDeg });
+  }
+
+  /**
    * Register a corrective morph driven by the continuous product of several
-   * shaped coefficients. The corrective is exposed as a normal sparse morph so
-   * the existing GPU morph pipeline consumes it (weight == product of inputs).
+   * shaped coefficients (properties and/or bone deflections). The corrective is
+   * exposed as a normal sparse morph so the existing GPU morph pipeline consumes
+   * it (weight == product of inputs).
    */
   registerCorrective(
     morphName: string,
     inputs: MorphCorrectiveWeight['inputs'],
   ): void {
     for (const input of inputs) {
-      void this.registry.require(input.property);
-      this.properties.add(input.property);
+      if ((input as { property?: string }).property) {
+        void this.registry.require((input as { property: string }).property);
+        this.properties.add((input as { property: string }).property);
+      }
     }
     this.morphToProperty.set(morphName, { kind: 'corrective', inputs });
+  }
+
+  /**
+   * Set the current skeleton + pose used to evaluate bone-driven weight sources.
+   * Called by Human whenever a pose is applied so pose changes flow into the morph
+   * pipeline (P15 pose correctives).
+   */
+  setPose(bones: BoneDef[], poses: BonePose[] = []): void {
+    this.bones = bones;
+    this.poses = new Map(poses.map((p) => [p.name, p]));
   }
 
   /** Morph names driven by a property path (linear, single-property morphs). */
@@ -116,9 +186,36 @@ export class MorphDriver {
     const source = this.morphToProperty.get(morphName);
     if (typeof source === 'string') return source === propPath;
     if (source && source.kind === 'corrective') {
-      return source.inputs.some((i) => i.property === propPath);
+      return source.inputs.some((i) => (i as { property?: string }).property === propPath);
     }
     return false;
+  }
+
+  /** True if a morph is driven by the named bone (pose corrective). */
+  morphUsesBone(morphName: string, boneName: string): boolean {
+    const source = this.morphToProperty.get(morphName);
+    if (typeof source !== 'string' && source && source.kind === 'bone')
+      return source.boneName === boneName;
+    if (typeof source !== 'string' && source && source.kind === 'corrective') {
+      return source.inputs.some((i) => (i as { boneName?: string }).boneName === boneName);
+    }
+    return false;
+  }
+
+  /** Bone deflection coefficient for a single-input bone source. */
+  private boneCoefficient(
+    input: Omit<MorphBoneWeight, 'kind'>,
+    definition: HumanDefinition,
+  ): number {
+    void definition;
+    const bone = this.bones.find((b) => b.name === input.boneName);
+    if (!bone) return 0;
+    const pose = this.poses.get(input.boneName);
+    const qRest = bone.restRotation;
+    const qPose = pose ? pose.localRot : qRest;
+    const angle = decoupleAngle(qPose, qRest, input.axis) - input.neutralDeg;
+    const span = input.spanDeg <= 0 ? 1 : input.spanDeg;
+    return Math.max(-1, Math.min(1, angle / span));
   }
 
   /** Weight of a morph based on the current definition. 0 = neutral. */
@@ -134,17 +231,24 @@ export class MorphDriver {
         meta.default,
       );
     }
+    if (source.kind === 'bone') return this.boneCoefficient(source, definition);
     if (source.kind === 'corrective') {
       let acc = 1;
       for (const input of source.inputs) {
-        const meta = this.registry.require(input.property);
-        let c = coefficientFor(
-          definition.get(input.property),
-          typeof meta.min === 'number' ? meta.min : 0,
-          typeof meta.max === 'number' ? meta.max : 1,
-          meta.default,
-        );
-        if (input.influence) c = input.influence(c);
+        let c = 0;
+        if ((input as { boneName?: string }).boneName) {
+          c = this.boneCoefficient(input as Omit<MorphBoneWeight, 'kind'>, definition);
+        } else {
+          const p = input as { property: string; influence?: (c: number) => number };
+          const meta = this.registry.require(p.property);
+          c = coefficientFor(
+            definition.get(p.property),
+            typeof meta.min === 'number' ? meta.min : 0,
+            typeof meta.max === 'number' ? meta.max : 1,
+            meta.default,
+          );
+          if (p.influence) c = p.influence(c);
+        }
         acc *= c;
         if (acc === 0) break;
       }
