@@ -1,4 +1,8 @@
-import { CanonicalHuman, RegionName, MorphDelta } from '../../geometry/canonical/canonical-human.js';
+import {
+  CanonicalHuman,
+  RegionName,
+  MorphDelta,
+} from '../../geometry/canonical/canonical-human.js';
 import { SparseMorphSet } from '../../geometry/morph/sparse-morph.js';
 import { ShapeBasis, ShapeBasisRegistry } from './shape-basis.js';
 

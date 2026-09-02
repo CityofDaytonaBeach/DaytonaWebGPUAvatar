@@ -7,11 +7,7 @@ import {
   topologyFromHuman,
 } from './canonical-provider.js';
 import { validateCanonicalTopology } from './canonical-validator.js';
-import {
-  HumanLandmark,
-  resolveLandmarkPosition,
-  findTriangleInRegion,
-} from './landmark.js';
+import { HumanLandmark, resolveLandmarkPosition, findTriangleInRegion } from './landmark.js';
 import { Human } from '../../human.js';
 
 describe('DebugBlockHumanProvider (block human is preserved as a provider)', () => {
@@ -108,10 +104,7 @@ describe('Provider-driven canonical ingestion (P2/P3 arch seam)', () => {
     expect(rebuilt.regionRanges.has('nose')).toBe(true);
     expect(rebuilt.partByRegion.has('eye_sclera')).toBe(true);
     for (let i = 0; i < rebuilt.vertices.length; i++) {
-      expect(rebuilt.vertices[i].position.x).toBeCloseTo(
-        asset.topology.vertices[i].position.x,
-        5,
-      );
+      expect(rebuilt.vertices[i].position.x).toBeCloseTo(asset.topology.vertices[i].position.x, 5);
     }
   });
 

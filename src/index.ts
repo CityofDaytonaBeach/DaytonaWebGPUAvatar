@@ -154,6 +154,18 @@ export type {
 export { IdentitySolver } from './identity/solver/identity-solver.js';
 export type { IdentityBudget, IdentityChangeGate } from './identity/solver/identity-solver.js';
 
+// Shape space
+export { ShapeBasisRegistry, sparseDelta } from './anatomy/shape-space/shape-basis.js';
+export type { ShapeBasis } from './anatomy/shape-space/shape-basis.js';
+export { HumanShapeSpace } from './anatomy/shape-space/human-shape-space.js';
+export type { VertexDeltaFn } from './anatomy/shape-space/human-shape-space.js';
+export { ShapeCoefficientSolver } from './anatomy/shape-space/shape-coefficient-solver.js';
+export { CorrectiveShapeSolver } from './anatomy/shape-space/shape-corrective-solver.js';
+export type {
+  CorrectiveRule,
+  CorrectiveInput,
+} from './anatomy/shape-space/shape-corrective-solver.js';
+
 // Geometry
 export { CanonicalHuman, generateBlockHuman } from './geometry/canonical/canonical-human.js';
 export type {
@@ -187,6 +199,19 @@ export type {
   CanonicalAdapterResult,
   CanonicalAssetAdapter,
 } from './geometry/canonical/canonical-adapter.js';
+export {
+  DebugBlockHumanProvider,
+  CanonicalHumanProviderRegistry,
+  topologyFromHuman,
+  DEFAULT_PROVIDER_BONE_NAMES,
+} from './geometry/canonical/canonical-provider.js';
+export type {
+  CanonicalHumanProvider,
+  CanonicalHumanAsset,
+  CanonicalValidationResult,
+} from './geometry/canonical/canonical-provider.js';
+export { resolveLandmarkPosition, findTriangleInRegion } from './geometry/canonical/landmark.js';
+export type { HumanLandmark, ResolvedLandmark } from './geometry/canonical/landmark.js';
 export { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 export { MorphDriver } from './geometry/morph/morph-driver.js';
 

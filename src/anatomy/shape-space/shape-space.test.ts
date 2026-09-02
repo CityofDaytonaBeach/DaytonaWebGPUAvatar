@@ -100,9 +100,7 @@ describe('HumanShapeSpace evaluation', () => {
       dy: 0,
       dz: 0,
     }));
-    const coeffs = new Map<number, number>([
-      [space.bases.getByName('NoseWidthBasis')!.id, 1.0],
-    ]);
+    const coeffs = new Map<number, number>([[space.bases.getByName('NoseWidthBasis')!.id, 1.0]]);
     const delta = space.evaluate(coeffs);
     expect(delta.length).toBe(c.vertexCount * 3);
     // All nonzero deltas live in the nose region.
@@ -184,11 +182,16 @@ describe('CorrectiveShapeSolver (correlated deformation)', () => {
       dy: 0,
       dz: 0,
     }));
-    const corrective = space.addRegionBasis('WideJawWideMouth', 'face.mouth.width', 'mouth', (vx) => ({
-      dx: Math.sign(vx) * 0.03,
-      dy: 0,
-      dz: 0,
-    }));
+    const corrective = space.addRegionBasis(
+      'WideJawWideMouth',
+      'face.mouth.width',
+      'mouth',
+      (vx) => ({
+        dx: Math.sign(vx) * 0.03,
+        dy: 0,
+        dz: 0,
+      }),
+    );
     const solver = new CorrectiveShapeSolver(space, [
       {
         inputs: [{ basisId: jaw.id }, { basisId: mouth.id }],
