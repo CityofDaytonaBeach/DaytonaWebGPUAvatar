@@ -128,31 +128,98 @@
         font-size: 11px;
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-C8LaIHse.js"></script>
+    <script type="module" crossorigin src="/assets/index-BBpB-Rds.js"></script>
   </head>
   <body>
     <canvas id="viewport" width="720" height="900"></canvas>
     <div id="panel">
-      <h1>Daytona WebGPU Avatar — v0.4 Rigging &amp; Skinning Proof-of-Concept</h1>
+      <h1>Daytona WebGPU Avatar — HD Human V0.1 (Shape Space + Sparse GPU)</h1>
       <div class="muted">
         The Character is NOT the Mesh. All UI/AI/automation flow through one event API; only
         affected GPU work recomputes.
       </div>
 
-      <h2>Direct modification</h2>
+      <h2>Daytona HD Human V0.1 — identity controls</h2>
       <div class="row">
         <label>Nose width</label
-        ><input id="nose" type="range" min="60" max="160" value="100" /><span class="val" id="noseV"
+        ><input id="noseWidth" type="range" min="60" max="160" value="100" /><span
+          class="val"
+          id="noseWidthV"
           >1.00</span
         >
       </div>
       <div class="row">
-        <label>Jaw width</label><input id="jaw" type="range" min="80" max="135" value="100" /><span
+        <label>Nose length</label
+        ><input id="noseLength" type="range" min="70" max="140" value="100" /><span
           class="val"
-          id="jawV"
+          id="noseLengthV"
           >1.00</span
         >
       </div>
+      <div class="row">
+        <label>Jaw width</label><input id="jawWidth" type="range" min="80" max="135" value="100" /><span
+          class="val"
+          id="jawWidthV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Chin projection</label
+        ><input id="chinProj" type="range" min="80" max="130" value="100" /><span
+          class="val"
+          id="chinProjV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Eye spacing</label
+        ><input id="eyeSpacing" type="range" min="75" max="135" value="100" /><span
+          class="val"
+          id="eyeSpacingV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Eye size</label
+        ><input id="eyeSize" type="range" min="70" max="140" value="100" /><span class="val" id="eyeSizeV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Cheek width</label
+        ><input id="cheekWidth" type="range" min="80" max="130" value="100" /><span
+          class="val"
+          id="cheekWidthV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Mouth width</label
+        ><input id="mouthWidth" type="range" min="70" max="150" value="100" /><span
+          class="val"
+          id="mouthWidthV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Upper lip</label
+        ><input id="upperLip" type="range" min="70" max="150" value="100" /><span class="val" id="upperLipV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Lower lip</label
+        ><input id="lowerLip" type="range" min="70" max="150" value="100" /><span class="val" id="lowerLipV"
+          >1.00</span
+        >
+      </div>
+      <div class="row">
+        <label>Highlight affected</label>
+        <input id="showAffected" type="checkbox" checked />
+        <span class="muted">(localized-edit proof)</span>
+      </div>
+
+      <h2>Direct modification</h2>
       <div class="row">
         <label>Muscularity</label><input id="musc" type="range" min="0" max="100" value="48" /><span
           class="val"
@@ -229,6 +296,6 @@
 
       <h2>Profiler / dirty regions</h2>
       <div id="log">initializing…</div>
-    </div>
+    </div>
   </body>
 </html>

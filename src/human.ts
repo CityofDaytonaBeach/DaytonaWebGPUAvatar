@@ -22,6 +22,9 @@ import type { CanonicalHumanProvider } from './geometry/canonical/canonical-prov
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { MorphDriver } from './geometry/morph/morph-driver.js';
 import { MorphKernel } from './gpu/kernels/morph-kernel.js';
+import { HumanShapeSpace } from './anatomy/shape-space/human-shape-space.js';
+import { CorrectiveShapeSolver } from './anatomy/shape-space/shape-corrective-solver.js';
+import { buildHdShapeSpace } from './anatomy/shape-space/hd-shape-builder.js';
 import { HumanProfiler, countDirtyVertices } from './gpu/profiler/profiler.js';
 import {
   FacialExpressionSystem,
@@ -157,6 +160,14 @@ export class Human {
   private morphs: SparseMorphSet;
   private morphDriver: MorphDriver;
   private morphKernel: MorphKernel;
+  private shapeSpace: HumanShapeSpace;
+  private correctives!: CorrectiveShapeSolver;
+  private correctiveMorphInputs: Array<{
+    name: string;
+    inputs: Array<{ property: string; influence?: (c: number) => number }>;
+  }> = [];
+  /** Vertex ids affected by the shape bases currently contributing (P17). */
+  private currentAffectedVertices = new Set<number>();
   readonly profiler = new HumanProfiler();
   private facial = new FacialExpressionSystem();
   private speech = new SpeechSolver();
@@ -185,16 +196,82 @@ export class Human {
     this.morphs = new SparseMorphSet(this.canonical);
     this.morphDriver = new MorphDriver(this.registry);
     this.morphKernel = new MorphKernel(this.morphs, this.morphDriver, opts.device ?? null);
+
+    // Human Shape Space V0.1: register the 10 identity controls + combination
+    // correctives, compile them into the existing sparse morph pipeline (P6-P11).
+    this.shapeSpace = this.registerShapeSpace();
+
+    // MorphDriver maps each compiled shape morph back to its property so the
+    // existing GPU/CPU morph path drives them (coefficients == driver weights).
+    this.registerShapeMorphsInDriver();
+
     this.registerCanonicalMorphs();
     this.device = opts.device ?? null;
+    const skeleton = this.parametricSkeleton();
     if (opts.device) {
       this.gpu = new WebGpuHumanPipeline(this.canonical, this.morphs, this.morphDriver, {
         device: opts.device,
         format: opts.format,
         paramByteSize: this.registry.sizeBytes,
-        skeleton: this.parametricSkeleton(),
+        skeleton,
       });
     }
+  }
+
+  /** Human Shape Space V0.1: register the 10 identity controls + combination correctives. */
+  private registerShapeSpace(): HumanShapeSpace {
+    const { space, spec } = buildHdShapeSpace(this.canonical);
+    // Compile every basis (including correctives) into the sparse morph set so
+    // the existing GPU morph pipeline consumes them with zero new infrastructure.
+    space.compileToSparseMorphs(this.morphs);
+    this.correctiveMorphInputs = spec.correctiveMorphs;
+    this.correctives = new CorrectiveShapeSolver(space, spec.correctiveRules);
+    return space;
+  }
+
+  /**
+   * Tell MorphDriver which property (or corrective combination) drives each
+   * compiled shape morph, so the existing GPU/CPU morph path evaluates the same
+   * coefficients the shape space computes. Correctives use a continuous product
+   * weight across their inputs (P11).
+   */
+  private registerShapeMorphsInDriver(): void {
+    for (const basis of this.shapeSpace.bases.list()) {
+      const morphName = `shape_${basis.name}`;
+      const isCorrective = basis.tags?.includes('corrective');
+      // Corrective bases are weighted by a multi-property product; register them
+      // from the known corrective map. Linear bases map 1:1 to their property.
+      if (!isCorrective) this.morphDriver.registerBasis(morphName, basis.property);
+    }
+    for (const { name, inputs } of this.correctiveMorphInputs) {
+      this.morphDriver.registerCorrective(name, inputs);
+    }
+  }
+
+  /**
+   * Number of corrective rules meaningfully active (coefficient threshold) under
+   * the current definition — P11/P17 telemetry. 0 when none are active.
+   */
+  private contributingCorrectiveRules(): number {
+    const coeffs = this.shapeCoefficients();
+    return this.correctives.listActiveRules(coeffs).length;
+  }
+
+  /** Full coefficient map (property ratio about neutral) for every registered basis. */
+  private shapeCoefficients(): Map<number, number> {
+    const out = new Map<number, number>();
+    for (const basis of this.shapeSpace.bases.list()) {
+      const meta = this.registry.require(basis.property);
+      const value = this.definition.get(basis.property);
+      const coeff =
+        meta.default !== 0
+          ? value / meta.default - 1
+          : (value - (typeof meta.min === 'number' ? meta.min : 0)) /
+            ((typeof meta.max === 'number' ? meta.max : 1) -
+              (typeof meta.min === 'number' ? meta.min : 0) || 1);
+      out.set(basis.id, coeff);
+    }
+    return out;
   }
 
   /** Create a human asynchronously (GPU device optional). */
@@ -208,30 +285,24 @@ export class Human {
   }
 
   private registerCanonicalMorphs(): void {
-    // Nose width: push nose vertices outward along X (region-localized to nose).
-    this.morphs.add('noseWidth', 'nose', (vx) => {
-      return { dx: Math.sign(vx) * 0.03, dy: 0, dz: 0 };
-    });
-    // Jaw width: widen jaw region laterally (region-localized to jaw).
-    this.morphs.add('jawWidth', 'jaw', (vx) => {
-      return { dx: Math.sign(vx) * 0.05, dy: 0, dz: 0 };
-    });
-    // Eye spacing: separate the body eye boxes laterally.
-    this.morphs.add('eyeSpacing', 'eyes', (vx) => {
-      return { dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 };
-    });
-    // Same semantic spread to the detailed eyeball parts (sclera + iris/pupil).
-    this.morphs.add('eyeSpacingSclera', 'eye_sclera', (vx) => {
-      return { dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 };
-    });
-    this.morphs.add('eyeSpacingIris', 'eye_iris', (vx) => {
-      return { dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 };
-    });
+    // NOTE: The 10 identity face controls (nose/jaw/chin/eye/cheek/mouth/lips)
+    // are owned by the Human Shape Space (registerShapeSpace), which compiles
+    // them into this same sparse morph set with coarse-region fallback so they
+    // work on both the HD head and the debug block human. Only the body, anatomy
+    // and expression morphs below are defined here.
     this.morphs.add('muscularity', 'torso', (_vx, vy) => {
       const up = 1 + (vy - 1.5) * 0.5;
       return { dx: 0, dy: 0, dz: up * 0.05 * Math.sign(_vx) };
     });
-    this.morphs.add('mouthWidth', 'mouth', (vx) => ({ dx: Math.sign(vx) * 0.02, dy: 0, dz: 0 }));
+    // Eyeball spacing on the detail sclera/iris parts (the shape space's
+    // EyeSpacingBasis drives the border/eyelid/eye-box regions; these drive the
+    // separately-spawned sclera + iris sub-meshes so the whole eye moves).
+    this.morphs.add('eyeSpacingSclera', 'eye_sclera', (vx) => {
+      return { dx: Math.sign(vx) * 0.04, dy: 0, dz: 0 };
+    });
+    this.morphs.add('eyeSpacingIris', 'eye_iris', (vx) => {
+      return { dx: Math.sign(vx) * 0.04, dy: 0, dz: 0 };
+    });
     // Jaw open: lower the tongue and widen the mouth cavity (part-localized).
     this.morphs.add('jawOpen', 'tongue', (_vx, vy) => ({
       dx: 0,
@@ -293,12 +364,31 @@ export class Human {
   /**
    * Recompute the accumulated sparse-morph deltas for the current definition.
    * Used by renderers (CPU reference / demo) and tests to show that only
-   * affected geometry moves.
+   * affected geometry moves. Linear shape bases + combination correctives all
+   * flow through the same sparse morph pipeline.
    */
   computeMorphDelta(): Float32Array {
     const delta = new Float32Array(this.canonical.vertexCount * 3);
     this.morphKernel.accumulate(this.definition, delta);
+    this.currentAffectedVertices = this.shapeSpace.affectedVertexIds(
+      this.shapeCoefficients(),
+    );
     return delta;
+  }
+
+  /**
+   * Vertex ids the shape space currently displaces (P17 localized-edit proof).
+   * Consumed by the demo overlay to highlight affected geometry.
+   */
+  affectedVertexIds(): Set<number> {
+    return this.currentAffectedVertices.size > 0
+      ? this.currentAffectedVertices
+      : this.shapeSpace.affectedVertexIds(this.shapeCoefficients());
+  }
+
+  /** Number of corrective rules active under the current definition (P11/P17). */
+  activeCorrectiveCount(): number {
+    return this.contributingCorrectiveRules();
   }
 
   /** The WebGPU pipeline, if this Human was created with a GPU device. */

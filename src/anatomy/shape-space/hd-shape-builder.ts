@@ -1,0 +1,289 @@
+import { CanonicalHuman, RegionName } from '../../geometry/canonical/canonical-human.js';
+import { HumanShapeSpace } from './human-shape-space.js';
+import { CorrectiveRule } from './shape-corrective-solver.js';
+import { MorphCorrectiveWeight } from '../../geometry/morph/morph-driver.js';
+
+export interface HdShapeSpec {
+  /** Properties wired into the sparse morph pipeline via their shape bases. */
+  propertyPaths: string[];
+  /** Humanly-readable count of corrective rules registered. */
+  correctiveRules: CorrectiveRule[];
+  /** Corrective weight sources (morphName -> product inputs) to register in MorphDriver. */
+  correctiveMorphs: Array<{ name: string; inputs: NonNullable<MorphCorrectiveWeight['inputs']> }>;
+}
+
+/**
+ * Builds the Human Shape Space V0.1 for a given canonical topology.
+ *
+ * Registers exactly the ten first-generation identity controls (direction.md
+ * P7) as sparse, reusable shape bases with CORRELATED deformation functions
+ * (P8): a control spreads across its adjacent semantic transition regions
+ * rather than naively scaling a single vertex axis. Bases are emitted on the
+ * fine-grained HD regions when present, and fall back to the coarse block-human
+ * regions otherwise, so the same shape space drives both topologies.
+ *
+ * Returns the spec needed by the Human runtime to:
+ *   1. compile bases into the existing sparse morph set (P10),
+ *   2. register their property mappings on the MorphDriver,
+ *   3. register corrective (combination) rules (P11).
+ */
+export function buildHdShapeSpace(canonical: CanonicalHuman): {
+  space: HumanShapeSpace;
+  spec: HdShapeSpec;
+} {
+  const space = new HumanShapeSpace(canonical);
+  const spec: HdShapeSpec = {
+    propertyPaths: [],
+    correctiveRules: [],
+    correctiveMorphs: [],
+  };
+
+  // Resolve a semantic control to a fine or coarse region basis. If neither the
+  // granular nor the coarse region exists, the control is a no-op for this
+  // topology — that is fine (e.g. body controls on a head-only topology).
+  const addFineControl = (
+    name: string,
+    property: string,
+    fineRegions: RegionName[],
+    coarseRegions: RegionName[],
+    fn: (vx: number, vy: number, vz: number) => { dx: number; dy: number; dz: number },
+    tags?: string[],
+  ) => {
+    const regions = fineRegions.filter((r) => canonical.regionRanges.has(r));
+    const fallback = regions.length === 0 ? coarseRegions.filter((r) => canonical.regionRanges.has(r)) : [];
+    const targets = regions.length > 0 ? regions : fallback;
+    if (targets.length === 0) return null;
+    const ids = new Set<number>();
+    for (const region of targets) {
+      const range = canonical.regionRanges.get(region)!;
+      for (let i = range.start; i < range.start + range.count; i++) ids.add(i);
+    }
+    const basis = space.addVertexBasis(name, property, [...ids], fn, tags);
+    spec.propertyPaths.push(property);
+    return basis.id;
+  };
+
+  // ---- 10 identity controls (P7) with correlated deformation (P8) ----
+
+  // Nose width: alars widen laterally, tip widens slightly, bridge/cheek blend.
+  addFineControl(
+    'NoseWidthBasis',
+    'face.nose.width',
+    ['nose_alar_left', 'nose_alar_right', 'nose_tip', 'nose_bridge'],
+    ['nose'],
+    (vx, _vy, vz) => {
+      const s = Math.sign(vx || 1e-6);
+      const magnitude = Math.min(0.05, Math.abs(vx) * 0.28 + 0.012);
+      return { dx: s * magnitude, dy: 0, dz: vz < 0.28 ? 0.004 : 0 };
+    },
+    ['nose', 'correlated'],
+  );
+  // Nose length: tip + alars project forward (+z; nose points +z in this frame).
+  addFineControl(
+    'NoseLengthBasis',
+    'face.nose.length',
+    ['nose_tip', 'nose_alar_left', 'nose_alar_right', 'nose_bridge'],
+    ['nose'],
+    (_vx, _vy, vz) => ({
+      dx: 0,
+      dy: 0,
+      dz: vz >= 0.26 ? 0.04 : vz >= 0.24 ? 0.02 : 0.008,
+    }),
+    ['nose', 'correlated'],
+  );
+  // Jaw width: jaw angles widen laterally, cheeks and chin transition with it.
+  addFineControl(
+    'JawWidthBasis',
+    'face.jaw.width',
+    ['jaw_left', 'jaw_right', 'cheek_left', 'cheek_right', 'chin', 'mouth_corner_left', 'mouth_corner_right'],
+    ['jaw', 'cheek_left', 'cheek_right'],
+    (vx, _vy, _vz) => {
+      const s = Math.sign(vx || 1e-6);
+      const strength = Math.abs(vx) > 0.05 ? 0.05 : 0.035;
+      return { dx: s * strength, dy: 0, dz: 0 };
+    },
+    ['jaw', 'cheek', 'correlated'],
+  );
+  // Chin projection: chin + lower lip push forward (+z).
+  addFineControl(
+    'ChinProjectionBasis',
+    'face.chin.projection',
+    ['chin', 'lower_lip', 'jaw_left', 'jaw_right'],
+    ['jaw'],
+    (_vx, _vy, vz) => ({ dx: 0, dy: 0, dz: vz >= 0.22 ? 0.045 : 0.02 }),
+    ['chin', 'correlated'],
+  );
+  // Eye spacing: eye + eyelid regions spread laterally about x=0.
+  // (The separately-spawned sclera/iris sub-meshes are moved by the dedicated
+  // eyeSpacingSclera / eyeSpacingIris morphs; the shape space drives the border
+  // and eyelid geometry here.)
+  addFineControl(
+    'EyeSpacingBasis',
+    'face.eye.spacing',
+    [
+      'eye_left',
+      'eye_right',
+      'upper_eyelid_left',
+      'upper_eyelid_right',
+      'lower_eyelid_left',
+      'lower_eyelid_right',
+    ],
+    ['eyes'],
+    (vx, _vy, _vz) => ({ dx: Math.sign(vx || 1e-6) * 0.04, dy: 0, dz: 0 }),
+    ['eye', 'correlated'],
+  );
+  // Eye size: eyelid regions expand about the eye centers (both axes).
+  addFineControl(
+    'EyeSizeBasis',
+    'face.eye.size',
+    [
+      'upper_eyelid_left',
+      'upper_eyelid_right',
+      'lower_eyelid_left',
+      'lower_eyelid_right',
+      'eye_left',
+      'eye_right',
+    ],
+    ['eyes'],
+    (vx, vy, _vz) => {
+      const cx = Math.abs(vx) <= 0.06 ? 0 : Math.sign(vx) * 0.06;
+      return { dx: (vx - cx) * 0.12, dy: (vy - 1.9) * 0.2, dz: 0.004 };
+    },
+    ['eye', 'correlated'],
+  );
+  // Cheek width: cheeks widen laterally, jaw and temple transition with them.
+  addFineControl(
+    'CheekWidthBasis',
+    'face.cheek.width',
+    ['cheek_left', 'cheek_right', 'jaw_left', 'jaw_right', 'temple_left', 'temple_right'],
+    ['cheek_left', 'cheek_right'],
+    (vx, _vy, _vz) => {
+      const s = Math.sign(vx || 1e-6);
+      const strength = Math.abs(vx) > 0.06 ? 0.04 : 0.028;
+      return { dx: s * strength, dy: 0, dz: 0 };
+    },
+    ['cheek', 'correlated'],
+  );
+  // Mouth width: mouth corners spread, lips widen slightly.
+  addFineControl(
+    'MouthWidthBasis',
+    'face.mouth.width',
+    ['mouth_corner_left', 'mouth_corner_right', 'upper_lip', 'lower_lip'],
+    ['mouth'],
+    (vx, _vy, _vz) => {
+      const s = Math.sign(vx || 1e-6);
+      const strength = Math.abs(vx) > 0.022 ? 0.05 : 0.02;
+      return { dx: s * strength, dy: 0, dz: 0 };
+    },
+    ['mouth', 'correlated'],
+  );
+  // Upper lip thickness: upper lip grows vertically (up = +y toward mouth).
+  addFineControl(
+    'UpperLipThicknessBasis',
+    'face.upperLip.thickness',
+    ['upper_lip', 'mouth_corner_left', 'mouth_corner_right'],
+    ['mouth', 'face'],
+    (_vx, vy, _vz) => ({ dx: 0, dy: (1.74 - vy) > 0 ? (1.74 - vy) * 0.5 : 0.015, dz: 0 }),
+    ['lip', 'correlated'],
+  );
+  // Lower lip thickness: lower lip grows downward.
+  addFineControl(
+    'LowerLipThicknessBasis',
+    'face.lowerLip.thickness',
+    ['lower_lip', 'mouth_corner_left', 'mouth_corner_right'],
+    ['mouth', 'face'],
+    (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.72) > 0 ? (vy - 1.72) * -0.5 : -0.015, dz: 0 }),
+    ['lip', 'correlated'],
+  );
+
+  // ---- Combination correctives (P11) ----
+  // A corrective is a reusable basis that only activates when several linear
+  // inputs are simultaneously active (continuous product activation).
+  const correctiveBasis = (
+    name: string,
+    regions: RegionName[],
+    fn: (vx: number, vy: number, vz: number) => { dx: number; dy: number; dz: number },
+  ): number | null => {
+    const present = regions.filter((r) => canonical.regionRanges.has(r));
+    if (present.length === 0) return null;
+    const ids = new Set<number>();
+    for (const r of present) {
+      const range = canonical.regionRanges.get(r)!;
+      for (let i = range.start; i < range.start + range.count; i++) ids.add(i);
+    }
+    return space.addVertexBasis(name, 'face.jaw.width', [...ids], fn, ['corrective']).id;
+  };
+
+  const jawBasis = space.bases.getByName('JawWidthBasis')?.id;
+  const noseBasis = space.bases.getByName('NoseWidthBasis')?.id;
+  const mouthBasis = space.bases.getByName('MouthWidthBasis')?.id;
+  const cheekBasis = space.bases.getByName('CheekWidthBasis')?.id;
+
+  // Wide jaw + wide mouth: jaw cheeks and mouth corners push wider together.
+  if (jawBasis && mouthBasis) {
+    const output = correctiveBasis(
+      'WideJawWideMouthCorrective',
+      ['jaw_left', 'jaw_right', 'cheek_left', 'cheek_right', 'mouth_corner_left', 'mouth_corner_right'],
+      (vx, _vy, _vz) => ({ dx: Math.sign(vx || 1e-6) * 0.025, dy: 0.006, dz: 0 }),
+    );
+    if (output != null) {
+      spec.correctiveRules.push({
+        inputs: [{ basisId: jawBasis }, { basisId: mouthBasis }],
+        outputBasisId: output,
+      });
+      spec.correctiveMorphs.push({
+        name: 'shape_WideJawWideMouthCorrective',
+        inputs: [
+          { property: 'face.jaw.width' },
+          { property: 'face.mouth.width' },
+        ],
+      });
+    }
+  }
+
+  // Wide jaw + wide nose: jaw widening bleeds into nose alar widening.
+  if (jawBasis && noseBasis) {
+    const output = correctiveBasis(
+      'WideJawWideNoseCorrective',
+      ['nose_alar_left', 'nose_alar_right', 'jaw_left', 'jaw_right'],
+      (vx, _vy, _vz) => ({ dx: Math.sign(vx || 1e-6) * 0.018, dy: 0, dz: 0.005 }),
+    );
+    if (output != null) {
+      spec.correctiveRules.push({
+        inputs: [{ basisId: jawBasis }, { basisId: noseBasis }],
+        outputBasisId: output,
+      });
+      spec.correctiveMorphs.push({
+        name: 'shape_WideJawWideNoseCorrective',
+        inputs: [
+          { property: 'face.jaw.width' },
+          { property: 'face.nose.width' },
+        ],
+      });
+    }
+  }
+
+  // Wide cheeks + wide jaw: cheeks bulge outward.
+  if (cheekBasis && jawBasis) {
+    const output = correctiveBasis(
+      'WideCheeksWideJawCorrective',
+      ['cheek_left', 'cheek_right', 'jaw_left', 'jaw_right'],
+      (vx, _vy, _vz) => ({ dx: Math.sign(vx || 1e-6) * 0.02, dy: -0.004, dz: 0 }),
+    );
+    if (output != null) {
+      spec.correctiveRules.push({
+        inputs: [{ basisId: cheekBasis }, { basisId: jawBasis }],
+        outputBasisId: output,
+      });
+      spec.correctiveMorphs.push({
+        name: 'shape_WideCheeksWideJawCorrective',
+        inputs: [
+          { property: 'face.cheek.width' },
+          { property: 'face.jaw.width' },
+        ],
+      });
+    }
+  }
+
+  return { space, spec };
+}

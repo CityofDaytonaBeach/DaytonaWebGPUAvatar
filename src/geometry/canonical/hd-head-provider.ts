@@ -128,14 +128,14 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
 
   private buildGeometry(): {
     vertices: CanonicalTopologyVertex[];
-    indices: number[];
+    indices: Uint32Array;
     parts: CanonicalTopologyPart[];
   } {
     const skin = this.buildSkin();
     const append = this.buildDetailParts();
 
     const vertices: CanonicalTopologyVertex[] = [...skin.vertices, ...append.vertices];
-    const indices: number[] = [...skin.indices, ...append.indices];
+    const indices = Uint32Array.from([...skin.indices, ...append.indices]);
 
     // Stable vertex ids must equal the global index (the validator enforces this
     // and every consumer keys off index); re-number after concatenation.

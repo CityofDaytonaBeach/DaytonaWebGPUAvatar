@@ -61,6 +61,11 @@ export class CorrectiveShapeSolver {
     return Math.abs(this.activation(rule, coeffs)) > threshold;
   }
 
+  /** Rules whose activation is above the threshold (P11/P17 telemetry). */
+  listActiveRules(coeffs: Map<number, number>, threshold = 0.01): CorrectiveRule[] {
+    return this.rules.filter((rule) => this.isActive(rule, coeffs, threshold));
+  }
+
   /**
    * Accumulate the corrective contribution into a dense per-vertex delta array
    * (length vertexCount*3). Returns the same array for chaining.

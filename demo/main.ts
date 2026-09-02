@@ -4,6 +4,7 @@ import {
   WebGL2HumanRenderer,
   createDeviceAndProfile,
   quatFromEuler,
+  HDCanonicalHumanProvider,
 } from '../src';
 import type { DeviceCapabilities } from '../src';
 
@@ -29,8 +30,10 @@ class CanvasHumanRenderer {
   /**
    * @param skinned When animating, an optional array of final skinned positions
    *   (Float32Array) overrides the morph-deformed base so bones visibly move.
+   * @param affectedVertexIds Optional set of vertex ids to highlight (P17
+   *   localized-edit proof); they are drawn as bright wireframe overlays.
    */
-  render(human: Human, skinned?: Float32Array) {
+  render(human: Human, skinned?: Float32Array, affectedVertexIds?: Set<number>) {
     const ctx = this.canvas.getContext('2d');
     if (!ctx) return;
     const w = this.canvas.width;
@@ -43,9 +46,9 @@ class CanvasHumanRenderer {
     const delta = human.computeMorphDelta();
 
     const proj = (x: number, y: number): [number, number] => {
-      const sx = ((x + 1.3) / 2.6) * w;
-      const sy = ((1.9 - y) / 3.3) * h;
-      return [sx, sy];
+      // Head-first topology: zoom into the canonical head band (y 1.6..2.1).
+      const sy = ((2.12 - y) / 0.55) * h;
+      return [((x + 0.2) / 0.4) * w, sy];
     };
 
     // Full 3D position of a vertex (skinned when animating, else morph-deformed).
@@ -120,6 +123,23 @@ class CanvasHumanRenderer {
     // Detail parts in canonical order.
     for (const p of canonical.parts) {
       drawRange(p.indexStart, p.indexCount, partColor(p.name, p.kind));
+    }
+
+    // Localized-edit proof (P17): highlight the affected vertices in bright cyan
+    // without re-shading the base mesh, so only displaced geometry pops.
+    if (affectedVertexIds && affectedVertexIds.size > 0) {
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = 'rgba(80,220,255,0.95)';
+      ctx.beginPath();
+      for (const id of affectedVertexIds) {
+        const p = pvec(id);
+        const [sxx, syy] = proj(p[0], p[1]);
+        ctx.moveTo(sxx - 2, syy);
+        ctx.lineTo(sxx + 2, syy);
+        ctx.moveTo(sxx, syy - 2);
+        ctx.lineTo(sxx, syy + 2);
+      }
+      ctx.stroke();
     }
 
     // Joint markers from the parametric skeleton (world-space accumulation).
@@ -221,6 +241,7 @@ async function main() {
   const human = await Human.create({
     device: caps?.device ?? undefined,
     format: navigator.gpu?.getPreferredCanvasFormat?.() ?? undefined,
+    canonicalProvider: new HDCanonicalHumanProvider(),
     seed: {
       'global.height': 1.78,
       'body.waist': 1.0,
@@ -247,6 +268,7 @@ async function main() {
   const gpuDevice = caps?.device ?? null;
   let running = false;
   const renderFallback = () => {
+    const show = (document.getElementById('showAffected') as HTMLInputElement)?.checked ?? true;
     if (webglRenderer) {
       webglRenderer.render(
         animating ? human.skinScene() : morphedPositions(human),
@@ -254,7 +276,11 @@ async function main() {
       );
       return;
     }
-    canvasRenderer.render(human, animating ? human.skinScene() : undefined);
+    canvasRenderer.render(
+      human,
+      animating ? human.skinScene() : undefined,
+      show ? human.affectedVertexIds() : undefined,
+    );
   };
 
   function loop() {
@@ -272,7 +298,13 @@ async function main() {
   }
 
   const refresh = (msg: string) => {
-    log.textContent = `${msg}\n\n${human.profiler.summarize()}\n\nengine: ${gpuLabel}`;
+    // Localized-edit + GPU telemetry (P17/P18): show exactly how few vertices the
+    // shape space displaced and how many corrective rules are active.
+    const affected = human.affectedVertexIds();
+    const total = human.canonicalRef.vertexCount;
+    const percent = total > 0 ? ((affected.size / total) * 100).toFixed(2) : '0.00';
+    const activeCorrectives = human.activeCorrectiveCount();
+    log.textContent = `${msg}\n\n${human.profiler.summarize()}\n\nengine: ${gpuLabel}\n\naffected vertices: ${affected.size} / ${total} (${percent}%)\ncorrectives active: ${activeCorrectives}`;
     timelineInfo.textContent = `events: ${human.historyLength} · index: ${human.historyIndex} · undo/redo ready`;
     if (!caps || !ctx || !running) {
       // WebGL2 fallback uses CPU morph/skinning buffers; 2D canvas is last resort.
@@ -331,11 +363,35 @@ async function main() {
   renderFallback();
   if (caps && ctx) requestAnimationFrame(loop);
 
-  bindRange('nose', 'noseV', (v) =>
-    refresh(formatResult('nose', human.modify({ 'face.nose.width': v }))),
+  bindRange('noseWidth', 'noseWidthV', (v) =>
+    refresh(formatResult('nose.width', human.modify({ 'face.nose.width': v }))),
   );
-  bindRange('jaw', 'jawV', (v) =>
-    refresh(formatResult('jaw', human.modify({ 'face.jaw.width': v }))),
+  bindRange('noseLength', 'noseLengthV', (v) =>
+    refresh(formatResult('nose.length', human.modify({ 'face.nose.length': v }))),
+  );
+  bindRange('jawWidth', 'jawWidthV', (v) =>
+    refresh(formatResult('jaw.width', human.modify({ 'face.jaw.width': v }))),
+  );
+  bindRange('chinProj', 'chinProjV', (v) =>
+    refresh(formatResult('chin.projection', human.modify({ 'face.chin.projection': v }))),
+  );
+  bindRange('eyeSpacing', 'eyeSpacingV', (v) =>
+    refresh(formatResult('eye.spacing', human.modify({ 'face.eye.spacing': v }))),
+  );
+  bindRange('eyeSize', 'eyeSizeV', (v) =>
+    refresh(formatResult('eye.size', human.modify({ 'face.eye.size': v }))),
+  );
+  bindRange('cheekWidth', 'cheekWidthV', (v) =>
+    refresh(formatResult('cheek.width', human.modify({ 'face.cheek.width': v }))),
+  );
+  bindRange('mouthWidth', 'mouthWidthV', (v) =>
+    refresh(formatResult('mouth.width', human.modify({ 'face.mouth.width': v }))),
+  );
+  bindRange('upperLip', 'upperLipV', (v) =>
+    refresh(formatResult('upperLip.thickness', human.modify({ 'face.upperLip.thickness': v }))),
+  );
+  bindRange('lowerLip', 'lowerLipV', (v) =>
+    refresh(formatResult('lowerLip.thickness', human.modify({ 'face.lowerLip.thickness': v }))),
   );
   bindRange('musc', 'muscV', (v) =>
     refresh(formatResult('muscularity', human.modify({ 'body.muscularity': v }))),
@@ -376,6 +432,10 @@ async function main() {
   document.getElementById('snap')?.addEventListener('click', () => {
     human.snapshot();
     refresh('SNAPSHOT taken');
+  });
+
+  document.getElementById('showAffected')?.addEventListener('change', () => {
+    if (!caps || !ctx || !running) renderFallback();
   });
 
   document
