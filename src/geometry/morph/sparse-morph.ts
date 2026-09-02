@@ -25,7 +25,11 @@ export class SparseMorphSet {
   ): void {
     const range = this.canonical.regionRanges.get(region);
     if (!range) {
-      throw new Error(`Unknown region: ${region}`);
+      // Provider-agnostic: a morph targeting a region the current topology does
+      // not expose registers as a no-op with zero deltas (block human registers
+      // on coarse regions; a head-first topology omits them).
+      this.byName.set(name, { name, deltas: [] });
+      return;
     }
     const deltas: MorphDelta[] = [];
     for (let i = range.start; i < range.start + range.count; i++) {

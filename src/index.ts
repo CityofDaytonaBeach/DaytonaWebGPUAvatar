@@ -210,6 +210,15 @@ export type {
   CanonicalHumanAsset,
   CanonicalValidationResult,
 } from './geometry/canonical/canonical-provider.js';
+export { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
+export type { HdHeadOptions } from './geometry/canonical/hd-head-provider.js';
+export {
+  HD_HEAD_REGIONS,
+  HD_HEAD_PART_REGIONS,
+  HD_BODY_REGIONS,
+  EYELID_REGIONS,
+  REQUIRED_HD_HEAD_REGIONS,
+} from './geometry/canonical/regions.js';
 export { resolveLandmarkPosition, findTriangleInRegion } from './geometry/canonical/landmark.js';
 export type { HumanLandmark, ResolvedLandmark } from './geometry/canonical/landmark.js';
 export { SparseMorphSet } from './geometry/morph/sparse-morph.js';
