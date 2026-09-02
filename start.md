@@ -3579,3 +3579,3128 @@ The first objective is not "perfect graphics."
 The first objective is proving that the underlying architecture can represent ONE human correctly, modify that human non-destructively, update only affected GPU state, preserve identity, animate the resulting character, and reconstruct any previous state deterministically.
 
 Once that foundation is proven, progressively pursue photorealism, advanced anatomy, procedural skin, strand hair, cloth, neural residuals, learned deformation, advanced simulation, and additional experimental rendering technologies without breaking the character model underneath them.
+
+
+EXPANDED:
+At this point, what's remaining is less about inventing more architecture and much more about turning the prototypes into an actual HD human system.
+
+Remaining work, in priority order
+Priority	Remaining	Current state
+🔴 P0	Real HD canonical human topology	Procedural block prototype
+🔴 P0	HD anatomical shape space	Still needed
+🔴 P0	Production facial topology	Needs real geometry
+🔴 P0	Production body topology	Needs real geometry
+🔴 P0	High-quality skin materials	Prototype-level
+🔴 P0	Realistic optical eyes	Parts exist, realism needed
+🔴 P0	Production morph dataset/basis	Sparse system exists, data needed
+🟠 P1	Production skeleton/weights	Foundation implemented
+🟠 P1	Pose-space correctives	Needs expansion
+🟠 P1	Muscle/soft-tissue deformation	Needs serious implementation
+🟠 P1	Full facial/FACS correctives	Foundation exists
+🟠 P1	Motion/behavior system	Prototype
+🟠 P1	Speech performance/co-articulation	Visemes implemented
+🟠 P1	Internal anatomy fidelity	Prototype
+🟡 P2	Hair	Prototype
+🟡 P2	Clothing	Prototype
+🟡 P2	Cloth physics	Prototype
+🟡 P2	SDF collision	Prototype
+🟡 P2	Tattoos	Prototype
+🟡 P2	Neural skin residual	Prototype
+🟡 P2	Perceptual validation/correction	Prototype
+🟡 P2	GPU timestamp benchmarking	Prototype
+🟡 P2	Localized benchmark suite	Prototype
+🟢	WebGPU rendering	Implemented
+🟢	WebGL2 fallback	Implemented
+🟢	Delta compiler	Implemented
+🟢	Dependency graph	Implemented
+🟢	Identity solver	Implemented
+🟢	Constraint solver	Implemented
+🟢	GPU sparse morphs	Implemented
+🟢	GPU skinning	Implemented
+🟢	Semantic/perceptual LOD	Implemented
+🟢	Timeline/history	Implemented
+🟢	Prompt patch system	Implemented
+🟢	Attachment coordinates	Implemented
+
+Your own current capability matrix agrees with this picture.
+
+1. The big remaining piece is now extremely clear
+
+You need:
+
+CanonicalHumanHD
+
+Your current README still says:
+
+Canonical human (procedural block, replaceable) | PROTOTYPE
+
+But importantly, you now have:
+
+Canonical topology validation | IMPLEMENTED
+Canonical topology asset adapter | IMPLEMENTED
+
+Excellent architectural move.
+
+That means you don't need to rewrite your engine to introduce HD geometry.
+
+You can essentially go:
+
+DebugBlockHuman
+        ↓
+CanonicalTopologyAdapter
+        ↓
+Daytona Human HD
+
+while retaining:
+
+HumanDefinition
+DependencyGraph
+DeltaCompiler
+SparseMorph
+Skeleton
+IdentitySolver
+Constraints
+Timeline
+Attachments
+WebGPU
+
+That's exactly what I'd want.
+
+2. Build the Human Anatomical Shape Space
+
+This is now the biggest missing algorithmic system.
+
+Create something like:
+
+src/anatomy/shape-space/
+
+HumanShapeSpace.ts
+FaceShapeBasis.ts
+BodyShapeBasis.ts
+SkullShapeBasis.ts
+SoftTissueBasis.ts
+AgeShapeBasis.ts
+
+ShapeCoefficientSolver.ts
+ShapeConstraintSolver.ts
+ShapeCorrectiveSolver.ts
+
+SparseBasisEncoder.ts
+SparseBasisDecoder.ts
+
+The pipeline becomes:
+
+HumanDefinition
+
+      ↓
+
+Semantic Anatomy Parameters
+
+      ↓
+
+Anatomical Constraint Solver
+
+      ↓
+
+Identity Preservation Solver
+
+      ↓
+
+HUMAN SHAPE SPACE
+
+      ↓
+
+Shape coefficients
+
+      ↓
+
+Corrective Shape Solver
+
+      ↓
+
+Sparse deformation
+
+      ↓
+
+WebGPU
+
+That is the missing bridge between your very good semantic architecture and an actual realistic person.
+
+3. Stop treating HD morphology as individual morph sliders
+
+Eventually:
+
+jaw.width = .73
+
+cannot merely activate:
+
+jawWidthMorph * .73
+
+It should solve correlated anatomy.
+
+For example:
+
+jaw.width
+     ↓
+mandible width
+gonial angle
+masseter placement
+chin relationship
+cheek transition
+mouth relationship
+under-chin tissue
+neck transition
+skin surface
+facial hair anchors
+
+And your existing dependency graph is beautifully positioned to handle this.
+
+Humans, annoyingly, refused to evolve as independent slider controls.
+
+4. You need actual HD human data
+
+This becomes unavoidable now.
+
+The runtime can invent transformations.
+
+It cannot magically know the exact topology of a photoreal human without a reference representation.
+
+You need a canonical dataset containing approximately:
+
+HD neutral body mesh
+HD neutral head mesh
+
+stable vertex IDs
+stable topology
+UVs
+semantic vertex regions
+anatomical landmarks
+
+skeleton
+joint positions
+skin weights
+
+facial expression shapes
+identity shapes
+body shapes
+pose correctives
+
+eye geometry
+teeth
+gums
+tongue
+eyelashes
+
+Later you can develop your own procedural/statistical generation of that data.
+
+But v1 should load excellent source geometry through the adapter you just built.
+
+5. Skin becomes a major project
+
+You'll need a dedicated Daytona skin renderer.
+
+Something roughly:
+
+Skin Base
++
+Melanin/pigmentation
++
+Blood coloration
++
+Thickness
++
+Subsurface scattering
++
+Roughness variation
++
+Specular
++
+Pore field
++
+Micro normal
++
+Wrinkle field
++
+Displacement
++
+Dynamic expression wrinkles
++
+Age effects
++
+Environmental effects
+
+I would explicitly separate frequencies:
+
+MACRO
+geometry
+
+MESO
+displacement
+
+MICRO
+normal/procedural skin
+
+OPTICAL
+shader/SSS
+
+Don't put pores into a million extra vertices because apparently GPUs haven't suffered enough.
+
+6. Eyes need their own renderer
+
+Eyes will expose a fake human immediately.
+
+Build:
+
+EyeSystem
+
+Sclera
+Iris
+Pupil
+Cornea
+Anterior chamber
+Limbus
+Tear film
+Tear line
+Eyelid contact
+
+Then:
+
+GazeSolver
+BlinkSolver
+SaccadeSolver
+PupilSolver
+
+Eyes should remain anatomically attached while facial geometry changes.
+
+7. Upgrade the skeleton
+
+The parametric skeleton and GPU skinning are already implemented.
+
+Now make it production-grade.
+
+Move toward:
+
+100+ transforms
+
+spine chain
+neck chain
+jaw
+eyes
+
+clavicles
+scapula
+shoulder
+arm twist
+forearm twist
+full hands
+
+pelvis
+hip
+thigh twist
+knee
+shin
+ankle
+foot
+toes
+
+But don't solve deformation with bones alone.
+
+Use:
+
+Skeleton
++
+Skinning
++
+Pose Correctives
++
+Muscle deformation
++
+Soft tissue
+8. Muscle and tissue layer
+
+This is probably your second-biggest R&D problem after Shape Space.
+
+Eventually:
+
+Skeleton Pose
+      ↓
+Muscle activation
+      ↓
+Muscle volume deformation
+      ↓
+Soft tissue response
+      ↓
+Skin
+
+You don't need medically perfect finite-element simulation.
+
+You need visually anatomically convincing deformation.
+
+Simplified muscle primitives/SDFs are sufficient initially.
+
+9. Finish your prototype systems
+
+Your current capability matrix still labels these prototype:
+
+Internal anatomy
+Motion compiler
+Time transitions
+Tattoo projection
+Clothing
+Strand hair
+SDF collision
+Cloth physics
+Neural skin residual
+Localized benchmark
+GPU timestamp benchmark
+Perceptual validation
+
+Don't rewrite them.
+
+Graduate each:
+
+PROTOTYPE
+   ↓
+HD integration
+   ↓
+GPU optimization
+   ↓
+validation
+   ↓
+stress testing
+   ↓
+production
+10. Add automated visual validation
+
+Your perceptual validator is currently prototype status.
+
+Eventually every important character mutation should be testable from standardized cameras:
+
+front face
+left profile
+right profile
+3/4 face
+full body front
+full body side
+hands
+eyes
+extreme expression
+extreme pose
+
+Check:
+
+self-intersection
+eye placement
+mouth penetration
+teeth clipping
+joint collapse
+broken silhouette
+hair penetration
+clothing penetration
+asymmetry
+identity drift
+anatomical limits
+
+That will become invaluable once you have hundreds of interacting parameters.
+
+11. Make the benchmark prove your architecture
+
+You added the GPU timestamp benchmark prototype. Good.
+
+Finish it.
+
+Your demo should eventually expose something like:
+
+PROMPT
+"Make his nose slightly narrower"
+
+Semantic properties changed: 1
+Dependencies affected: 7
+
+Human vertices:
+184,632
+
+Vertices recomputed:
+3,816
+
+Percentage:
+2.07%
+
+GPU:
+
+Shape solver       0.04 ms
+Morph              0.05 ms
+Corrective         0.02 ms
+Normals            0.03 ms
+
+Skin               CACHED
+Hair               CACHED
+Clothing           CACHED
+Body               CACHED
+
+Total update:
+0.14 ms
+
+Now you're not merely claiming your delta architecture works.
+
+You're demonstrating it.
+
+The remaining roadmap
+
+I would now freeze new feature categories and execute:
+
+DAYTONA HUMAN HD
+
+PHASE A
+Real canonical HD topology
+        ↓
+PHASE B
+Human Anatomical Shape Space
+        ↓
+PHASE C
+HD identity + body deformation
+        ↓
+PHASE D
+Production skeleton + weights
+        ↓
+PHASE E
+Pose correctives
+        ↓
+PHASE F
+Skin + SSS + microstructure
+        ↓
+PHASE G
+Optical eyes
+        ↓
+PHASE H
+Full facial deformation
+        ↓
+PHASE I
+Muscle + soft tissue
+        ↓
+PHASE J
+Hair
+        ↓
+PHASE K
+Clothing + collision
+        ↓
+PHASE L
+Speech + motion performance
+        ↓
+PHASE M
+Visual validation
+        ↓
+PHASE N
+GPU optimization
+        ↓
+PHASE O
+HD HUMAN V1
+Bottom line
+
+Architecturally, I'd estimate you've built most of the major runtime categories already. That does not mean you're 80% of the way to photorealism. The remaining 20-ish percent of categories contains perhaps 70% of the visual difficulty.
+
+The architecture is no longer your main obstacle.
+
+Human data, HD topology, anatomical shape solving, deformation quality, skin, eyes and hair are.
+
+And that's actually a good place for this project to be. The plumbing is getting sophisticated enough that you can finally stop teaching the pipes philosophy and make them carry water.
+
+give example of each item to implement and tell ai how to build it
+
+Yes. At this point I'd give the coding AI a production-upgrade prompt, not another "build the architecture" prompt. Most of that architecture already exists. The instructions below tell it what each remaining system actually means, give a concrete example, and explain how to implement it without casually demolishing the rather useful engine you've already built.
+
+DAYTONA WEBGPU AVATAR
+HD HUMAN V1 IMPLEMENTATION MASTER PROMPT
+OBJECTIVE
+
+Continue development of the existing DaytonaWebGPUAvatar repository.
+
+Repository:
+
+CityofDaytonaBeach/DaytonaWebGPUAvatar
+
+DO NOT restart the project.
+
+DO NOT replace the existing architecture.
+
+DO NOT convert this into a conventional avatar creator.
+
+The repository already contains major architectural systems including:
+
+Human Definition Language
+property registry
+numeric property IDs
+dependency graph
+delta compiler
+dirty-region tracking
+sparse morphs
+GPU morph compute
+GPU-resident rendering
+GPU skinning
+identity preservation
+anatomical constraints
+event-sourced timeline
+attachments
+semantic/perceptual LOD
+WebGPU renderer
+WebGL2 fallback
+facial controls
+speech/visemes
+motion compiler prototype
+SDF collision prototype
+cloth prototype
+hair prototype
+skin residual prototype
+topology validation
+canonical topology adapter
+GPU benchmarking foundation
+
+The next objective is:
+
+TURN THE EXISTING DIGITAL-HUMAN RUNTIME INTO DAYTONA HUMAN HD V1.
+
+The current procedural block human must remain available as a debug/testing representation.
+
+Create a new HD path beside it.
+
+1. CANONICAL HUMAN PROVIDER ARCHITECTURE
+Problem
+
+The current procedural block human is useful for testing but cannot represent a photorealistic person.
+
+Do not delete it.
+
+Build
+
+Create an abstraction such as:
+
+interface CanonicalHumanProvider {
+  load(): Promise<CanonicalHumanAsset>;
+
+  topologyVersion(): string;
+
+  validate(): CanonicalValidationResult;
+}
+
+Implement:
+
+CanonicalHumanProvider
+    │
+    ├── DebugBlockHumanProvider
+    │
+    ├── HDHumanProvider
+    │
+    └── ImportedHumanProvider
+
+The existing block human becomes the debug provider.
+
+Example
+const human = await Human.create({
+  canonicalProvider: new HDHumanProvider({
+    asset: "/humans/daytona-hd-v1.glb"
+  })
+});
+
+The rest of the runtime should not care whether the topology came from the debug human or HD human.
+
+Acceptance criteria
+
+Changing provider must NOT require changes to:
+
+HumanDefinition
+CharacterEvent
+DependencyGraph
+DeltaCompiler
+Timeline
+PromptInterpreter
+IdentitySolver
+2. HD CANONICAL TOPOLOGY
+Goal
+
+Introduce one high-quality neutral human topology.
+
+This is the common topology from which normal human characters derive.
+
+Requirements
+
+The topology needs:
+
+stable vertex IDs
+stable triangle IDs
+stable UV coordinates
+semantic regions
+anatomical landmarks
+skeleton
+skin weights
+facial loops
+mouth interior
+eyes
+eyelids
+teeth
+gums
+tongue
+ears
+hands
+fingers
+feet
+toes
+
+Do not procedurally create the production human from cubes or spheres.
+
+Example semantic regions
+face.forehead
+face.temple.left
+face.temple.right
+
+face.eye.left.upperLid
+face.eye.left.lowerLid
+
+face.nose.bridge
+face.nose.tip
+face.nose.alar.left
+face.nose.alar.right
+
+face.cheek.left
+face.cheek.right
+
+face.mouth.upperLip
+face.mouth.lowerLip
+
+face.jaw.left
+face.jaw.right
+face.chin
+
+body.chest
+body.abdomen
+body.shoulder.left
+body.shoulder.right
+
+arm.left.upper
+arm.left.forearm
+
+hand.left
+hand.right
+Add semantic lookup structures
+
+Conceptually:
+
+interface SemanticRegion {
+  id: number;
+  name: string;
+
+  vertexRanges: VertexRange[];
+  triangleRanges: TriangleRange[];
+
+  importance: number;
+}
+
+Support non-contiguous ranges.
+
+Do NOT assume every anatomical region occupies one contiguous vertex range.
+
+3. ANATOMICAL LANDMARK SYSTEM
+
+Create stable anatomical landmarks independent of world position.
+
+Examples:
+
+skull.top
+skull.chin
+
+eye.left.center
+eye.right.center
+
+nose.bridge
+nose.tip
+nose.alar.left
+nose.alar.right
+
+mouth.corner.left
+mouth.corner.right
+
+jaw.angle.left
+jaw.angle.right
+
+shoulder.left
+shoulder.right
+
+elbow.left
+elbow.right
+
+wrist.left
+wrist.right
+
+hip.left
+hip.right
+
+knee.left
+knee.right
+
+ankle.left
+ankle.right
+
+Represent landmarks through stable topology references where possible.
+
+Example:
+
+interface SurfaceLandmark {
+  id: number;
+  regionId: number;
+
+  triangleId: number;
+
+  barycentric: [number, number, number];
+
+  normalOffset: number;
+}
+
+Landmarks must survive morphing and animation.
+
+4. HUMAN ANATOMICAL SHAPE SPACE
+
+THIS IS ONE OF THE MOST IMPORTANT NEW SYSTEMS.
+
+Create:
+
+src/anatomy/shape-space/
+
+Suggested files:
+
+human-shape-space.ts
+face-shape-basis.ts
+body-shape-basis.ts
+skull-shape-basis.ts
+tissue-shape-basis.ts
+age-shape-basis.ts
+
+shape-coefficient-solver.ts
+shape-corrective-solver.ts
+shape-basis-loader.ts
+shape-basis-encoder.ts
+Purpose
+
+Semantic properties should not directly manipulate vertices.
+
+Instead:
+
+HumanDefinition
+       ↓
+Semantic parameters
+       ↓
+ShapeCoefficientSolver
+       ↓
+Shape Basis
+       ↓
+Sparse deformation
+Example
+
+Input:
+
+face.jaw.width = 0.70
+
+DO NOT implement as:
+
+vertex.x *= 1.2;
+
+Instead solve:
+
+jaw.width
+    ↓
+mandible width coefficient
+gonial-angle coefficient
+masseter-volume coefficient
+cheek-transition coefficient
+chin-transition coefficient
+neck-transition coefficient
+
+Then combine shape bases.
+
+Conceptually:
+
+FinalShape =
+BaseShape
++
+Σ(identityBasis[i] × identityCoefficient[i])
++
+Σ(bodyBasis[i] × bodyCoefficient[i])
++
+Σ(ageBasis[i] × ageCoefficient[i])
++
+Σ(correctiveBasis[i] × correctiveCoefficient[i])
+5. FACE SHAPE BASIS
+
+Create a high-resolution facial identity system.
+
+Start with perhaps 50-100 meaningful dimensions.
+
+Architect for hundreds.
+
+Examples:
+
+Skull
+skull.width
+skull.height
+skull.depth
+forehead.height
+forehead.slope
+temple.width
+brow.projection
+Eyes
+eyes.spacing
+eyes.depth
+eyes.size
+eyes.rotation
+eyes.upperLidShape
+eyes.lowerLidShape
+Nose
+nose.width
+nose.length
+nose.projection
+nose.bridgeWidth
+nose.bridgeHeight
+nose.tipWidth
+nose.tipRotation
+nose.alarWidth
+nostril.width
+nostril.height
+Cheeks
+cheekbone.width
+cheekbone.height
+cheekbone.projection
+cheek.softTissue
+Jaw
+jaw.width
+jaw.height
+jaw.angle
+jaw.projection
+chin.width
+chin.height
+chin.projection
+Mouth
+mouth.width
+mouth.position
+upperLip.thickness
+lowerLip.thickness
+lip.projection
+cupidsBow.shape
+philtrum.depth
+Ears
+ear.size
+ear.rotation
+ear.projection
+ear.lobeSize
+
+Each semantic parameter can influence multiple basis vectors.
+
+6. BODY SHAPE BASIS
+
+Build a body shape space.
+
+Example dimensions:
+
+height
+torso.length
+leg.length
+arm.length
+
+shoulder.width
+ribCage.width
+ribCage.depth
+
+waist.width
+pelvis.width
+hip.width
+
+upperArm.volume
+forearm.volume
+
+thigh.volume
+calf.volume
+
+bodyFat
+muscularity
+
+abdomen.volume
+chest.volume
+glute.volume
+
+Example:
+
+"Make him more muscular"
+
+should NOT simply scale the whole body.
+
+It should produce something like:
+
+deltoid +0.10
+biceps +0.12
+triceps +0.09
+forearm +0.06
+chest +0.08
+latissimus +0.07
+quadriceps +0.08
+calves +0.05
+
+while maintaining skeletal proportions.
+
+7. SHAPE COEFFICIENT SOLVER
+
+Build a solver converting semantic human properties into deformation coefficients.
+
+Example:
+
+interface ShapeSolveInput {
+  definition: HumanDefinition;
+  changedPropertyIds: number[];
+}
+
+interface ShapeSolveResult {
+  coefficients: Float32Array;
+  affectedBasisIds: Uint32Array;
+  affectedRegions: Uint32Array;
+}
+
+It should use:
+
+property dependencies
+anatomical constraints
+identity restrictions
+current pose where required
+age/body composition interactions
+8. CORRECTIVE SHAPE SOLVER
+
+Individual shapes can be valid while combinations are invalid.
+
+Example:
+
+wide jaw
++
+strong smile
+
+may distort the mouth/cheek transition.
+
+Create corrective rules.
+
+Conceptually:
+
+if jawWidth > threshold
+AND smile > threshold
+
+activate:
+wideJawSmileCorrective
+
+Do not hard-code thousands of if statements permanently.
+
+Create a generalized corrective activation system.
+
+Example:
+
+interface CorrectiveRule {
+  inputs: number[];
+  activation: CorrectiveActivation;
+  basisId: number;
+}
+
+Eventually this can support learned corrective prediction.
+
+9. SPARSE SHAPE BASIS STORAGE
+
+Reuse the existing sparse morph architecture.
+
+Do NOT store a complete copy of the entire mesh for every basis vector.
+
+Example basis:
+
+nose.width
+
+might affect only 4,000 vertices.
+
+Store:
+
+basis ID
+affected vertex ranges
+quantization scale
+compressed deltas
+
+Potential entry:
+
+vertex ID
+dx
+dy
+dz
+
+Experiment with:
+
+Float32 baseline
+Float16
+Int16 quantization
+Int8 quantization
+range encoding
+delta prediction
+
+Benchmark quality and memory.
+
+10. PRODUCTION SKELETON
+
+Upgrade the existing skeleton.
+
+Do not discard existing GPU skinning.
+
+Expand the skeleton toward a production humanoid rig.
+
+Include:
+
+root
+pelvis
+
+spine_01
+spine_02
+spine_03
+chest
+
+neck_01
+neck_02
+head
+
+jaw
+eye_l
+eye_r
+
+clavicle_l
+scapula_l
+upperarm_l
+upperarm_twist_l
+forearm_l
+forearm_twist_l
+hand_l
+
+clavicle_r
+...
+
+Add complete finger chains.
+
+Add:
+
+thumb
+index
+middle
+ring
+pinky
+
+Add lower-body chains:
+
+thigh
+thigh_twist
+knee
+shin
+ankle
+foot
+toe
+11. PARAMETRIC SKELETON ADAPTATION
+
+The skeleton must adapt when anatomy changes.
+
+Example:
+
+height:
+1.70 → 1.90
+
+should update:
+
+pelvis position
+spine length
+shoulder position
+limb lengths
+joint positions
+
+Example:
+
+shoulder.width += 10%
+
+should move:
+
+clavicle endpoints
+shoulder joints
+upper-arm origins
+
+Do not leave bones floating inside modified geometry.
+
+12. SKIN WEIGHT SYSTEM
+
+Support at least four bone influences per vertex.
+
+Architect for more if WebGPU implementation benefits.
+
+Normalize weights.
+
+Validate:
+
+Σ weights = 1
+
+Build tooling to identify:
+
+unweighted vertices
+invalid bone references
+poorly normalized weights
+extreme weighting
+13. DUAL-QUATERNION SKINNING EXPERIMENT
+
+The existing skinning system should remain the baseline.
+
+Add optional dual-quaternion skinning.
+
+Compare against linear blend skinning for:
+
+shoulders
+forearms
+wrists
+hips
+
+Keep whichever produces measurable quality improvement without unacceptable cost.
+
+14. POSE-SPACE DEFORMATION
+
+Bones alone will not produce realistic shoulders, elbows, hips and knees.
+
+Implement Pose Space Deformation.
+
+Example:
+
+shoulder.abduction = 90 degrees
+
+activates:
+
+shoulder_raise_90_corrective
+deltoid_corrective
+armpit_corrective
+scapula_corrective
+
+Blend continuously.
+
+15. SHOULDER SYSTEM
+
+Treat shoulders as a dedicated deformation problem.
+
+Coordinate:
+
+clavicle
+scapula
+humerus
+deltoid
+pectoralis
+latissimus
+upper-back tissue
+armpit
+skin
+
+Test:
+
+arm forward
+arm sideways
+arm overhead
+arm backward
+
+The shoulder silhouette must remain plausible.
+
+16. MUSCLE SYSTEM
+
+Create:
+
+src/anatomy/muscles/
+
+Represent major visible muscle groups.
+
+Examples:
+
+deltoid
+biceps
+triceps
+pectoralis
+trapezius
+latissimus
+rectus abdominis
+gluteus
+quadriceps
+hamstrings
+gastrocnemius
+
+Each muscle needs approximately:
+
+origin
+insertion
+rest volume
+activation
+bulge behavior
+
+Start with simplified volumes.
+
+Do NOT attempt medical-grade biomechanics.
+
+Goal:
+
+visually convincing real-time deformation.
+
+17. MUSCLE DEFORMATION EXAMPLE
+
+When:
+
+elbow flexion = 120 degrees
+
+calculate:
+
+biceps shortening
+biceps bulging
+triceps relaxation
+forearm interaction
+skin response
+
+Output deformation coefficients.
+
+Do not directly simulate millions of tissue particles.
+
+18. SOFT-TISSUE SYSTEM
+
+Create simplified tissue layers:
+
+muscle
+fat
+skin
+
+Inputs:
+
+bodyFat
+muscularity
+pose
+motion velocity
+gravity
+
+Output:
+
+surface deformation
+secondary motion
+
+Initially use corrective deformation and spring-like secondary motion.
+
+Architect for more advanced simulation later.
+
+19. HUMAN-SPECIFIC SDF COLLISION
+
+Upgrade the prototype.
+
+Build regional collision fields.
+
+Example:
+
+head
+torso
+pelvis
+
+upperarm_l
+forearm_l
+hand_l
+
+upperarm_r
+...
+
+thigh_l
+shin_l
+foot_l
+
+Use simplified capsules/spheres first.
+
+Potential future upgrade:
+
+low-resolution volumetric SDF.
+
+Expose:
+
+distanceToHuman(point)
+surfaceNormal(point)
+projectOutside(point)
+
+Use for:
+
+hair
+cloth
+jewelry
+attachments
+20. HD SKIN RENDERER
+
+Create a specialized skin rendering pipeline.
+
+Required inputs:
+
+base pigmentation
+roughness
+specular
+normal
+micro normal
+displacement
+thickness
+subsurface scattering
+AO
+blood coloration
+oiliness
+wetness
+
+Do not use one uniform skin roughness.
+
+Define anatomical roughness regions.
+
+Example:
+
+forehead
+nose
+cheeks
+lips
+neck
+hands
+arms
+legs
+21. SKIN FREQUENCY SEPARATION
+
+Separate detail into:
+
+Macro
+
+Geometry:
+
+skull
+nose
+cheeks
+jaw
+body anatomy
+Meso
+
+Displacement:
+
+wrinkles
+folds
+scars
+Micro
+
+Normal/procedural:
+
+pores
+fine wrinkles
+skin grain
+
+Do not use geometry for every pore.
+
+22. PROCEDURAL PORES
+
+Generate deterministic pore detail.
+
+Inputs:
+
+region
+age
+skin type
+oiliness
+seed
+
+Example:
+
+samplePoreField({
+  region: FACE_NOSE,
+  age: 42,
+  oiliness: 0.65,
+  seed: character.seed
+});
+
+Same character + same seed must reproduce the same pore pattern.
+
+23. WRINKLE SYSTEM
+
+Separate:
+
+static age wrinkles
+expression wrinkles
+
+Static:
+
+forehead
+eyes
+mouth
+neck
+
+Dynamic:
+
+smile
+squint
+frown
+brow raise
+
+Example:
+
+smile = 0.8
+
+activates:
+
+nasolabial fold
+cheek compression
+crow's feet
+lip deformation
+
+Dynamic wrinkles disappear/reduce when expression relaxes.
+
+24. SUBSURFACE SCATTERING
+
+Implement a practical real-time SSS approximation.
+
+Use skin thickness and anatomical region.
+
+Areas such as:
+
+ears
+nose
+fingers
+
+should transmit/scatter differently from thick facial/torso regions.
+
+Create quality levels.
+
+Example:
+
+SSS OFF
+SSS LOW
+SSS HIGH
+
+Semantic/perceptual LOD controls it.
+
+25. EYE SYSTEM
+
+Create:
+
+src/render/eyes/
+
+Separate:
+
+sclera
+iris
+pupil
+cornea
+limbus
+tear film
+tear line
+
+The cornea must be separate from the iris.
+
+Implement corneal curvature/refraction approximation.
+
+26. EYE SHADING
+
+Add:
+
+iris depth
+limbal ring
+sclera coloration
+subtle sclera veins
+corneal reflection
+tear-film specular
+pupil dilation
+
+Avoid flat image-texture eyes.
+
+27. GAZE SYSTEM
+
+Implement:
+
+human.lookAt(target);
+
+Resolve target into coordinated:
+
+left eye rotation
+right eye rotation
+head rotation
+neck rotation
+
+Use limits.
+
+Eyes should move first for small gaze changes.
+
+Head should increasingly participate for larger changes.
+
+28. SACCADES
+
+Humans do not hold perfectly static eyes.
+
+Add tiny procedural saccades.
+
+Use deterministic/random-seeded behavior.
+
+Do not make them excessive.
+
+29. BLINKING
+
+Blinking must coordinate:
+
+upper eyelid
+lower eyelid
+eyeball contact
+expression
+
+Do not simply scale the eye geometry.
+
+Use proper eyelid deformation.
+
+30. FACIAL ACTION SYSTEM
+
+Expand the facial rig.
+
+Use ARKit-compatible naming as an interoperability baseline.
+
+Support controls including:
+
+eyeBlinkLeft
+eyeBlinkRight
+eyeSquintLeft
+eyeSquintRight
+
+browInnerUp
+browOuterUpLeft
+browOuterUpRight
+
+jawOpen
+
+mouthSmileLeft
+mouthSmileRight
+
+mouthFrownLeft
+mouthFrownRight
+
+mouthPucker
+mouthFunnel
+mouthStretch
+mouthPress
+mouthRoll
+
+cheekSquint
+noseSneer
+
+Add Daytona-specific higher-resolution controls as needed.
+
+31. SEMANTIC EXPRESSIONS
+
+Create high-level expressions.
+
+Example:
+
+human.setExpression("happy", 0.7);
+
+Resolve into low-level facial actions.
+
+Example:
+
+mouth smile = .65
+cheek raise = .42
+eye squint = .20
+brow adjustment = .08
+
+Do not hardwire expression directly to vertices.
+
+32. MICRO EXPRESSIONS
+
+Add subtle:
+
+blink variation
+brow tension
+lip tension
+jaw tension
+nostril motion
+cheek motion
+
+Use these during speech and idle behavior.
+
+33. SPEECH CO-ARTICULATION
+
+Upgrade speech beyond simple viseme switching.
+
+Input:
+
+phoneme A
+phoneme B
+phoneme C
+
+The mouth shape for B should be influenced by A and C.
+
+Create overlapping viseme curves.
+
+Example:
+
+previous phoneme
+current phoneme
+next phoneme
+
+produce blended:
+
+jaw
+lips
+tongue
+cheeks
+34. SPEECH PERFORMANCE
+
+Speech should combine:
+
+visemes
+emotion
+gaze
+blinks
+head motion
+breathing
+gestures
+
+Example prompt:
+
+"Say hello warmly."
+
+should produce:
+
+speech
++
+small smile
++
+soft eye expression
++
+appropriate gaze
++
+subtle head movement
+35. MOTION COMPILER
+
+Graduate the existing prototype.
+
+Input:
+
+"Walk to the desk, turn around and wave."
+
+Output:
+
+locomotion event
+target position
+turn event
+arm gesture
+IK
+timing
+
+Represent as deterministic timeline instructions.
+
+Do not let AI directly write bone transforms frame-by-frame.
+
+36. FULL-BODY IK
+
+Implement targets such as:
+
+hand target
+foot target
+head target
+look target
+pelvis target
+
+Example:
+
+human.reachFor(cupPosition);
+
+should solve:
+
+shoulder
+elbow
+wrist
+torso
+
+within joint limits.
+
+37. FOOT PLACEMENT
+
+Use ground/environment information.
+
+During walking/standing:
+
+raycast ground
+↓
+foot target
+↓
+ankle orientation
+↓
+leg IK
+↓
+pelvis adjustment
+
+Prevent floating feet.
+
+38. HAIR SYSTEM
+
+Graduate the prototype in stages.
+
+Level 1
+
+Hair cards.
+
+Level 2
+
+Guide curves.
+
+Level 3
+
+GPU-generated interpolated strands.
+
+Representation:
+
+scalp follicles
+      ↓
+guide hairs
+      ↓
+strand interpolation
+      ↓
+clumps
+      ↓
+physics
+39. HAIR PARAMETERS
+
+Support:
+
+hairline
+length
+density
+thickness
+curl
+wave
+frizz
+clumping
+part
+direction
+color
+highlight
+gray percentage
+wetness
+
+Example:
+
+"Make her hair shoulder-length and curly."
+
+must modify semantic hair state.
+
+Do not replace the whole character.
+
+40. HAIR LOD
+
+Close:
+
+strands
+
+Medium:
+
+clusters
+
+Far:
+
+cards/shell
+
+Semantic LOD chooses representation.
+
+41. CLOTHING SYSTEM
+
+Upgrade clothing from prototype.
+
+Garments remain independent character attachments.
+
+Representation:
+
+garment definition
+mesh
+material
+fit
+skin weights
+collision
+cloth parameters
+42. CLOTHING FIT
+
+Body modification must update clothing fit.
+
+Example:
+
+body muscularity +20%
+
+should trigger:
+
+body measurement change
+↓
+garment fit update
+↓
+collision update
+
+Do not leave the body penetrating the shirt.
+
+43. CLOTH PHYSICS
+
+Upgrade existing cloth prototype.
+
+Start with position-based dynamics.
+
+Constraints:
+
+distance
+bend
+attachment
+collision
+
+Run quality based on perceptual LOD.
+
+44. TATTOOS
+
+Upgrade tattoo projection.
+
+Store tattoos using surface attachment coordinates.
+
+Example:
+
+{
+  "region": "arm.left.forearm",
+  "triangle": 3814,
+  "barycentric": [0.2, 0.5, 0.3],
+  "rotation": 12,
+  "scale": 0.3
+}
+
+Tattoo must follow:
+
+morph
+pose
+skin deformation
+45. PIERCINGS
+
+Use semantic landmarks.
+
+Example:
+
+human://ear/left/helix
+
+Store local orientation and offset.
+
+When ear shape changes:
+
+landmark updates
+↓
+piercing transform updates
+46. INTERNAL ANATOMY
+
+Graduate internal anatomy carefully.
+
+Use modular assets for:
+
+skeleton
+major muscles
+heart
+lungs
+liver
+kidneys
+digestive structures
+
+Do not load them during normal rendering.
+
+Use lazy loading.
+
+Modes:
+
+EXTERNAL
+SKIN_TRANSPARENT
+MUSCLE
+SKELETON
+ORGANS
+47. TIME EVOLUTION
+
+Graduate time transitions.
+
+Example:
+
+"Age this person 20 years."
+
+Do NOT implement:
+
+age += 20
+
+and call it finished.
+
+Age influences:
+
+facial volume
+skin elasticity
+wrinkles
+pigmentation
+hair density
+hair gray
+posture
+soft tissue
+
+Use correlated age curves.
+
+48. HAIR GROWTH
+
+Example:
+
+advanceTime(180 days)
+
+can update:
+
+scalp hair length
+facial hair length
+
+subject to configured growth models.
+
+The event remains deterministic.
+
+49. FITNESS / BODY EVOLUTION
+
+Represent progressive change.
+
+Example:
+
+strength training for six months
+
+can influence:
+
+muscle coefficients
+body composition
+posture
+
+Use bounded curves.
+
+Do not transform the character instantly unless requested.
+
+50. IDENTITY PRESERVATION UPGRADE
+
+After introducing HD shape space, upgrade identity preservation.
+
+Create an Identity Vector.
+
+Example:
+
+skull
+eyes
+nose
+jaw
+mouth
+cheeks
+distinctive asymmetry
+
+For:
+
+"make him older"
+
+identity weights remain strongly preserved.
+
+For:
+
+"make a different person"
+
+identity constraints may be relaxed.
+
+51. IDENTITY DRIFT TEST
+
+Render standardized facial views before and after unrelated operations.
+
+Examples:
+
+change shirt
+change hair
+smile
+walk
+age slightly
+
+Structural identity should remain stable except where explicitly expected.
+
+52. PERCEPTUAL VALIDATION
+
+Graduate the current prototype.
+
+Create standardized validation cameras:
+
+face_front
+face_left
+face_right
+face_three_quarter
+
+body_front
+body_side
+body_back
+
+hand_close
+eye_close
+
+Check geometric conditions directly where possible.
+
+53. INTERSECTION VALIDATION
+
+Automatically detect:
+
+teeth through lips
+tongue through face
+eyes through eyelids
+hair through skull
+clothing through body
+limb self-intersection
+
+Use:
+
+SDF
+BVH
+triangle tests
+
+depending on precision needed.
+
+54. HUMAN PROPORTION VALIDATION
+
+Validate anatomical relationships.
+
+Examples:
+
+eye spacing
+jaw/skull relationship
+limb proportions
+joint positions
+hand proportions
+foot proportions
+
+Use realistic ranges for REALISTIC mode.
+
+55. GPU TIMESTAMP BENCHMARKING
+
+Graduate the timestamp benchmark.
+
+Measure actual GPU passes where supported.
+
+Record:
+
+morph
+corrective
+skinning
+normals
+hair
+cloth
+render
+
+Never fabricate unavailable timing.
+
+If timestamp queries are unavailable, report:
+
+GPU timing unavailable
+56. LOCALIZED EDIT BENCHMARK
+
+Create a permanent benchmark.
+
+Example operation:
+
+nose width +5%
+
+Report:
+
+total vertices
+affected vertices
+percentage touched
+
+dependencies visited
+compute nodes scheduled
+
+CPU delta compile time
+GPU morph time
+GPU normal time
+
+systems reused
+systems recomputed
+57. PERFORMANCE DEMO PANEL
+
+Display something like:
+
+FPS                  60
+
+GPU Frame            9.4 ms
+Human GPU            5.1 ms
+
+Vertices             186,422
+Touched this edit    4,032
+Touched %            2.16%
+
+Morph                0.08 ms
+Skinning             0.12 ms
+Hair                  1.4 ms
+Skin render           1.8 ms
+
+Face LOD              5
+Eye LOD               5
+Hair LOD              4
+Body LOD              3
+
+This proves the architecture.
+
+58. GPU SCHEDULER UPGRADE
+
+Use measured timings.
+
+Each workload provides:
+
+priority
+estimated cost
+actual moving-average cost
+visibility
+semantic importance
+deadline
+
+Scheduler chooses:
+
+RUN
+REDUCE
+REUSE
+DEFER
+SKIP
+
+Example:
+
+If frame budget is exceeded:
+
+KEEP:
+face animation
+eyes
+visible skin
+
+REDUCE:
+hair physics
+cloth iterations
+micro skin
+shadow quality
+59. TEMPORAL REUSE
+
+Add validity tracking.
+
+Potentially reuse:
+
+skin shading
+hair simulation
+cloth
+shadow
+microdetail
+
+when inputs have not changed.
+
+Never reuse invalid history.
+
+Track dependency/version IDs.
+
+60. PROCEDURAL SKIN RESIDUAL
+
+Keep procedural skin deterministic.
+
+Generate detail using:
+
+character seed
+anatomical region
+age
+skin properties
+
+Use spatially stable coordinates.
+
+Do not let pores swim across the skin during animation.
+
+61. NEURAL SKIN RESIDUAL
+
+Keep neural residual optional.
+
+Pipeline:
+
+PBR skin
++
+SSS
++
+procedural detail
++
+small neural residual
+
+The neural component should predict missing appearance detail.
+
+It should NOT generate the underlying face.
+
+Provide a conventional fallback.
+
+62. WEBNN EXPERIMENT
+
+If neural residual inference is introduced:
+
+compare:
+
+WebGPU compute
+WebNN
+WASM
+
+Measure actual performance.
+
+Do not make WebNN mandatory.
+
+63. HD TEXTURE STREAMING
+
+Support high-resolution textures without loading everything at full resolution.
+
+Use:
+
+KTX2
+Basis
+mipmaps
+
+Architect region-aware streaming.
+
+Example:
+
+Face close-up:
+
+face high-resolution
+feet lower-resolution
+64. HUMAN SEMANTIC TEXTURE LOD
+
+Texture quality should follow human importance.
+
+Example:
+
+camera = face close-up
+
+prioritize:
+
+eyes
+face
+lips
+hairline
+
+not:
+
+shoes
+back
+legs
+65. GLTF / GLB IMPORT
+
+Use the canonical topology adapter.
+
+Validate imported humans.
+
+Check:
+
+vertex count
+topology signature
+regions
+UVs
+skeleton
+weights
+landmarks
+required parts
+
+Reject incompatible topology explicitly.
+
+Never silently reinterpret a random mesh as Daytona canonical topology.
+
+66. GLTF EXPORT
+
+Export current compiled character when requested.
+
+Include:
+
+mesh
+materials
+skeleton
+skin weights
+animations
+
+Where Daytona-specific semantics cannot fit standard glTF, store extension metadata where appropriate.
+
+HumanDefinition remains the authoritative editable format.
+
+67. DAYTONA HUMAN PACKAGE
+
+Create a future package concept:
+
+.dhuman
+
+Possible contents:
+
+manifest
+HDL
+topology reference
+identity coefficients
+shape coefficients
+skin configuration
+hair configuration
+attachments
+clothing
+timeline
+version metadata
+
+Do not finalize binary format prematurely.
+
+Start with a versioned package manifest.
+
+68. PHOTO-TO-HUMAN PREPARATION
+
+Do not implement arbitrary AI mesh generation.
+
+Future photo fitting pipeline:
+
+photo
+↓
+facial landmarks
+↓
+proportion estimation
+↓
+shape coefficients
+↓
+identity solver
+↓
+Daytona canonical human
+
+The photo estimates parameters.
+
+It does not become the character representation.
+
+69. PROMPT-TO-HUMAN UPGRADE
+
+Prompt interpreter should understand more semantic properties.
+
+Example:
+
+"Create a tall athletic man with a narrow face,
+strong jaw, deep-set brown eyes and short curly hair."
+
+AI produces:
+
+identity parameters
+body parameters
+face parameters
+skin parameters
+hair parameters
+
+Then engine validation occurs.
+
+AI does not produce vertices.
+
+70. COMPLEX PROMPT DECOMPOSITION
+
+Example:
+
+"Make her older, cut her hair short, put her
+in a blue jacket and have her smile."
+
+Compile into separate events:
+
+AGE
+HAIR
+CLOTHING
+EXPRESSION
+
+Each produces its own dependency delta.
+
+Do not regenerate the human.
+
+71. LIVE MODIFICATION DURING ANIMATION
+
+This is a critical demonstration.
+
+Character should be able to:
+
+walk
++
+speak
++
+smile
+
+while receiving:
+
+change hair
+change clothing
+modify face
+
+Animation must continue.
+
+No character reload.
+
+72. FULL HUMAN STATE TEST
+
+Create one integration test exercising:
+
+create human
+modify anatomy
+modify face
+add tattoo
+add piercing
+add clothing
+change hair
+set expression
+walk
+speak
+advance time
+undo
+redo
+save
+reload
+
+Reloaded state must reproduce the character deterministically.
+
+73. HD HUMAN VISUAL TEST
+
+Create a canonical benchmark character.
+
+Render:
+
+neutral front
+neutral profile
+neutral 3/4
+
+smile
+frown
+blink
+jaw open
+
+arm overhead
+elbow flexed
+sitting
+walking
+
+Store approved images for regression testing.
+
+74. EXTREME PARAMETER TEST
+
+Generate combinations near REALISTIC limits.
+
+Examples:
+
+maximum realistic height
+minimum realistic height
+
+high muscularity
+high body fat
+
+wide jaw
+narrow jaw
+
+large nose
+small nose
+
+Check:
+
+topology
+intersections
+skeleton
+skin weights
+clothing
+attachments
+75. RANDOM HUMAN FUZZ TEST
+
+Generate thousands of seeded HumanDefinitions inside realistic limits.
+
+For each:
+
+solve anatomy
+generate shape
+pose
+validate
+
+Detect:
+
+NaN
+Infinity
+invalid GPU values
+mesh explosions
+intersections
+invalid joints
+invalid weights
+
+This is essential once parameter interactions become complicated.
+
+76. MEMORY TESTING
+
+Measure:
+
+canonical shared geometry
+shape basis
+per-human parameters
+working geometry
+textures
+hair
+clothing
+temporary buffers
+
+Display per-character memory estimate.
+
+77. MULTIPLE HUMANS
+
+After one HD human works, test:
+
+1
+2
+5
+10
+20
+
+characters.
+
+Share:
+
+canonical topology
+shape basis
+shaders
+textures where possible
+animation clips
+
+Keep per-character state separate.
+
+78. GPU-DRIVEN VISIBILITY
+
+Eventually move decisions such as:
+
+visible hair clusters
+visible clothing sections
+LOD
+
+onto GPU where beneficial.
+
+Benchmark against CPU decisions.
+
+Do not move logic to GPU merely because it sounds impressive.
+
+79. FRAME-BUDGET TEST
+
+Target:
+
+60 FPS = 16.67ms
+
+Define human budget.
+
+Example:
+
+animation        0.5ms
+deformation      1.0ms
+skin             2.0ms
+eyes             0.5ms
+hair             2.0ms
+clothing         1.0ms
+remaining scene  4.0ms
+headroom          ...
+
+These are initial budgets, not assumptions.
+
+Measure actual hardware.
+
+80. QUALITY TIERS
+
+Create:
+
+CINEMATIC
+HIGH
+MEDIUM
+LOW
+COMPATIBILITY
+
+Example:
+
+CINEMATIC
+highest shape detail
+SSS high
+strand hair
+high skin detail
+cloth high
+eye optics high
+LOW
+reduced geometry
+simple skin
+hair cards
+simple eyes
+reduced physics
+81. CAPABILITY BENCHMARK
+
+At startup test representative work:
+
+morph
+skinning
+normal reconstruction
+texture sampling
+hair
+cloth
+
+Choose default tier based on measured performance and WebGPU limits.
+
+82. DEVICE LOSS
+
+Test intentionally losing/recreating GPU state where possible.
+
+Recovery:
+
+HumanDefinition
++
+timeline
++
+asset references
+↓
+rebuild GPU state
+
+No character loss.
+
+83. DOCUMENTATION
+
+For every subsystem document:
+
+purpose
+inputs
+outputs
+CPU/GPU ownership
+dependencies
+dirty behavior
+LOD behavior
+memory cost
+performance cost
+fallback
+tests
+status
+84. CAPABILITY MATRIX
+
+Continue using:
+
+IMPLEMENTED
+PROTOTYPE
+PARTIAL
+PLANNED
+
+Do not promote a feature to IMPLEMENTED merely because its class exists.
+
+IMPLEMENTED should mean:
+
+functional
+integrated
+tested
+documented
+85. IMPLEMENTATION ORDER
+
+Do NOT implement this prompt randomly.
+
+Use this order:
+
+1 Canonical provider abstraction
+
+2 HD canonical topology ingestion
+
+3 semantic regions
+
+4 anatomical landmarks
+
+5 Human Shape Space
+
+6 Face Shape Basis
+
+7 Body Shape Basis
+
+8 Shape Coefficient Solver
+
+9 Corrective Shape Solver
+
+10 sparse HD basis integration
+
+11 production skeleton
+
+12 skeleton adaptation
+
+13 skin weights
+
+14 pose-space correctives
+
+15 HD skin renderer
+
+16 procedural skin
+
+17 eyes
+
+18 facial system
+
+19 muscle approximation
+
+20 soft tissue
+
+21 SDF collision
+
+22 hair
+
+23 clothing
+
+24 cloth
+
+25 tattoos/piercings
+
+26 motion + IK
+
+27 speech performance
+
+28 aging/time
+
+29 identity validation
+
+30 perceptual validation
+
+31 GPU benchmarking
+
+32 GPU scheduler optimization
+
+33 texture streaming
+
+34 package/export
+
+35 multi-human optimization
+86. FIRST DEVELOPMENT MILESTONE
+
+Do NOT attempt the entire list before producing something testable.
+
+Milestone:
+
+DAYTONA HD FACE V0.1
+
+Requirements:
+
+real canonical head topology
+
+eyes
+teeth
+tongue
+
+semantic face regions
+
+facial landmarks
+
+at least 30 identity shape controls
+
+at least 20 expression controls
+
+GPU sparse deformation
+
+identity preservation
+
+skin PBR
+
+basic SSS
+
+eye shader
+
+Demo controls:
+
+nose width
+nose length
+
+jaw width
+chin projection
+
+eye spacing
+eye size
+
+cheek width
+
+mouth width
+lip thickness
+
+age
+
+All modifications must go through HumanDefinition events.
+
+87. SECOND MILESTONE
+DAYTONA HD BODY V0.1
+
+Requirements:
+
+real body topology
+production skeleton
+skin weights
+body shape basis
+height
+shoulder width
+body composition
+muscularity
+arm/leg proportions
+pose-space shoulder/elbow/hip/knee correctives
+88. THIRD MILESTONE
+DAYTONA HD PERFORMANCE V0.1
+
+Character:
+
+walks
+looks
+blinks
+smiles
+speaks
+gestures
+
+while remaining continuously editable.
+
+89. FOURTH MILESTONE
+DAYTONA HD APPEARANCE V0.1
+
+Implement:
+
+procedural skin
+wrinkles
+hair
+tattoos
+piercings
+clothing
+cloth
+90. FIFTH MILESTONE
+DAYTONA HD EVOLUTION V0.1
+
+Demonstrate:
+
+Day 0
+↓
+six months
+↓
+five years
+↓
+twenty years
+
+with deterministic:
+
+hair
+skin
+body
+age
+
+changes while identity remains recognizable.
+
+91. FINAL REQUIRED DEMONSTRATION
+
+Create one persistent Daytona Human.
+
+Then execute:
+
+Create person
+
+↓
+"Make his jaw wider."
+
+↓
+"Give him short brown hair."
+
+↓
+"Add a tattoo to his left forearm."
+
+↓
+"Put him in a jacket."
+
+↓
+"Smile."
+
+↓
+"Walk toward the camera."
+
+↓
+"Say: Welcome to Daytona."
+
+↓
+while speaking:
+"Make the jacket darker."
+
+↓
+"Age him ten years."
+
+↓
+Undo age
+
+↓
+Undo jacket
+
+↓
+Restore age
+
+↓
+Save
+
+↓
+Close character
+
+↓
+Reload
+
+The final reloaded character must reproduce the saved state.
+
+No regeneration.
+
+No identity replacement.
+
+No topology replacement.
+
+No animation-rig replacement.
+
+92. PERFORMANCE PROOF
+
+During the demonstration display:
+
+HumanDefinition changes
+
+Dependency nodes touched
+
+Dirty anatomical regions
+
+Shape bases activated
+
+Vertices affected
+
+Compute kernels scheduled
+
+GPU time
+
+Systems reused
+
+Systems recomputed
+
+This is crucial.
+
+The architecture's central advantage must be visible and measurable.
+
+93. NON-NEGOTIABLE RULES
+
+DO NOT:
+
+regenerate the whole human for localized edits
+allow AI to directly write mesh vertices
+use the visible mesh as persistent character state
+destroy the debug block human
+replace the event architecture
+create separate mutation APIs for every subsystem
+allow expression changes to modify identity
+allow clothing changes to modify anatomy
+bake tattoos permanently into base textures
+bind attachments to world coordinates
+assume all regions are contiguous vertex ranges
+reload the character when appearance changes
+hide GPU failures
+fabricate benchmark numbers
+mark placeholders as implemented
+add dependencies merely to avoid understanding the underlying problem
+94. CENTRAL ENGINE INVARIANT
+
+Maintain:
+
+HumanDefinition
++
+Identity
++
+Anatomical Constraints
++
+Relationships
++
+Timeline
+=
+CHARACTER
+
+The mesh is a compiled output.
+
+95. CENTRAL PERFORMANCE INVARIANT
+
+Maintain:
+
+Character Event
+      ↓
+Changed semantic state
+      ↓
+Affected dependencies
+      ↓
+Minimal shape/deformation work
+      ↓
+Minimal GPU work
+      ↓
+Updated visual human
+
+Do not rebuild what did not change.
+
+96. CENTRAL HD HUMAN INVARIANT
+
+The production system should become:
+
+                 HUMAN DEFINITION
+                        │
+                        ▼
+              ANATOMICAL CONSTRAINTS
+                        │
+                        ▼
+                IDENTITY SOLVER
+                        │
+                        ▼
+                HUMAN SHAPE SPACE
+                        │
+                        ▼
+              COEFFICIENT SOLVER
+                        │
+                        ▼
+              CORRECTIVE SOLVER
+                        │
+                        ▼
+              SPARSE DELTA COMPILER
+                        │
+                        ▼
+                   WEBGPU
+                        │
+        ┌───────────────┼───────────────┐
+        ▼               ▼               ▼
+     SKELETON         TISSUE          SURFACE
+        │               │               │
+        ▼               ▼               ▼
+     SKINNING        MUSCLES           SKIN
+     CORRECTIVES     SOFT BODY         EYES
+                                       HAIR
+                                       CLOTH
+                        │
+                        ▼
+                 HD HUMAN RENDERER
+97. BEGINNING INSTRUCTIONS FOR THE CODING AI
+
+Before modifying code:
+
+Pull the current main branch.
+Inspect the complete repository.
+Read README and capability matrix.
+Locate all existing implementations corresponding to this prompt.
+DO NOT duplicate existing systems.
+Identify which systems are IMPLEMENTED versus PROTOTYPE.
+Identify interfaces that can be extended.
+Run all existing tests.
+Run build.
+Record baseline performance where possible.
+
+Then produce an implementation report containing:
+
+EXISTING AND REUSABLE
+
+EXISTING BUT NEEDS EXTENSION
+
+PROTOTYPE TO GRADUATE
+
+MISSING
+
+ARCHITECTURAL CONFLICTS
+
+ASSET REQUIREMENTS
+
+FIRST MILESTONE
+
+Then begin with:
+
+DAYTONA HD FACE V0.1
+
+Do not begin with hair, organs, clothing or neural rendering.
+
+The first target is a convincing, deformable, identity-preserving human head using the architecture already built.
+
+98. SUCCESS CONDITION
+
+The immediate project succeeds when DaytonaWebGPUAvatar can load a real HD canonical human and the existing architecture can modify that human through semantic parameters while preserving:
+
+topology
+identity
+skeleton
+animation
+attachments
+materials
+history
+
+and updating only the affected computation.
+
+Once this works, continue progressively through body anatomy, tissue, skin, eyes, hair, clothing, speech, motion and temporal evolution.
+
+Do not chase additional feature breadth until the HD human itself proves that the architecture works on production-quality geometry.
+
+The key change from your earlier giant prompt is that this one tells the AI how each missing piece connects to the code you've already built. It also puts HD Face V0.1 first, because right now a realistic deformable head will teach you more about whether the engine actually works than another dozen prototype subsystems will.
