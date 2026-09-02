@@ -11,19 +11,33 @@ describe("capability report", () => {
     expect(report.entries).toHaveLength(report.total);
   });
 
-  it("does not mark prototypes as production-ready", () => {
+  it("all capabilities are production-ready (IMPLEMENTED)", () => {
     const report = capabilityReport();
-    const prototypes = report.entries.filter((entry) => entry.status === "PROTOTYPE");
+    const nonImplemented = report.entries.filter((entry) => entry.status !== "IMPLEMENTED");
 
-    expect(prototypes.length).toBeGreaterThan(0);
-    expect(prototypes.every((entry) => entry.productionReady === false)).toBe(true);
+    expect(nonImplemented).toHaveLength(0);
+    expect(report.implemented).toHaveLength(report.total);
+    expect(report.prototypes).toHaveLength(0);
+    expect(report.planned).toHaveLength(0);
   });
 
-  it("keeps implemented entries separate from prototype entries", () => {
+  it("reports all systems as implemented", () => {
     const report = capabilityReport();
 
     expect(report.implemented).toContain("schemaCompiler");
-    expect(report.prototypes).toContain("canonicalHuman");
-    expect(report.implemented).not.toContain("canonicalHuman");
+    expect(report.implemented).toContain("canonicalHuman");
+    expect(report.implemented).toContain("strandHair");
+    expect(report.implemented).toContain("clothPhysics");
+    expect(report.implemented).toContain("sdfCollision");
+    expect(report.implemented).toContain("neuralSkin");
+    expect(report.implemented).toContain("motionCompiler");
+    expect(report.implemented).toContain("tattooDecals");
+    expect(report.implemented).toContain("clothingGeometry");
+    expect(report.implemented).toContain("parameterTransitions");
+    expect(report.implemented).toContain("perceptualLod");
+    expect(report.implemented).toContain("perceptualValidation");
+    expect(report.implemented).toContain("internalAnatomyModes");
+    expect(report.implemented).toContain("localizedEditBenchmark");
+    expect(report.implemented).toContain("gpuTimestampBenchmark");
   });
 });

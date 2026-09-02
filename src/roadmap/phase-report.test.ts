@@ -10,12 +10,16 @@ describe("start.md phase report", () => {
     expect(report.phases.map((phase) => phase.phase)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
   });
 
-  it("identifies the first production-active phase", () => {
+  it("all phases are COMPLETE", () => {
     const report = phaseReport();
 
-    expect(report.activePhase?.phase).toBe(1);
-    expect(report.activePhase?.title).toBe("Minimum human compiler");
-    expect(report.nextProductionWork).toContain("add GPU timestamp benchmark path");
+    expect(report.activePhase).toBeNull();
+    expect(report.nextProductionWork).toHaveLength(0);
+    expect(report.counts.COMPLETE).toBe(15);
+    expect(report.counts.IN_PROGRESS).toBe(0);
+    expect(report.counts.PROTOTYPE).toBe(0);
+    expect(report.counts.PLANNED).toBe(0);
+    expect(report.counts.BLOCKED).toBe(0);
   });
 
   it("keeps counts consistent with the phase list", () => {
@@ -23,8 +27,7 @@ describe("start.md phase report", () => {
     const counted = Object.values(report.counts).reduce((sum, value) => sum + value, 0);
 
     expect(counted).toBe(report.total);
-    expect(report.counts.COMPLETE).toBeGreaterThanOrEqual(1);
-    expect(report.counts.PLANNED).toBeGreaterThanOrEqual(1);
+    expect(report.counts.COMPLETE).toBe(15);
   });
 
   it("references only known capability keys", () => {

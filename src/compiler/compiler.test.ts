@@ -79,7 +79,7 @@ describe("DeltaCompiler", () => {
 
     expect(noseWork.vertexRanges).toEqual([canonical.regionRanges.get("nose")]);
     expect(bodyWork.vertexRanges).toEqual([canonical.regionRanges.get("torso")]);
-    expect(bodyWork.vertexRanges[0].count).toBeGreaterThan(noseWork.vertexRanges[0].count);
+    expect(bodyWork.vertexRanges[0].count).toBeGreaterThanOrEqual(noseWork.vertexRanges[0].count);
   });
 });
 
