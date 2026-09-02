@@ -18,6 +18,7 @@ import {
 import { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
 import { IdentitySolver } from './identity/solver/identity-solver.js';
 import { CanonicalHuman, RegionName } from './geometry/canonical/canonical-human.js';
+import type { CanonicalHumanProvider } from './geometry/canonical/canonical-provider.js';
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { MorphDriver } from './geometry/morph/morph-driver.js';
 import { MorphKernel } from './gpu/kernels/morph-kernel.js';
@@ -91,6 +92,13 @@ export interface HumanCreateOptions {
   seed?: Record<string, number>;
   device?: GPUDevice;
   format?: GPUTextureFormat;
+  /**
+   * A canonical topology provider. When omitted, the default debug/build block
+   * human is used. Loading is async and happens in `Human.create`.
+   */
+  canonicalProvider?: CanonicalHumanProvider;
+  /** Internal: the resolved canonical mesh (built from the provider). */
+  canonical?: CanonicalHuman;
 }
 
 export interface HumanModifyResult {
@@ -172,7 +180,7 @@ export class Human {
     this.deps = new DependencyGraph(this.registry);
     this.dirty = new DirtyRegionTracker(this.registry);
     this.identity = new IdentitySolver(this.registry);
-    this.canonical = new CanonicalHuman(DEFAULT_BONE_NAMES);
+    this.canonical = opts.canonical ?? new CanonicalHuman(DEFAULT_BONE_NAMES);
     this.delta = new DeltaCompiler(this.registry, this.deps, this.canonical);
     this.morphs = new SparseMorphSet(this.canonical);
     this.morphDriver = new MorphDriver(this.registry);
@@ -191,7 +199,12 @@ export class Human {
 
   /** Create a human asynchronously (GPU device optional). */
   static async create(opts: HumanCreateOptions = {}): Promise<Human> {
-    return new Human(opts);
+    let canonical: CanonicalHuman | undefined = opts.canonical;
+    if (!canonical && opts.canonicalProvider) {
+      const asset = await opts.canonicalProvider.load();
+      canonical = CanonicalHuman.fromTopology(asset.topology, DEFAULT_BONE_NAMES);
+    }
+    return new Human({ ...opts, canonical });
   }
 
   private registerCanonicalMorphs(): void {

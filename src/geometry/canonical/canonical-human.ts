@@ -1,4 +1,5 @@
 ﻿import { Vec3 } from '../../core/math/vec.js';
+import type { CanonicalTopology } from './canonical-topology.js';
 
 export type RegionName =
   | 'head'
@@ -92,56 +93,82 @@ export class CanonicalHuman {
   readonly partIndexRanges = new Map<string, IndexRange>();
   private boneIndex = new Map<string, number>();
 
-  constructor(boneNames: string[]) {
+  constructor(boneNames: string[], topology?: CanonicalTopology) {
     boneNames.forEach((b, i) => this.boneIndex.set(b, i));
     const headBone = 'head';
 
-    const body = generateBlockHuman(boneNames);
-    const vertices: Vertex[] = [...body.vertices];
-    const indices: number[] = Array.from(body.indices);
+    if (topology) {
+      // External provider topology (e.g. HD head). Build vertices/parts from
+      // the supplied contract; derive regional + per-part ranges identically to
+      // the procedural path so every consumer is topology-agnostic.
+      const vertices: Vertex[] = topology.vertices.map((v) => ({
+        id: v.id,
+        position: { x: v.position.x, y: v.position.y, z: v.position.z },
+        normal: { x: v.normal.x, y: v.normal.y, z: v.normal.z },
+        uv: { u: v.uv.u, v: v.uv.v },
+        region: v.region,
+        weights: { ...v.weights },
+      }));
+      const parts: PartGeometry[] = topology.parts.map((p) => ({
+        name: p.name,
+        kind: p.kind,
+        region: p.region,
+        vertexStart: p.vertexStart,
+        vertexCount: p.vertexCount,
+        indexStart: p.indexStart,
+        indexCount: p.indexCount,
+      }));
+      this.parts = parts;
+      for (const p of parts) this.partByRegion.set(p.region, p);
+      this.vertices = vertices;
+      this.indices = Uint32Array.from(topology.indices);
+    } else {
+      const body = generateBlockHuman(boneNames);
+      const vertices: Vertex[] = [...body.vertices];
+      const indices: number[] = Array.from(body.indices);
 
-    // Build detail parts. New parts are appended so their global ids are stable
-    // and never collide with the body regardless of body edits.
-    const parts: PartGeometry[] = [];
-    const detail = buildDetailParts();
-    let vertexBase = vertices.length;
-    let indexBase = indices.length;
-    for (const dp of detail) {
-      const start = vertexBase;
-      const istart = indexBase;
-      for (const v of dp.vertices) {
-        vertices.push({
-          id: start + v.localIndex,
-          position: v.position,
-          normal: v.normal,
-          uv: v.uv,
+      // Build detail parts. New parts are appended so their global ids are stable
+      // and never collide with the body regardless of body edits.
+      const parts: PartGeometry[] = [];
+      const detail = buildDetailParts();
+      let vertexBase = vertices.length;
+      let indexBase = indices.length;
+      for (const dp of detail) {
+        const start = vertexBase;
+        const istart = indexBase;
+        for (const v of dp.vertices) {
+          vertices.push({
+            id: start + v.localIndex,
+            position: v.position,
+            normal: v.normal,
+            uv: v.uv,
+            region: dp.region,
+            weights: { [headBone]: 1.0 },
+          });
+        }
+        for (const vi of dp.indices) {
+          indices.push(start + vi);
+        }
+        vertexBase += dp.vertices.length;
+        indexBase += dp.indices.length;
+        const part: PartGeometry = {
+          name: dp.name,
+          kind: dp.kind,
           region: dp.region,
-          weights: { [headBone]: 1.0 },
-        });
+          vertexStart: start,
+          vertexCount: dp.vertices.length,
+          indexStart: istart,
+          indexCount: dp.indices.length,
+        };
+        parts.push(part);
+        this.partByRegion.set(dp.region, part);
       }
-      for (const vi of dp.indices) {
-        indices.push(start + vi);
-      }
-      vertexBase += dp.vertices.length;
-      indexBase += dp.indices.length;
-      const part: PartGeometry = {
-        name: dp.name,
-        kind: dp.kind,
-        region: dp.region,
-        vertexStart: start,
-        vertexCount: dp.vertices.length,
-        indexStart: istart,
-        indexCount: dp.indices.length,
-      };
-      parts.push(part);
-      this.partByRegion.set(dp.region, part);
+      this.parts = parts;
+      this.vertices = vertices;
+      this.indices = Uint32Array.from(indices);
     }
-    this.parts = parts;
 
-    this.vertices = vertices;
-    this.indices = Uint32Array.from(indices);
-
-    // Build regional ranges (aggregate) â€” body regions plus detail parts.
+    // Build regional ranges (aggregate) — body regions plus detail parts.
     const region: Record<string, IndexRange> = {};
     for (let i = 0; i < this.vertices.length; i++) {
       const r = this.vertices[i].region;
@@ -153,9 +180,14 @@ export class CanonicalHuman {
     }
 
     // Index ranges per part (for per-part draw/sub-mesh rendering).
-    for (const p of parts) {
+    for (const p of this.parts) {
       this.partIndexRanges.set(p.name, { start: p.indexStart, count: p.indexCount });
     }
+  }
+
+  /** Build a canonical human from an externally supplied topology + bones. */
+  static fromTopology(topology: CanonicalTopology, boneNames: string[]): CanonicalHuman {
+    return new CanonicalHuman(boneNames, topology);
   }
 
   get vertexCount(): number {

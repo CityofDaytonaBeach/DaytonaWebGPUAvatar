@@ -39,6 +39,16 @@ export class SparseMorphSet {
     this.byName.set(name, { name, deltas });
   }
 
+  /**
+   * Register a morph from precomputed sparse deltas (e.g. compiled shape bases
+   * or authored data). Deltas must reference stable vertex ids. This is the
+   * insertion point the Human Shape Space uses to feed the existing GPU morph
+   * pipeline without changing its transport.
+   */
+  addRaw(name: string, deltas: MorphDelta[]): void {
+    this.byName.set(name, { name, deltas: Array.from(deltas) });
+  }
+
   get(name: string): SparseMorph | undefined {
     return this.byName.get(name);
   }
