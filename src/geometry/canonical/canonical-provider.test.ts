@@ -12,6 +12,7 @@ import {
   resolveLandmarkPosition,
   findTriangleInRegion,
 } from './landmark.js';
+import { Human } from '../../human.js';
 
 describe('DebugBlockHumanProvider (block human is preserved as a provider)', () => {
   it('loads a valid canonical asset with the v0.1 contract', async () => {
@@ -94,5 +95,36 @@ describe('topologyFromHuman', () => {
     expect(top.indices.length / 3).toBe(canonical.triangleCount);
     expect(top.parts.length).toBe(canonical.parts.length);
     expect(top.vertices[0].id).toBe(0);
+  });
+});
+
+describe('Provider-driven canonical ingestion (P2/P3 arch seam)', () => {
+  it('CanonicalHuman.fromTopology reproduces the source geometry', async () => {
+    const provider = new DebugBlockHumanProvider();
+    const asset = await provider.load();
+    const rebuilt = CanonicalHuman.fromTopology(asset.topology, DEFAULT_PROVIDER_BONE_NAMES);
+    expect(rebuilt.vertexCount).toBe(asset.topology.vertices.length);
+    expect(rebuilt.triangleCount).toBe(asset.topology.indices.length / 3);
+    expect(rebuilt.regionRanges.has('nose')).toBe(true);
+    expect(rebuilt.partByRegion.has('eye_sclera')).toBe(true);
+    for (let i = 0; i < rebuilt.vertices.length; i++) {
+      expect(rebuilt.vertices[i].position.x).toBeCloseTo(
+        asset.topology.vertices[i].position.x,
+        5,
+      );
+    }
+  });
+
+  it('Human.create consumes a canonical provider to build its mesh', async () => {
+    const human = await Human.create({ canonicalProvider: new DebugBlockHumanProvider() });
+    expect(human.canonicalRef.vertexCount).toBeGreaterThan(0);
+    const asset = await new DebugBlockHumanProvider().load();
+    expect(human.canonicalRef.vertexCount).toBe(asset.topology.vertices.length);
+  });
+
+  it('Human without a provider still uses the default block human', async () => {
+    const human = await Human.create();
+    const asset = await new DebugBlockHumanProvider().load();
+    expect(human.canonicalRef.vertexCount).toBe(asset.topology.vertices.length);
   });
 });
