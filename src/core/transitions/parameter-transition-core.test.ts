@@ -57,7 +57,11 @@ describe('sampleTransition curves', () => {
   it('rejects negative durations at creation', () => {
     const def = makeDef();
     expect(() =>
-      createParameterTransition(def, { path: 'body.muscularity', targetValue: 0.8, duration: -1 }, 0),
+      createParameterTransition(
+        def,
+        { path: 'body.muscularity', targetValue: 0.8, duration: -1 },
+        0,
+      ),
     ).toThrow();
   });
 });

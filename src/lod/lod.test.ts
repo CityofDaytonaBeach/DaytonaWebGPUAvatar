@@ -14,7 +14,6 @@ import {
 } from './index';
 
 const FACE = PropertyCategory.Face;
-const SKIN = PropertyCategory.Skin;
 const BODY = PropertyCategory.Body;
 const HAIR = PropertyCategory.Hair;
 

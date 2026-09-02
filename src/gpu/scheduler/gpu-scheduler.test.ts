@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { HumanProfiler } from '../profiler/profiler';
-import {
-  GpuScheduler,
-  PriorityQueue,
-  ScheduleItem,
-  SchedulerProfile,
-} from './gpu-scheduler';
+import { GpuScheduler, PriorityQueue, ScheduleItem, SchedulerProfile } from './gpu-scheduler';
 
 function item(partial: Partial<ScheduleItem>): ScheduleItem {
   return {
@@ -28,7 +23,11 @@ function makeScheduler(config?: Partial<ConstructorParameters<typeof GpuSchedule
 
 /** A minimal profiler stub so we can control averageCpuMs deterministically. */
 function stubProfiler(averageCpuMs: number): HumanProfiler {
-  return { get averageCpuMs() { return averageCpuMs; } } as unknown as HumanProfiler;
+  return {
+    get averageCpuMs() {
+      return averageCpuMs;
+    },
+  } as unknown as HumanProfiler;
 }
 
 describe('PriorityQueue', () => {
@@ -141,9 +140,12 @@ describe('GpuScheduler.scheduleBatch', () => {
 
     const stats = scheduler.getStats();
     expect(stats.totalScheduled).toBe(4);
-    expect(stats.lastFrameExecuted + stats.lastFrameReduced + stats.lastFrameSkipped + stats.lastFrameReused).toBe(
-      4,
-    );
+    expect(
+      stats.lastFrameExecuted +
+        stats.lastFrameReduced +
+        stats.lastFrameSkipped +
+        stats.lastFrameReused,
+    ).toBe(4);
   });
 
   it('returns results in descending priority order', () => {
