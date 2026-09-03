@@ -112,10 +112,10 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
       indices: asset.indices,
       parts: asset.parts,
     });
-    // HD body is a TOP section (head), so the whole body may still be incomplete
-    // for strictly full-body validators; we assert the HD head + HD body region
-    // vocabularies explicitly and surface all other structural issues.
-    const structural = report.issues.filter((i) => i.code !== 'missing-region');
+    // The strict canonical contract is expressed in the coarse vocabulary;
+    // coarse aliases are synthesized over the HD fine regions, so the report
+    // above must already be valid. We additionally assert the full HD head + HD
+    // body fine vocabularies explicitly and surface every remaining issue.
     const present = new Set(asset.vertices.map((v) => v.region));
     const missing = [
       ...REQUIRED_HD_HEAD_REGIONS.filter((r) => !present.has(r)),
@@ -123,8 +123,8 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
     ].map(
       (r) => ({ code: 'missing-hd-region', message: `missing required HD region ${r}` }) as const,
     );
-    const issues = [...structural, ...missing];
-    return { valid: issues.length === 0, report, issues };
+    const issues = [...report.issues, ...missing];
+    return { valid: report.valid && missing.length === 0, report, issues };
   }
 
   topologyVersion(): string {

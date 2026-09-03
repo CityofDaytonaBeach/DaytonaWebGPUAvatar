@@ -9,6 +9,7 @@ import {
 } from './regions.js';
 import { resolveLandmarkPosition } from './landmark.js';
 import { CanonicalHumanProviderRegistry } from './canonical-provider.js';
+import { validateCanonicalTopology, REQUIRED_CANONICAL_REGIONS } from './canonical-validator.js';
 import { Human } from '../../human.js';
 
 describe('HDCanonicalHumanProvider (HD HUMAN V0.1)', () => {
@@ -57,6 +58,28 @@ describe('HDCanonicalHumanProvider (HD HUMAN V0.1)', () => {
     const result = provider.validate();
     expect(result.valid).toBe(true);
     expect(result.issues.length).toBe(0);
+  });
+
+  it('the raw HD topology satisfies the coarse canonical contract', async () => {
+    const provider = new HDCanonicalHumanProvider();
+    const asset = await provider.load();
+    const report = validateCanonicalTopology(asset.topology);
+    expect(report.valid).toBe(true);
+    expect(report.issues).toEqual([]);
+  });
+
+  it('exposes both coarse and fine regions through CanonicalHuman', async () => {
+    const provider = new HDCanonicalHumanProvider();
+    const asset = await provider.load();
+    const canonical = CanonicalHuman.fromTopology(asset.topology, ['head', 'neck']);
+    // Coarse contract regions, synthesized as aliases over fine sub-regions.
+    for (const r of REQUIRED_CANONICAL_REGIONS) {
+      expect(canonical.regionRanges.has(r), `missing coarse region ${r}`).toBe(true);
+    }
+    // Fine detail regions remain available.
+    for (const r of ['chest', 'upper_arm_left', 'eye_left', 'forehead', 'upper_arm_right']) {
+      expect(canonical.regionRanges.has(r), `missing fine region ${r}`).toBe(true);
+    }
   });
 
   it('emits detailed eye / teeth / tongue / cavity parts', async () => {
