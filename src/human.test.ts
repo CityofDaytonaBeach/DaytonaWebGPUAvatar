@@ -230,3 +230,55 @@ function sumAbsDiff(a: Float32Array, b: Float32Array): number {
   for (let i = 0; i < a.length; i++) sum += Math.abs(a[i] - b[i]);
   return sum;
 }
+
+describe('Human — HD BODY V0.1 shape controls', () => {
+  it('registers body shape bases into the sparse morph pipeline (coarse fallback)', async () => {
+    const human = await Human.create();
+    const names = human.morphNames();
+    for (const m of [
+      'shape_ChestWidthBasis',
+      'shape_WaistBasis',
+      'shape_HipWidthBasis',
+      'shape_BodyFatBasis',
+      'shape_MuscleDefinitionBasis',
+      'shape_ShoulderWidthBasis',
+      'shape_SpineLengthBasis',
+      'shape_NeckLengthBasis',
+      'shape_ArmLengthBasis',
+      'shape_LegLengthBasis',
+      'shape_GlobalHeightBasis',
+    ]) {
+      expect(names, `missing morph ${m}`).toContain(m);
+    }
+  });
+
+  it('registers the muscular x broad-shoulders corrective morph', async () => {
+    const human = await Human.create();
+    expect(human.morphNames()).toContain('shape_MuscularBroadShouldersCorrective');
+  });
+
+  it('applies a waist edit through the sparse morph pipeline and moves vertices', async () => {
+    const human = await Human.create();
+    const rest = human.skinScene();
+
+    const result = human.modify({ 'body.waist': 1.3 }, 'ui');
+    expect(result.cancelled).toBe(false);
+    expect(human.get('body.waist')).toBe(1.3);
+    expect(result.affectedKernelWork.map((w) => w.kind)).toContain('SparseMorph');
+    expect(sumAbsDiff(human.skinScene(), rest)).toBeGreaterThan(1e-4);
+
+    human.undo();
+    expect(human.get('body.waist')).toBe(1.0);
+    expect(sumAbsDiff(human.skinScene(), rest)).toBeLessThan(1e-6);
+  });
+
+  it('applies global height and a skeletal proportion independently', async () => {
+    const human = await Human.create();
+    human.modify({ 'global.height': 1.9 });
+    expect(human.get('global.height')).toBe(1.9);
+    human.modify({ 'skeleton.armLength': 1.15 });
+    expect(human.get('skeleton.armLength')).toBe(1.15);
+    // Both are valid body/morph edits that route to SparseMorph without error.
+    expect(human.morphNames()).toContain('shape_ArmLengthBasis');
+  });
+});
