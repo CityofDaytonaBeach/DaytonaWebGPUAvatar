@@ -12,6 +12,49 @@ export interface HdShapeSpec {
   correctiveMorphs: Array<{ name: string; inputs: NonNullable<MorphCorrectiveWeight['inputs']> }>;
 }
 
+/** Fine HD regions covering the full axial figure for global.height. */
+const HD_AXIAL_REGIONS_FINE: RegionName[] = [
+  'chest',
+  'abdomen',
+  'back',
+  'shoulder_left',
+  'shoulder_right',
+  'pelvis',
+  'neck',
+  'forehead',
+  'upper_arm_left',
+  'upper_arm_right',
+  'forearm_left',
+  'forearm_right',
+  'hand_left',
+  'hand_right',
+  'thigh_left',
+  'thigh_right',
+  'shin_left',
+  'shin_right',
+  'foot_left',
+  'foot_right',
+];
+
+/** Coarse block-human regions covering the whole figure for global.height. */
+const HD_AXIAL_REGIONS_COARSE: RegionName[] = [
+  'torso',
+  'neck',
+  'head',
+  'upperarm_l',
+  'upperarm_r',
+  'forearm_l',
+  'forearm_r',
+  'hand_l',
+  'hand_r',
+  'thigh_l',
+  'thigh_r',
+  'shin_l',
+  'shin_r',
+  'foot_left',
+  'foot_right',
+];
+
 /**
  * Builds the Human Shape Space V0.1 for a given canonical topology.
  *
@@ -280,6 +323,249 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
         inputs: [
           { property: 'face.cheek.width' },
           { property: 'face.jaw.width' },
+        ],
+      });
+    }
+  }
+
+  // ---- HD BODY V0.1 identity controls ----
+  // The same shape-space treatment the head receives (P6/P8): each body control
+  // is a sparse, reusable basis with CORRELATED deformation (spreads across its
+  // adjacent semantic transition regions) that compiles into the existing sparse
+  // morph / GPU pipeline. Fine HD body regions are preferred; the coarse
+  // block-human fallback keeps the same basis working on the debug topology.
+  //
+  // NOTE: `global.height` and the skeleton.*Length props could also be expressed
+  // as a single tall basis each, but scaling about the ground (height) and about
+  // a segment origin (limb/neck/spine lengths) are kept separate so a person can
+  // be short-necked, long-armed, or big-chested independently (correlated, not a
+  // single naive scale).
+
+  // Chest (torso or fine chest/back): pectoral width + depth expands laterally
+  // and forward, back and shoulder transition with it. body.chest default 1.0.
+  addFineControl(
+    'ChestWidthBasis',
+    'body.chest',
+    ['chest', 'back', 'shoulder_left', 'shoulder_right'],
+    ['torso'],
+    (vx, _vy, vz) => {
+      const s = Math.sign(vx || 1e-6);
+      const lateral = Math.abs(vx) >= 0.18 ? 0.045 : 0.028;
+      return { dx: s * lateral, dy: 0, dz: vz >= 0.05 ? 0.05 : 0.02 };
+    },
+    ['chest', 'correlated'],
+  );
+
+  // Waist (abdomen): waistline narrows/widens radially about the spine axis.
+  // body.waist default 1.0.
+  addFineControl(
+    'WaistBasis',
+    'body.waist',
+    ['abdomen', 'chest', 'back', 'pelvis'],
+    ['torso'],
+    (vx, _vy, vz) => ({
+      dx: vx * 0.42,
+      dy: 0,
+      dz: vz * 0.42,
+    }),
+    ['waist', 'correlated'],
+  );
+
+  // Hips (pelvis): hip width/depth about the spine axis, thigh tops transition.
+  // body.hips default 1.0.
+  addFineControl(
+    'HipWidthBasis',
+    'body.hips',
+    ['pelvis', 'abdomen', 'thigh_left', 'thigh_right'],
+    ['torso'],
+    (vx, _vy, vz) => ({
+      dx: vx * 0.4,
+      dy: 0,
+      dz: vz * 0.4,
+    }),
+    ['hips', 'correlated'],
+  );
+
+  // Body fat: overall girth increases about the spine on torso regions and adds
+  // a softer fullness to the limbs. body.bodyFat default 0.21.
+  addFineControl(
+    'BodyFatBasis',
+    'body.bodyFat',
+    [
+      'chest',
+      'abdomen',
+      'back',
+      'shoulder_left',
+      'shoulder_right',
+      'pelvis',
+      'upper_arm_left',
+      'upper_arm_right',
+      'thigh_left',
+      'thigh_right',
+    ],
+    ['torso', 'upperarm_l', 'upperarm_r', 'thigh_l', 'thigh_r'],
+    (vx, _vy, vz) => ({
+      dx: vx * 0.3,
+      dy: 0,
+      dz: vz * 0.3,
+    }),
+    ['bodyFat', 'correlated'],
+  );
+
+  // Muscularity: adds limb/torso cross-sectional definition (a "swelled" ring
+  // about each segment's spine) without growing length. body.muscularity
+  // default 0.48.
+  addFineControl(
+    'MuscleDefinitionBasis',
+    'body.muscularity',
+    [
+      'chest',
+      'back',
+      'shoulder_left',
+      'shoulder_right',
+      'upper_arm_left',
+      'upper_arm_right',
+      'forearm_left',
+      'forearm_right',
+      'thigh_left',
+      'thigh_right',
+      'shin_left',
+      'shin_right',
+    ],
+    [
+      'torso',
+      'upperarm_l',
+      'upperarm_r',
+      'forearm_l',
+      'forearm_r',
+      'thigh_l',
+      'thigh_r',
+      'shin_l',
+      'shin_r',
+    ],
+    (vx, _vy, vz) => {
+      // Expand the cross-section ring about the local spine axis; near the
+      // center (spine) the delta is smaller so muscle reads as definition.
+      const radius = Math.sqrt(vx * vx + vz * vz);
+      const amp = Math.min(0.05, 0.015 + radius * 0.4);
+      return { dx: vx * amp, dy: 0, dz: vz * amp };
+    },
+    ['muscle', 'correlated'],
+  );
+
+  // Shoulder width: deltoid/acromion span widens laterally; chest and upper arm
+  // transitions follow. skeleton.shoulderWidth default 1.0.
+  addFineControl(
+    'ShoulderWidthBasis',
+    'skeleton.shoulderWidth',
+    ['shoulder_left', 'shoulder_right', 'chest', 'back', 'upper_arm_left', 'upper_arm_right'],
+    ['torso', 'upperarm_l', 'upperarm_r'],
+    (vx, _vy, _vz) => {
+      const s = Math.sign(vx || 1e-6);
+      return { dx: s * Math.min(0.09, Math.abs(vx) * 0.35 + 0.02), dy: 0, dz: 0 };
+    },
+    ['shoulder', 'correlated'],
+  );
+
+  // Spine length: axial (vertical) stretch of the trunk about the hip origin.
+  // skeleton.spineLength default 1.0.
+  addFineControl(
+    'SpineLengthBasis',
+    'skeleton.spineLength',
+    ['chest', 'abdomen', 'back'],
+    ['torso'],
+    (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.0) * 0.5, dz: 0 }),
+    ['spine', 'correlated'],
+  );
+
+  // Neck length: axial stretch of the neck about its base. skeleton.neckLength
+  // default 1.0.
+  addFineControl(
+    'NeckLengthBasis',
+    'skeleton.neckLength',
+    ['neck', 'chest', 'shoulder_left', 'shoulder_right'],
+    ['neck'],
+    (_vx, vy, _vz) => ({ dx: 0, dy: vy - 1.78, dz: 0 }),
+    ['neck', 'correlated'],
+  );
+
+  // Arm length: vertical stretch of the upper arm + forearm about the shoulder,
+  // with the hand settling below (transition). skeleton.armLength default 1.0.
+  addFineControl(
+    'ArmLengthBasis',
+    'skeleton.armLength',
+    ['upper_arm_left', 'upper_arm_right', 'forearm_left', 'forearm_right', 'hand_left', 'hand_right'],
+    ['upperarm_l', 'upperarm_r', 'forearm_l', 'forearm_r', 'hand_l', 'hand_r'],
+    (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.45) * 0.4, dz: 0 }),
+    ['arm', 'correlated'],
+  );
+
+  // Leg length: vertical stretch of thigh + shin about the hip, foot settling
+  // below. skeleton.legLength default 1.0.
+  addFineControl(
+    'LegLengthBasis',
+    'skeleton.legLength',
+    ['thigh_left', 'thigh_right', 'shin_left', 'shin_right', 'foot_left', 'foot_right'],
+    ['thigh_l', 'thigh_r', 'shin_l', 'shin_r', 'foot_left', 'foot_right'],
+    (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.0) * 0.4, dz: 0 }),
+    ['leg', 'correlated'],
+  );
+
+  // Global height: uniform axial stretch of the whole skeleton about the ground.
+  // Unlike the per-segment length bases this treats every segment together, so
+  // a taller person keeps proportions while length-only edits stay independent.
+  // global.height default 1.78. We prefer coarse regions for coverage across the
+  // whole figure (torso + neck + head + all limb segments).
+  addFineControl(
+    'GlobalHeightBasis',
+    'global.height',
+    HD_AXIAL_REGIONS_FINE,
+    HD_AXIAL_REGIONS_COARSE,
+    (_vx, vy, _vz) => ({ dx: 0, dy: vy, dz: 0 }),
+    ['height', 'correlated'],
+  );
+
+  // ---- Body combination corrective (P11) ----
+  // Muscular + broad shoulders: muscle definition is amplified on the shoulder
+  // line when muscularity AND shoulder width are both elevated (produces a
+  // "squared deltoid" bulge rather than double-counting independent spans).
+  const muscleBasis = space.bases.getByName('MuscleDefinitionBasis')?.id;
+  const shoulderBasis = space.bases.getByName('ShoulderWidthBasis')?.id;
+  const bodyCorrectiveBasis = (
+    name: string,
+    regions: RegionName[],
+    fn: (vx: number, vy: number, vz: number) => { dx: number; dy: number; dz: number },
+  ): number | null => {
+    const present = regions.filter((r) => canonical.regionRanges.has(r));
+    if (present.length === 0) return null;
+    const ids = new Set<number>();
+    for (const r of present) {
+      const range = canonical.regionRanges.get(r)!;
+      for (let i = range.start; i < range.start + range.count; i++) ids.add(i);
+    }
+    return space.addVertexBasis(name, 'body.muscularity', [...ids], fn, ['corrective']).id;
+  };
+
+  if (muscleBasis && shoulderBasis) {
+    const output = bodyCorrectiveBasis(
+      'MuscularBroadShouldersCorrective',
+      ['shoulder_left', 'shoulder_right', 'chest', 'back', 'upper_arm_left', 'upper_arm_right'],
+      (vx, _vy, _vz) => {
+        const s = Math.sign(vx || 1e-6);
+        const lateral = Math.abs(vx) >= 0.18 ? 0.03 : 0.016;
+        return { dx: s * lateral, dy: 0.004, dz: 0.006 };
+      },
+    );
+    if (output != null) {
+      spec.correctiveRules.push({
+        inputs: [{ basisId: muscleBasis }, { basisId: shoulderBasis }],
+        outputBasisId: output,
+      });
+      spec.correctiveMorphs.push({
+        name: 'shape_MuscularBroadShouldersCorrective',
+        inputs: [
+          { property: 'body.muscularity' },
+          { property: 'skeleton.shoulderWidth' },
         ],
       });
     }

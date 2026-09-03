@@ -17,7 +17,7 @@ import {
 } from './compiler/dependency/affected-systems.js';
 import { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
 import { IdentitySolver } from './identity/solver/identity-solver.js';
-import { CanonicalHuman, RegionName } from './geometry/canonical/canonical-human.js';
+import { CanonicalHuman } from './geometry/canonical/canonical-human.js';
 import type { CanonicalHumanProvider } from './geometry/canonical/canonical-provider.js';
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { MorphDriver } from './geometry/morph/morph-driver.js';
@@ -137,12 +137,6 @@ const DEFAULT_BONE_NAMES = [
   'foot_l',
   'foot_r',
 ];
-
-function cap(s: string): string {
-  const [main, side] = s.split('_');
-  const cased = main.charAt(0).toUpperCase() + main.slice(1);
-  return side === 'l' || side === 'r' ? cased + side.toUpperCase() : cased;
-}
 
 /**
  * The ultimate character API. Everything resolves through a single event
@@ -321,11 +315,8 @@ export class Human {
     // are owned by the Human Shape Space (registerShapeSpace), which compiles
     // them into this same sparse morph set with coarse-region fallback so they
     // work on both the HD head and the debug block human. Only the body, anatomy
-    // and expression morphs below are defined here.
-    this.morphs.add('muscularity', 'torso', (_vx, vy) => {
-      const up = 1 + (vy - 1.5) * 0.5;
-      return { dx: 0, dy: 0, dz: up * 0.05 * Math.sign(_vx) };
-    });
+    // and expression morphs below are defined here (body identity now lives in
+    // the shape space as sparse correlated shape bases — see buildHdShapeSpace).
     // Eyeball spacing on the detail sclera/iris parts (the shape space's
     // EyeSpacingBasis drives the border/eyelid/eye-box regions; these drive the
     // separately-spawned sclera + iris sub-meshes so the whole eye moves).
@@ -346,32 +337,6 @@ export class Human {
       dy: -0.015 * (vz > 0.18 ? 1 : 0.3),
       dz: 0,
     }));
-
-    // ---- Parametric anatomy corrective morphs (identity body properties).
-    // Height: vertical scale of the axial + limb regions about the ground.
-    this.morphs.add('heightTorso', 'torso', (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
-    this.morphs.add('heightNeck', 'neck', (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
-    this.morphs.add('heightHead', 'head', (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
-    for (const b of [
-      'upperarm_l',
-      'upperarm_r',
-      'forearm_l',
-      'forearm_r',
-      'thigh_l',
-      'thigh_r',
-      'shin_l',
-      'shin_r',
-    ] as RegionName[]) {
-      this.morphs.add(`height${cap(b)}`, b, (_x, vy) => ({ dx: 0, dy: vy, dz: 0 }));
-    }
-    // Shoulder width: lateral scale of the torso (shoulders) about x=0.
-    this.morphs.add('shoulderWidth', 'torso', (vx) => ({ dx: vx * 0.75, dy: 0, dz: 0 }));
-    // Waist / body fat: torso girth (rounding) about the spine axis.
-    this.morphs.add('waist', 'torso', (vx, _v, vz) => ({ dx: vx * 0.5, dy: 0, dz: vz * 0.5 }));
-    this.morphs.add('bodyFat', 'torso', (vx, _v, vz) => ({ dx: vx * 0.3, dy: 0, dz: vz * 0.3 }));
-    // Spine / neck length scaling about the trunk origin region.
-    this.morphs.add('spine', 'torso', (_x, vy) => ({ dx: 0, dy: (vy - 1.5) * 0.5, dz: 0 }));
-    this.morphs.add('neckScale', 'neck', (_x, vy) => ({ dx: 0, dy: vy - 1.8, dz: 0 }));
   }
 
   // ---------------------------------------------------------------- getters

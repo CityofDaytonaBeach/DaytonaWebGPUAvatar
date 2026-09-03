@@ -93,29 +93,8 @@ export class MorphDriver {
     this.register('face.nose.width', 'noseWidth');
     this.register('face.jaw.width', 'jawWidth');
     this.register('face.eyeSpacing', 'eyeSpacing', 'eyeSpacingSclera', 'eyeSpacingIris');
-    this.register('body.muscularity', 'muscularity');
     this.register('face.mouth.width', 'mouthWidth');
     this.register('expression.jawOpen', 'jawOpen', 'jawOpenCavity');
-    // Parametric anatomy corrective morphs.
-    this.register(
-      'global.height',
-      'heightTorso',
-      'heightNeck',
-      'heightHead',
-      'heightUpperarmL',
-      'heightUpperarmR',
-      'heightForearmL',
-      'heightForearmR',
-      'heightThighL',
-      'heightThighR',
-      'heightShinL',
-      'heightShinR',
-    );
-    this.register('skeleton.shoulderWidth', 'shoulderWidth');
-    this.register('body.waist', 'waist');
-    this.register('body.bodyFat', 'bodyFat');
-    this.register('skeleton.spineLength', 'spine');
-    this.register('skeleton.neckLength', 'neckScale');
   }
 
   private register(propPath: string, ...morphNames: string[]): void {
