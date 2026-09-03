@@ -376,6 +376,10 @@ export interface SkinMaterialExport {
   wrinkleDepth: Float32Array;
   /** Blemish mask per vertex, stride 1 */
   blemishMask: Float32Array;
+  /** Tangent-space normal perturbation X per vertex (skin only), stride 1 */
+  normalPerturbX: Float32Array;
+  /** Tangent-space normal perturbation Y per vertex (skin only), stride 1 */
+  normalPerturbY: Float32Array;
 }
 
 // â”€â”€â”€ Core noise primitives (deterministic, zero-dep) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -778,6 +782,55 @@ export function computeSSSApproximation(
 // â”€â”€â”€ GPU material export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
+ * Per-vertex tangent-space normal perturbation from multi-scale pore and
+ * wrinkle detail. Returns [perturbX, perturbY] where the tangent-space
+ * normal is reconstructed as (perturbX, perturbY, sqrt(1 - x^2 - y^2)).
+ */
+export function generateNormalPerturbation(
+  vertexId: number,
+  uv: { u: number; v: number },
+  region: RegionName,
+  aging: AgingState,
+  poreDetailCombined: number,
+  wrinkleDepthVal: number,
+  strength: number = 1,
+): [number, number] {
+  const regionMat = REGION_MATERIALS[region] ?? REGION_MATERIALS.torso;
+  const regionScale = regionMat.poreScale;
+
+  const poreNx =
+    (fbm2D(vertexId * 11 + 700, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) * 0.06 * regionScale * poreDetailCombined;
+  const poreNy =
+    (fbm2D(vertexId * 11 + 800, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) * 0.06 * regionScale * poreDetailCombined;
+
+  const wrinkleNx =
+    (fbm2D(vertexId * 13 + 900, uv.u, uv.v, 2, 2.0, 0.5) - 0.5) *
+    0.1 *
+    regionMat.wrinkleSusceptibility *
+    wrinkleDepthVal *
+    aging.wrinkleDepth;
+  const wrinkleNy =
+    (fbm2D(vertexId * 13 + 1000, uv.u, uv.v, 2, 2.0, 0.5) - 0.5) *
+    0.1 *
+    regionMat.wrinkleSusceptibility *
+    wrinkleDepthVal *
+    aging.wrinkleDepth;
+
+  const grainNx = (fbm2D(vertexId * 17 + 1100, uv.u * 3, uv.v * 3, 2, 5.0, 0.35) - 0.5) * 0.02 * regionScale;
+  const grainNy = (fbm2D(vertexId * 17 + 1200, uv.u * 3, uv.v * 3, 2, 5.0, 0.35) - 0.5) * 0.02 * regionScale;
+
+  const totalX = clamp((poreNx + wrinkleNx + grainNx) * strength, -0.35, 0.35);
+  const totalY = clamp((poreNy + wrinkleNy + grainNy) * strength, -0.35, 0.35);
+
+  const mag2 = totalX * totalX + totalY * totalY;
+  if (mag2 >= 1.0) {
+    const s = (1 / Math.sqrt(mag2)) * 0.999;
+    return [totalX * s, totalY * s];
+  }
+  return [totalX, totalY];
+}
+
+/**
  * Generates a flat Float32Array-based material export suitable for
  * direct GPU buffer/texture upload. All fields are per-vertex, tightly packed.
  */
@@ -820,6 +873,8 @@ export function exportSkinMaterial(
   const poreDetail = new Float32Array(n);
   const wrinkleDepth = new Float32Array(n);
   const blemishMask = new Float32Array(n);
+  const normalPerturbX = new Float32Array(n);
+  const normalPerturbY = new Float32Array(n);
 
   const pigmentation = definition.get('skin.pigmentation');
 
@@ -897,6 +952,19 @@ export function exportSkinMaterial(
     // Wrinkle depth
     const wr = wrinkleMap.get(v.id);
     wrinkleDepth[v.id] = wr ? wr.depth : 0;
+
+    // Tangent-space normal perturbation (normal map proxy) from pore + wrinkle detail
+    const poreComb = poreDetails.get(v.id)!.combined;
+    const [npX, npY] = generateNormalPerturbation(
+      v.id,
+      v.uv,
+      v.region,
+      aging,
+      poreComb,
+      wrinkleDepth[v.id],
+    );
+    normalPerturbX[v.id] = npX;
+    normalPerturbY[v.id] = npY;
   }
 
   return {
@@ -910,6 +978,8 @@ export function exportSkinMaterial(
     poreDetail,
     wrinkleDepth,
     blemishMask,
+    normalPerturbX,
+    normalPerturbY,
   };
 }
 

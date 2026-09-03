@@ -3,7 +3,13 @@ import { createDefaultRegistry } from '../../core/schema/descriptors';
 import { HumanDefinition } from '../../core/schema/human-definition';
 import { CanonicalHuman } from '../../geometry/canonical/canonical-human';
 import { Human } from '../../human';
-import { applySkinResidualColor, generateSkinResiduals } from './neural-skin';
+import {
+  applySkinResidualColor,
+  generateSkinResiduals,
+  generateNormalPerturbation,
+  computeAgingState,
+  exportSkinMaterial,
+} from './neural-skin';
 
 describe('neural skin residual prototype', () => {
   it('generates deterministic bounded residual samples', () => {
@@ -63,5 +69,36 @@ describe('neural skin residual prototype', () => {
     expect(aged.samples).toHaveLength(12);
     expect(aged).not.toEqual(young);
     expect(human.canonicalRef.vertexCount).toBe(before);
+  });
+
+  it('generates bounded unit-length-normal perturbation (normal map proxy)', () => {
+    const registry = createDefaultRegistry();
+    const definition = new HumanDefinition(registry, { 'skin.age': 50 });
+    const aging = computeAgingState(definition);
+    const [x0, y0] = generateNormalPerturbation(3, { u: 0.2, v: 0.7 }, 'face', aging, 0.5, 0.3);
+    const [x1, y1] = generateNormalPerturbation(3, { u: 0.2, v: 0.7 }, 'face', aging, 0.5, 0.3);
+    expect(x0).toEqual(x1);
+    expect(y0).toEqual(y1);
+    expect(x0).toBeGreaterThanOrEqual(-0.35);
+    expect(x0).toBeLessThanOrEqual(0.35);
+    expect(x0 * x0 + y0 * y0).toBeLessThan(1);
+  });
+
+  it('adds bounded per-vertex normal perturbation to the GPU skin export', () => {
+    const registry = createDefaultRegistry();
+    const definition = new HumanDefinition(registry, { 'skin.age': 40 });
+    const canonical = new CanonicalHuman(['root', 'head']);
+    const material = exportSkinMaterial(definition, canonical);
+    expect(material.normalPerturbX.length).toBe(canonical.vertexCount);
+    expect(material.normalPerturbY.length).toBe(canonical.vertexCount);
+    let sawNonZero = false;
+    for (let i = 0; i < canonical.vertexCount; i++) {
+      expect(material.normalPerturbX[i]).toBeGreaterThanOrEqual(-0.35);
+      expect(material.normalPerturbX[i]).toBeLessThanOrEqual(0.35);
+      expect(material.normalPerturbY[i]).toBeGreaterThanOrEqual(-0.35);
+      expect(material.normalPerturbY[i]).toBeLessThanOrEqual(0.35);
+      if (material.normalPerturbX[i] !== 0 || material.normalPerturbY[i] !== 0) sawNonZero = true;
+    }
+    expect(sawNonZero).toBe(true);
   });
 });

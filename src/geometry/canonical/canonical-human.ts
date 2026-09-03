@@ -72,7 +72,16 @@ export type RegionName =
   | 'foot_right';
 
 /** Semantic part kind, used by the renderer to pick a shading path. */
-export type PartKind = 'skin' | 'sclera' | 'iris' | 'teeth' | 'tongue' | 'mouth_cavity';
+export type PartKind =
+  | 'skin'
+  | 'sclera'
+  | 'iris'
+  | 'limbus'
+  | 'cornea'
+  | 'cornea_optic'
+  | 'teeth'
+  | 'tongue'
+  | 'mouth_cavity';
 
 export interface PartGeometry {
   /** Stable part name, e.g. "eye_l", "teeth_upper", "tongue". */

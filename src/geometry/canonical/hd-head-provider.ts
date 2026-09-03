@@ -457,10 +457,21 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
         'eye_iris',
         disc(cx, ey, ez + 0.008, 0.0075),
       );
-      // Separate cornea dome (transparent surface over the iris).
+      // Limbus: the ring where the transparent cornea meets the sclera, and
+      // the iris/sclera boundary. A shallow annulus/cone produces the dark
+      // transition ring characteristic of the eye.
+      appendPart(
+        side < 0 ? 'limbus_l' : 'limbus_r',
+        'limbus',
+        'eye_iris',
+        limbus(cx, ey, ez + 0.006, 0.0195, 0.016, 12),
+      );
+      // Separate cornea dome (transparent surface over the iris). Marked with
+      // kind 'cornea' so the renderer can apply optical refraction (IOR) and
+      // corneal specular.
       appendPart(
         side < 0 ? 'cornea_l' : 'cornea_r',
-        'sclera',
+        'cornea',
         'cornea',
         dome(cx, ey, ez, 0.036, 0.022),
       );
@@ -663,6 +674,55 @@ function dome(
         indices.push(a0, b0, a0 + 1, b0, b0 + 1, a0 + 1);
       }
     }
+  }
+  return { positions, normals, uvs, indices };
+}
+
+/**
+ * Limbus ring: a flat annular band (outerRadius > innerRadius) at the iris
+ * boundary, giving the darker transition ring where cornea meets sclera.
+ */
+function limbus(
+  cx: number,
+  cy: number,
+  cz: number,
+  outerRadius: number,
+  innerRadius: number,
+  slices: number = 14,
+): { positions: Vec3[]; normals: Vec3[]; uvs: [number, number][]; indices: number[] } {
+  const positions: Vec3[] = [];
+  const normals: Vec3[] = [];
+  const uvs: [number, number][] = [];
+  const indices: number[] = [];
+
+  // Inner ring
+  for (let i = 0; i < slices; i++) {
+    const a = (i / slices) * Math.PI * 2;
+    positions.push({
+      x: cx + Math.cos(a) * innerRadius,
+      y: cy + Math.sin(a) * innerRadius,
+      z: cz,
+    });
+    normals.push({ x: 0, y: 0, z: 1 });
+    uvs.push([(Math.cos(a) + 1) / 2, (Math.sin(a) + 1) / 2]);
+  }
+  // Outer ring
+  for (let i = 0; i < slices; i++) {
+    const a = (i / slices) * Math.PI * 2;
+    positions.push({
+      x: cx + Math.cos(a) * outerRadius,
+      y: cy + Math.sin(a) * outerRadius,
+      z: cz,
+    });
+    normals.push({ x: 0, y: 0, z: 1 });
+    uvs.push([(Math.cos(a) + 1) / 2, (Math.sin(a) + 1) / 2]);
+  }
+  for (let i = 0; i < slices; i++) {
+    const i0 = i;
+    const i1 = (i + 1) % slices;
+    const o0 = slices + i;
+    const o1 = slices + ((i + 1) % slices);
+    indices.push(i0, o0, o1, i0, o1, i1);
   }
   return { positions, normals, uvs, indices };
 }

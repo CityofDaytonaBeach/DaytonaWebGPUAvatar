@@ -144,6 +144,8 @@ export function buildWebGL2RenderParts(canonical: CanonicalHuman): WebGL2RenderP
 
 export function webglPartColor(name: string, kind: string): [number, number, number] {
   if (kind === 'sclera') return [0.95, 0.95, 0.95];
+  if (kind === 'limbus') return [0.3, 0.34, 0.32];
+  if (kind === 'cornea') return [0.55, 0.6, 0.62];
   if (kind === 'iris') return name.startsWith('pupil') ? [0.12, 0.1, 0.12] : [0.35, 0.52, 0.38];
   if (kind === 'teeth') return [0.93, 0.91, 0.84];
   if (kind === 'tongue') return [0.82, 0.5, 0.48];

@@ -395,6 +395,7 @@ export {
   generateSkinResiduals,
   applySkinResidualColor,
   exportSkinMaterial,
+  generateNormalPerturbation,
   computeSSSApproximation,
   generateWrinkleMap,
   generatePoreDetail,

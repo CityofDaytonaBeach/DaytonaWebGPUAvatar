@@ -17,17 +17,23 @@ struct Camera {
 
 struct PartParams {
   baseColor : vec4f,
+  material : vec4f,   // rgb = roughness, specular, sssIntensity ; a = IOR
+  sssColor : vec4f,   // rgb = subsurface scatter color ; a = unused
+  flags : u32,        // bit0: hasTangentPerturb ; bit1: refractive(cornea)
 };
 
 struct VSIn {
   @location(0) position : vec3f,
   @location(1) normal   : vec3f,
   @location(2) uv       : vec2f,
+  @location(3) tangentPerturb : vec2f,   // optional normal-map pixels per vertex
 };
 struct VSOut {
   @builtin(position) clip_position : vec4f,
-  @location(0) normal : vec3f,
+  @location(0) world_normal : vec3f,
   @location(1) uv : vec2f,
+  @location(2) tangent_perturb : vec2f,
+  @location(3) part_flags : u32,
 };
 
 @group(0) @binding(0) var<uniform> params : HumanParams;
@@ -38,17 +44,105 @@ struct VSOut {
 fn vs_main(in : VSIn) -> VSOut {
   var out : VSOut;
   out.clip_position = camera.mvp * vec4f(in.position, 1.0);
-  out.normal = normalize(camera.normalMat * in.normal);
+  out.world_normal = normalize(camera.normalMat * in.normal);
   out.uv = in.uv;
+  out.tangent_perturb = in.tangentPerturb;
+  out.part_flags = part.flags;
   return out;
+}
+
+fn reconstructNormal(perturb : vec2f, n : vec3f) -> vec3f {
+  let z = sqrt(max(1.0 - dot(perturb, perturb), 0.0));
+  // World-space tangent-frame approximation from the geometric normal.
+  let t = normalize(cross(vec3f(0.0, 1.0, 0.0), n));
+  let b = cross(n, t);
+  let nn = t * perturb.x + b * perturb.y + n * z;
+  return normalize(nn);
+}
+
+fn fresnelSchlick(cosT : f32, f0 : vec3f) -> vec3f {
+  return f0 + (1.0 - f0) * pow(1.0 - cosT, 5.0);
+}
+
+fn distributionGGX(ndh : f32, roughness : f32) -> f32 {
+  let r2 = roughness * roughness;
+  let d = (ndh * ndh) * (r2 - 1.0) + 1.0;
+  return r2 / (3.14159265 * d * d);
+}
+
+fn geometrySchlickGGX(ndv : f32, roughness : f32) -> f32 {
+  let r = roughness + 1.0;
+  let k = (r * r) / 8.0;
+  return ndv / (ndv * (1.0 - k) + k);
+}
+
+fn geometrySmith(ndv : f32, ndl : f32, roughness : f32) -> f32 {
+  return geometrySchlickGGX(ndv, roughness) * geometrySchlickGGX(ndl, roughness);
 }
 
 @fragment
 fn fs_main(in : VSOut) -> @location(0) vec4f {
   let albedo = part.baseColor.rgb;
+  let roughness = part.material.r;
+  let specular = part.material.g;
+  let sssIntensity = part.material.b;
+  let ior = part.material.a;
+
+  var nrm = normalize(in.world_normal);
+  if ((in.part_flags & 1u) != 0u) {
+    nrm = reconstructNormal(in.tangent_perturb, nrm);
+  }
+
   let lightDir = normalize(vec3f(0.35, -0.7, 0.5));
-  let ndl = max(dot(normalize(in.normal), lightDir), 0.0);
-  let shade = albedo * (0.34 + 0.66 * ndl);
+  let viewDir = normalize(vec3f(0.0, 0.0, 1.0));
+  let halfDir = normalize(lightDir + viewDir);
+
+  let ndl = max(dot(nrm, lightDir), 0.0);
+  let ndv = max(dot(nrm, viewDir), 0.0);
+  let ndh = max(dot(nrm, halfDir), 0.0);
+
+  // Diffuse (Lambert)
+  let kD = vec3f(1.0);
+
+  // Specular (Cook-Torrance)
+  let f0 = mix(vec3f(0.04), albedo, specular);
+  let F = fresnelSchlick(ndv, f0);
+  let D = distributionGGX(ndh, roughness);
+  let G = geometrySmith(ndv, ndl, roughness);
+  let spec = (D * G * F) / (4.0 * ndv * ndl + 1e-4);
+
+  // Subsurface scattering approximation
+  let wrap = max(dot(nrm, lightDir) * 0.5 + 0.5, 0.0);
+  let sssTerm = mix(albedo, part.sssColor.rgb, wrap * sssIntensity * 0.5);
+
+  var color = (kD * (1.0 - F)) * sssTerm + spec;
+
+  // Corneal refraction (IOR-based optics). For the transparent cornea dome we
+  // approximate transmitted light by refracting the view ray through the dome
+  // and tinting toward the iris that sits behind it, blended by Fresnel (more
+  // reflection at grazing angles). This models refraction + corneal specular
+  // without a full scene-depth pass.
+  if ((in.part_flags & 2u) != 0u) {
+    let eta = 1.0 / max(ior, 1.0001);
+    let incident = -viewDir;
+    let cosI = clamp(dot(incident, nrm), -1.0, 1.0);
+    let k = 1.0 - eta * eta * (1.0 - cosI * cosI);
+    var refrDir = incident;
+    if (k >= 0.0) {
+      refrDir = eta * incident + (eta * cosI - sqrt(k)) * nrm;
+    }
+    refrDir = normalize(refrDir);
+    // Approximate the iris/sclera behind the dome: use the base brightness
+    // modulated by the refracted normal-vs-light term.
+    let behindIris = albedo * (0.5 + 0.5 * max(dot(refrDir, lightDir), 0.0));
+    // Fresnel reflection of the dome surface.
+    let domeF = fresnelSchlick(ndv, vec3f(0.04));
+    // Blend transmitted (refracted iris) with dome reflection + specular.
+    color = mix(behindIris * (1.0 - domeF), albedo * 0.9, domeF * 0.6) + spec * 1.5;
+  }
+
+  let shade = color * (0.3 + 0.7 * ndl);
+
   return vec4f(shade, part.baseColor.a);
 }
 `;
@@ -62,6 +156,16 @@ export interface CameraMatrices {
 export interface RenderPart {
   name: string;
   color: [number, number, number];
+  /** Material for PBR shading: [roughness, specular, sssIntensity]. */
+  material?: [number, number, number];
+  /** Subsurface scatter color (defaults to a muted skin tone). */
+  sssColor?: [number, number, number];
+  /** True if per-vertex tangent-space normal perturbation is supplied. */
+  hasNormalMap?: boolean;
+  /** True to apply IOR-based corneal refraction (transparent cornea dome). */
+  refractive?: boolean;
+  /** Refractive index for the cornea surface (e.g. 1.376 for human cornea). */
+  ior?: number;
   opaque: boolean;
   /** GPU index buffer for this part's triangles. */
   indexBuffer: GPUBuffer;
@@ -157,6 +261,7 @@ export class WebGPURenderer {
   private cameraBuffer!: GPUBuffer;
   private normalBuffer!: GPUBuffer;
   private uvBuffer!: GPUBuffer;
+  private tangentBuffer!: GPUBuffer;
   private parts: RenderPart[] = [];
   /** Per-part bind groups (params + camera + part color). */
   private partBindGroups: GPUBindGroup[] = [];
@@ -182,10 +287,13 @@ export class WebGPURenderer {
           buffer: { type: 'uniform' },
         },
         { binding: 1, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } },
-        { binding: 2, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+        {
+          binding: 2,
+          visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+          buffer: { type: 'uniform' },
+        },
       ],
-    });
-    this.pipeline = this.device.createRenderPipeline({
+    });    this.pipeline = this.device.createRenderPipeline({
       layout: this.device.createPipelineLayout({ bindGroupLayouts: [this.bindGroupLayout] }),
       vertex: {
         module,
@@ -202,6 +310,10 @@ export class WebGPURenderer {
           {
             arrayStride: 2 * 4,
             attributes: [{ shaderLocation: 2, offset: 0, format: 'float32x2' }],
+          },
+          {
+            arrayStride: 2 * 4,
+            attributes: [{ shaderLocation: 3, offset: 0, format: 'float32x2' }],
           },
         ],
       },
@@ -223,20 +335,34 @@ export class WebGPURenderer {
     this.parts = parts;
     this.partNames = parts.map((p) => p.name);
     this.partBindGroups = parts.map((p) => {
+      // PartParams = baseColor(vec4) + material(vec4) + sssColor(vec4) + flags(u32)
+      // WGSL struct is 64 bytes (flags at 48, struct padded to 16-byte align).
+      const buf = new ArrayBuffer(64);
+      const view = new DataView(buf);
+      const mat = p.material ?? [0.5, 0.4, 0.3];
+      const sss = p.sssColor ?? [0.9, 0.6, 0.5];
+      let flags = p.hasNormalMap ? 1 : 0;
+      if (p.refractive) flags |= 2;
+      const ior = p.ior ?? 0;
+      const f32 = new Float32Array(buf);
+      f32[0] = p.color[0];
+      f32[1] = p.color[1];
+      f32[2] = p.color[2];
+      f32[3] = p.opaque ? 1 : 1;
+      f32[4] = mat[0];
+      f32[5] = mat[1];
+      f32[6] = mat[2];
+      f32[7] = ior;
+      f32[8] = sss[0];
+      f32[9] = sss[1];
+      f32[10] = sss[2];
+      f32[11] = 0;
+      view.setUint32(48, flags, true);
       const colorBuffer = this.device.createBuffer({
-        size: 16,
+        size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
-      this.device.queue.writeBuffer(
-        colorBuffer,
-        0,
-        new Float32Array([
-          p.color[0],
-          p.color[1],
-          p.color[2],
-          p.opaque ? 1 : 1,
-        ]) as unknown as ArrayBuffer,
-      );
+      this.device.queue.writeBuffer(colorBuffer, 0, buf as ArrayBuffer);
       return this.device.createBindGroup({
         layout: this.bindGroupLayout,
         entries: [
@@ -248,10 +374,18 @@ export class WebGPURenderer {
     });
   }
 
-  /** Attach shared per-vertex normal + UV buffers (whole character). */
+  /** Attach shared per-vertex normal, UV, and optional tangent-perturb buffers. */
   setSharedNormalsAndUvs(normalBuffer: GPUBuffer, uvBuffer: GPUBuffer): void {
     this.normalBuffer = normalBuffer;
     this.uvBuffer = uvBuffer;
+  }
+
+  /**
+   * Attach the shared per-vertex tangent perturbation buffer (stride 2 floats).
+   * Parts marked hasNormalMap read it; all others ignore it.
+   */
+  setSharedTangentPerturb(tangentBuffer: GPUBuffer): void {
+    this.tangentBuffer = tangentBuffer;
   }
 
   uploadCamera(width: number, height: number): void {
@@ -289,6 +423,7 @@ export class WebGPURenderer {
     pass.setVertexBuffer(0, deformedBuffer);
     pass.setVertexBuffer(1, normalsBuffer ?? this.normalBuffer);
     pass.setVertexBuffer(2, this.uvBuffer);
+    pass.setVertexBuffer(3, this.tangentBuffer);
     for (let i = 0; i < this.parts.length; i++) {
       const p = this.parts[i];
       pass.setBindGroup(0, this.partBindGroups[i]);

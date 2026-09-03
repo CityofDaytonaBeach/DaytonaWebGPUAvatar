@@ -70,6 +70,8 @@ describe('HDCanonicalHumanProvider (HD HUMAN V0.1)', () => {
       'iris_r',
       'pupil_l',
       'pupil_r',
+      'limbus_l',
+      'limbus_r',
       'cornea_l',
       'cornea_r',
       'teeth_upper',
@@ -83,6 +85,17 @@ describe('HDCanonicalHumanProvider (HD HUMAN V0.1)', () => {
       expect(p.vertexStart + p.vertexCount).toBeLessThanOrEqual(asset.topology.vertices.length);
       expect(p.indexStart + p.indexCount).toBeLessThanOrEqual(asset.topology.indices.length);
     }
+  });
+
+  it('marks limbus as iris-region and cornea as refractive cornea parts', async () => {
+    const provider = new HDCanonicalHumanProvider();
+    const asset = await provider.load();
+    const limbus = asset.topology.parts.filter((p) => p.kind === 'limbus');
+    expect(limbus.length).toBe(2);
+    for (const p of limbus) expect(p.region).toBe('eye_iris');
+    const corneas = asset.topology.parts.filter((p) => p.kind === 'cornea');
+    expect(corneas.length).toBe(2);
+    for (const p of corneas) expect(p.region).toBe('cornea');
   });
 
   it('builds landmarks that resolve on the topology', async () => {

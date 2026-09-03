@@ -15,6 +15,8 @@ import { SparseMorphSet } from '../../geometry/morph/sparse-morph.js';
 import { MorphDriver } from '../../geometry/morph/morph-driver.js';
 import { HumanDefinition } from '../../core/schema/human-definition.js';
 import { BonePose } from '../../animation/skeleton/skeletal-animation.js';
+import { exportSkinMaterial, SkinPreset } from '../../surface/skin/neural-skin.js';
+import { createDefaultRegistry } from '../../core/schema/descriptors.js';
 
 export interface WebGpuHumanPipelineOptions {
   device: GPUDevice;
@@ -44,6 +46,8 @@ export class WebGpuHumanPipeline {
   private readonly renderer: WebGPURenderer;
   private readonly packed: PackedMorphBuffers;
   private readonly skeleton: BoneDef[];
+  private skinMaterial!: ReturnType<typeof exportSkinMaterial>;
+  private tangentBuffer!: GPUBuffer;
   readonly morphNames: string[];
 
   constructor(
@@ -86,6 +90,29 @@ export class WebGpuHumanPipeline {
     const renderParts = buildRenderParts(opts.device, canonical);
     this.renderer.setParts(renderParts, this.state.paramBuffer);
     this.renderer.setSharedNormalsAndUvs(this.state.normalBuffer, this.state.uvBuffer);
+
+    // Per-vertex tangent perturbation (normal map proxy) from the skin material.
+    // Zero for non-skin parts via the shared buffer; the body part reads it.
+    this.skinMaterial = exportSkinMaterial(
+      new HumanDefinition(createDefaultRegistry()),
+      canonical,
+      SkinPreset.Fair,
+    );
+    this.tangentBuffer = opts.device.createBuffer({
+      size: canonical.vertexCount * 2 * 4,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    const tangentData = new Float32Array(canonical.vertexCount * 2);
+    for (let i = 0; i < canonical.vertexCount; i++) {
+      tangentData[i * 2] = this.skinMaterial.normalPerturbX[i] ?? 0;
+      tangentData[i * 2 + 1] = this.skinMaterial.normalPerturbY[i] ?? 0;
+    }
+    opts.device.queue.writeBuffer(
+      this.tangentBuffer,
+      0,
+      tangentData as unknown as ArrayBuffer,
+    );
+    this.renderer.setSharedTangentPerturb(this.tangentBuffer);
   }
 
   /**
@@ -188,19 +215,29 @@ function buildRenderParts(device: GPUDevice, canonical: CanonicalHuman): RenderP
     return buf;
   };
 
-  // Body (skin) + every detail part in canonical order.
+  // Body (skin) + every detail part in canonical order. The body uses a
+  // realistic PBR skin material (roughness/specular/SSS) and exposes per-vertex
+  // tangent perturbations (normal map proxy) for pore/wrinkle detail.
   parts.push({
     name: 'body',
     color: [0.72, 0.56, 0.45],
+    material: [0.4, 0.4, 0.4],
+    sssColor: [0.9, 0.58, 0.48],
+    hasNormalMap: true,
     opaque: true,
     indexBuffer: mkIndexBuffer(0, bodyEnd),
     indexCount: bodyEnd,
   });
   for (const p of canonical.parts) {
     const color = partColor(p.name, p.kind);
+    const isCornea = p.kind === 'cornea';
     parts.push({
       name: p.name,
       color: color.rgb,
+      material: isCornea ? [0.06, 1.0, 0.0] : undefined,
+      sssColor: isCornea ? [0.35, 0.4, 0.45] : undefined,
+      refractive: isCornea,
+      ior: isCornea ? 1.376 : undefined,
       opaque: color.opaque,
       indexBuffer: mkIndexBuffer(p.indexStart, p.indexCount),
       indexCount: p.indexCount,
@@ -211,6 +248,8 @@ function buildRenderParts(device: GPUDevice, canonical: CanonicalHuman): RenderP
 
 function partColor(name: string, kind: string): { rgb: [number, number, number]; opaque: boolean } {
   if (kind === 'sclera') return { rgb: [0.95, 0.95, 0.95], opaque: true };
+  if (kind === 'limbus') return { rgb: [0.3, 0.34, 0.32], opaque: true };
+  if (kind === 'cornea') return { rgb: [0.55, 0.6, 0.62], opaque: false };
   if (kind === 'iris') {
     // Pupils darker than the iris ring.
     return name.startsWith('pupil')
