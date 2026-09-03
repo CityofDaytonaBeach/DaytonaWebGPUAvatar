@@ -1,5 +1,6 @@
 ﻿import { Vec3 } from '../../core/math/vec.js';
 import type { CanonicalTopology } from './canonical-topology.js';
+import { buildRegionRanges } from './regions.js';
 
 export type RegionName =
   | 'head'
@@ -222,16 +223,10 @@ export class CanonicalHuman {
       this.indices = Uint32Array.from(indices);
     }
 
-    // Build regional ranges (aggregate) — body regions plus detail parts.
-    const region: Record<string, IndexRange> = {};
-    for (let i = 0; i < this.vertices.length; i++) {
-      const r = this.vertices[i].region;
-      if (!region[r]) region[r] = { start: i, count: 0 };
-      region[r].count++;
-    }
-    for (const [name, range] of Object.entries(region)) {
-      this.regionRanges.set(name as RegionName, range);
-    }
+    // Build regional ranges (aggregate) — body regions plus detail parts, with
+    // coarse-region aliases synthesized over fine sub-regions so HD topologies
+    // satisfy the same coarse contract as the procedural block human.
+    this.regionRanges = buildRegionRanges(this.vertices);
 
     // Index ranges per part (for per-part draw/sub-mesh rendering).
     for (const p of this.parts) {

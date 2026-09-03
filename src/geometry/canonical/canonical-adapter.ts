@@ -1,4 +1,5 @@
 ﻿import { CanonicalHuman, PartGeometry, IndexRange, RegionName } from './canonical-human.js';
+import { buildRegionRanges } from './regions.js';
 import { CanonicalTopology } from './canonical-topology.js';
 import { validateCanonicalTopology, CanonicalValidationIssue } from './canonical-validator.js';
 
@@ -55,12 +56,7 @@ export class CanonicalTopologyAdapter implements CanonicalAssetAdapter {
     (canonical as { indices: typeof canonical.indices }).indices = indices;
     (canonical as { parts: typeof canonical.parts }).parts = parts;
 
-    const regions = new Map<RegionName, IndexRange>();
-    for (let i = 0; i < vertices.length; i++) {
-      const r = vertices[i].region;
-      if (!regions.has(r)) regions.set(r, { start: i, count: 0 });
-      regions.get(r)!.count++;
-    }
+    const regions = buildRegionRanges(vertices);
     (canonical as { regionRanges: typeof canonical.regionRanges }).regionRanges = regions;
 
     const partByRegion = new Map<RegionName, PartGeometry>();

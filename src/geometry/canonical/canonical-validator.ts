@@ -1,4 +1,5 @@
 ﻿import { RegionName } from './canonical-human.js';
+import { COARSE_REGION_FINE_ALIASES } from './regions.js';
 import {
   CanonicalTopology,
   CanonicalTopologyPart,
@@ -127,8 +128,13 @@ function validateRegions(topology: CanonicalTopology, issues: CanonicalValidatio
   const counts = new Map<RegionName, number>();
   for (const v of topology.vertices) counts.set(v.region, (counts.get(v.region) ?? 0) + 1);
   for (const region of REQUIRED_CANONICAL_REGIONS) {
-    if (!(counts.get(region) ?? 0))
-      issues.push({ code: 'missing-region', message: `missing required region ${region}` });
+    if (counts.get(region)) continue;
+    // Coarse-region aliases: an HD topology emits fine regions (chest,
+    // upper_arm_left, ...); the coarse contract is satisfied when those fine
+    // sub-regions are present, keeping both vocabularies valid.
+    const fines = COARSE_REGION_FINE_ALIASES[region];
+    if (fines && fines.every((fine) => counts.get(fine))) continue;
+    issues.push({ code: 'missing-region', message: `missing required region ${region}` });
   }
 }
 
