@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CAPABILITY_MATRIX, capabilityReport } from './index';
+import { CAPABILITY_MATRIX, capabilityReport, Capability } from './index';
 
 describe('capability report', () => {
   it('counts every matrix entry exactly once', () => {
@@ -11,33 +11,67 @@ describe('capability report', () => {
     expect(report.entries).toHaveLength(report.total);
   });
 
-  it('all capabilities are production-ready (IMPLEMENTED)', () => {
+  it('marks prototype systems as PROTOTYPE (no placeholder success)', () => {
     const report = capabilityReport();
-    const nonImplemented = report.entries.filter((entry) => entry.status !== 'IMPLEMENTED');
-
-    expect(nonImplemented).toHaveLength(0);
-    expect(report.implemented).toHaveLength(report.total);
-    expect(report.prototypes).toHaveLength(0);
-    expect(report.planned).toHaveLength(0);
+    const prototypes = new Set(report.prototypes);
+    // Runtime prototypes that direction.md/start.md explicitly say are not yet
+    // integrated/validated must never be reported as production-ready.
+    for (const cap of [
+      'motionCompiler',
+      'strandHair',
+      'clothPhysics',
+      'sdfCollision',
+      'neuralSkin',
+      'tattooDecals',
+      'clothingGeometry',
+      'perceptualValidation',
+      'internalAnatomyModes',
+      'parameterTransitions',
+      'localizedEditBenchmark',
+      'gpuTimestampBenchmark',
+    ]) {
+      expect(prototypes.has(cap as Capability), `${cap} should be PROTOTYPE`).toBe(true);
+      expect(CAPABILITY_MATRIX[cap as Capability]).toBe('PROTOTYPE');
+    }
   });
 
-  it('reports all systems as implemented', () => {
+  it('marks partial systems as PARTIAL, not IMPLEMENTED', () => {
     const report = capabilityReport();
+    const entry = report.entries.find((e) => e.name === 'canonicalHuman');
+    const speech = report.entries.find((e) => e.name === 'speechVisemes');
+    expect(entry!.status).toBe('PARTIAL');
+    expect(entry!.productionReady).toBe(false);
+    expect(speech!.status).toBe('PARTIAL');
+  });
 
-    expect(report.implemented).toContain('schemaCompiler');
-    expect(report.implemented).toContain('canonicalHuman');
-    expect(report.implemented).toContain('strandHair');
-    expect(report.implemented).toContain('clothPhysics');
-    expect(report.implemented).toContain('sdfCollision');
-    expect(report.implemented).toContain('neuralSkin');
-    expect(report.implemented).toContain('motionCompiler');
-    expect(report.implemented).toContain('tattooDecals');
-    expect(report.implemented).toContain('clothingGeometry');
-    expect(report.implemented).toContain('parameterTransitions');
-    expect(report.implemented).toContain('perceptualLod');
-    expect(report.implemented).toContain('perceptualValidation');
-    expect(report.implemented).toContain('internalAnatomyModes');
-    expect(report.implemented).toContain('localizedEditBenchmark');
-    expect(report.implemented).toContain('gpuTimestampBenchmark');
+  it('production-ready (IMPLEMENTED) excludes all prototypes/partials', () => {
+    const report = capabilityReport();
+    for (const entry of report.entries) {
+      if (entry.productionReady) {
+        expect(entry.status).toBe('IMPLEMENTED');
+      } else {
+        expect(entry.status).not.toBe('IMPLEMENTED');
+      }
+    }
+  });
+
+  it('reports core implemented systems as implemented', () => {
+    const report = capabilityReport();
+    for (const cap of [
+      'schemaCompiler',
+      'canonicalValidation',
+      'canonicalAssetAdapter',
+      'canonicalParts',
+      'skeletalAnimation',
+      'gpuSkinning',
+      'gpuRenderer',
+      'webglFallback',
+      'undoRedo',
+      'timelineEventSourcing',
+      'identitySolver',
+    ]) {
+      expect(report.implemented).toContain(cap);
+      expect(report.entries.find((e) => e.name === cap)!.productionReady).toBe(true);
+    }
   });
 });

@@ -1,3 +1,5 @@
+import { capabilityStatus, CapabilityStatus } from './capability-matrix.js';
+
 export const PHASE_STATUSES = [
   'COMPLETE',
   'IN_PROGRESS',
@@ -6,6 +8,27 @@ export const PHASE_STATUSES = [
   'BLOCKED',
 ] as const;
 export type PhaseStatus = (typeof PHASE_STATUSES)[number];
+
+/**
+ * Derive a phase's honest status from its required capabilities.
+ *
+ * A phase is only COMPLETE when every required capability is IMPLEMENTED. If any
+ * required capability is PLANNED the phase is PLANNED; if any is PROTOTYPE it is
+ * PROTOTYPE; if any is PARTIAL (and nothing worse) it is IN_PROGRESS. This keeps
+ * the phase report consistent with the capability matrix — a phase can never
+ * appear finished while one of its required systems is still a prototype.
+ */
+export function derivePhaseStatus(required: readonly string[]): PhaseStatus {
+  let hasPartial = false;
+  for (const cap of required) {
+    const s: CapabilityStatus | undefined = capabilityStatus(cap);
+    if (s === 'PLANNED') return 'PLANNED';
+    if (s === 'PROTOTYPE') return 'PROTOTYPE';
+    if (s === 'PARTIAL') hasPartial = true;
+    // unknown capability keys do not force an upgrade; they are validated by tests.
+  }
+  return hasPartial ? 'IN_PROGRESS' : 'COMPLETE';
+}
 
 export interface PhaseMilestone {
   phase: number;
@@ -36,7 +59,7 @@ export const START_MD_PHASES: PhaseMilestone[] = [
   phase(
     1,
     'Minimum human compiler',
-    'COMPLETE',
+    'PROTOTYPE',
     [
       'schemaCompiler',
       'propertyIds',
@@ -58,12 +81,15 @@ export const START_MD_PHASES: PhaseMilestone[] = [
       'localized nose edit benchmark',
       'undo exactness proof',
     ],
-    [],
+    [
+      'graduate localized + GPU timestamp benchmarks from prototype',
+      'fix failing pose-corrective / shape-space tests',
+    ],
   ),
   phase(
     2,
     'Canonical human',
-    'COMPLETE',
+    'IN_PROGRESS',
     ['canonicalHuman', 'canonicalValidation', 'canonicalAssetAdapter', 'canonicalParts'],
     [
       'licensed or original canonical topology',
@@ -72,19 +98,19 @@ export const START_MD_PHASES: PhaseMilestone[] = [
       'UV/surface coordinates',
       'replaceable asset boundary',
     ],
-    [],
+    ['replace procedural block default with Daytona HD canonical topology'],
   ),
   phase(
     3,
     'Anatomical system',
-    'COMPLETE',
+    'PROTOTYPE',
     ['parametricAnatomy', 'constraintSolver', 'internalAnatomyModes'],
     [
       'joint placement validated across body ranges',
       'hard/soft constraints tested',
       'corrective deformation coverage',
     ],
-    [],
+    ['graduate internal anatomy view modes from prototype; expand corrective coverage'],
   ),
   phase(
     4,
@@ -109,42 +135,42 @@ export const START_MD_PHASES: PhaseMilestone[] = [
   phase(
     6,
     'Speech',
-    'COMPLETE',
+    'IN_PROGRESS',
     ['speechVisemes'],
     ['phoneme timing adapter', 'co-articulation', 'expression blending', 'TTS adapter boundary'],
-    [],
+    ['add co-articulation + expression blending to graduate speech from partial'],
   ),
   phase(
     7,
     'Motion',
-    'COMPLETE',
+    'PROTOTYPE',
     ['skeletalAnimation', 'motionCompiler'],
     ['IK', 'look-at', 'gesture layering', 'retargeting', 'walk/stop/wave demo'],
-    [],
+    ['implement IK, look-at, gesture layering; retire motion from prototype'],
   ),
   phase(
     8,
     'Surface systems',
-    'COMPLETE',
+    'PROTOTYPE',
     ['tattooDecals', 'neuralSkin', 'attachmentCoordinates'],
     ['rendered tattoos/scars/makeup', 'procedural pores/wrinkles', 'attachment deformation tests'],
-    [],
+    ['render decals + procedural skin detail; graduate tattoo/neural-skin from prototype'],
   ),
   phase(
     9,
     'Hair and clothing',
-    'COMPLETE',
+    'PROTOTYPE',
     ['strandHair', 'clothingGeometry', 'clothPhysics'],
     ['rendered hair/cards or strands', 'separate garment rendering', 'cloth collision integration'],
-    [],
+    ['render separate garments + hair; integrate cloth collision'],
   ),
   phase(
     10,
     'SDF collision',
-    'COMPLETE',
+    'PROTOTYPE',
     ['sdfCollision'],
     ['collision usefulness benchmark', 'LOD-dependent fields', 'hair/cloth integration'],
-    [],
+    ['benchmark collision usefulness; integrate with hair/cloth'],
   ),
   phase(
     11,
@@ -165,18 +191,18 @@ export const START_MD_PHASES: PhaseMilestone[] = [
   phase(
     13,
     'Timeline and automation',
-    'COMPLETE',
+    'PROTOTYPE',
     ['timelineEventSourcing', 'parameterTransitions', 'snapshotRestore', 'undoRedo'],
     ['deterministic long replay', 'timeline scrub demo', 'branch/restore coverage'],
-    [],
+    ['graduate parameter transitions from prototype and prove deterministic long replay'],
   ),
   phase(
     14,
     'Advanced R&D',
-    'COMPLETE',
+    'PROTOTYPE',
     ['neuralSkin'],
     ['baseline comparisons', 'measured quality/performance benefit', 'portable fallback'],
-    [],
+    ['add baseline comparisons + portable fallback to neural skin'],
   ),
 ];
 
@@ -189,16 +215,20 @@ export function phaseReport(phases: readonly PhaseMilestone[] = START_MD_PHASES)
     BLOCKED: 0,
   };
   const ordered = [...phases].sort((a, b) => a.phase - b.phase);
-  for (const item of ordered) counts[item.status] += 1;
+  const derived = ordered.map((item) => ({
+    ...item,
+    status: derivePhaseStatus(item.requiredCapabilities),
+  }));
+  for (const item of derived) counts[item.status] += 1;
   const activePhase =
-    ordered.find(
+    derived.find(
       (item) =>
         item.status === 'IN_PROGRESS' || item.status === 'PROTOTYPE' || item.status === 'BLOCKED',
     ) ?? null;
   return {
-    total: ordered.length,
+    total: derived.length,
     counts,
-    phases: ordered,
+    phases: derived,
     activePhase,
     nextProductionWork: activePhase?.nextWork ?? [],
   };

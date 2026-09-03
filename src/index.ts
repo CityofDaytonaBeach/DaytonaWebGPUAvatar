@@ -570,99 +570,19 @@ export type {
 export { START_MD_PHASES, PHASE_STATUSES, phaseReport } from './roadmap/phase-report.js';
 export type { PhaseMilestone, PhaseReport, PhaseStatus } from './roadmap/phase-report.js';
 
-export const CAPABILITY_STATUSES = ['IMPLEMENTED', 'PARTIAL', 'PROTOTYPE', 'PLANNED'] as const;
-export type CapabilityStatus = (typeof CAPABILITY_STATUSES)[number];
-
-// Capability matrix (queryable; do not claim prototype systems as implemented).
-export const CAPABILITY_MATRIX = {
-  schemaCompiler: 'IMPLEMENTED',
-  propertyIds: 'IMPLEMENTED',
-  gpuParameterBuffer: 'IMPLEMENTED',
-  dependencyGraph: 'IMPLEMENTED',
-  affectedSystemDiagnostics: 'IMPLEMENTED',
-  deltaCompiler: 'IMPLEMENTED',
-  vertexRangeCompilation: 'IMPLEMENTED',
-  sparseMorph: 'IMPLEMENTED',
-  identitySolver: 'IMPLEMENTED',
-  constraintSolver: 'IMPLEMENTED',
-  canonicalHuman: 'IMPLEMENTED',
-  canonicalValidation: 'IMPLEMENTED',
-  canonicalAssetAdapter: 'IMPLEMENTED',
-  canonicalParts: 'IMPLEMENTED',
-  skeleton: 'IMPLEMENTED',
-  parametricAnatomy: 'IMPLEMENTED',
-  internalAnatomyModes: 'IMPLEMENTED',
-  skeletalAnimation: 'IMPLEMENTED',
-  motionCompiler: 'IMPLEMENTED',
-  gpuSkinning: 'IMPLEMENTED',
-  attachmentCoordinates: 'IMPLEMENTED',
-  tattooDecals: 'IMPLEMENTED',
-  clothingGeometry: 'IMPLEMENTED',
-  facialExpression: 'IMPLEMENTED',
-  speechVisemes: 'IMPLEMENTED',
-  timelineEventSourcing: 'IMPLEMENTED',
-  timelineDirtyReporting: 'IMPLEMENTED',
-  nonPropertyEventDirtyReporting: 'IMPLEMENTED',
-  parameterTransitions: 'IMPLEMENTED',
-  snapshotRestore: 'IMPLEMENTED',
-  undoRedo: 'IMPLEMENTED',
-  gpuScheduler: 'IMPLEMENTED',
-  gpuMorphCompute: 'IMPLEMENTED',
-  localizedEditBenchmark: 'IMPLEMENTED',
-  gpuTimestampBenchmark: 'IMPLEMENTED',
-  semanticLod: 'IMPLEMENTED',
-  perceptualLod: 'IMPLEMENTED',
-  perceptualValidation: 'IMPLEMENTED',
-  gpuRenderer: 'IMPLEMENTED',
-  webglFallback: 'IMPLEMENTED',
-  strandHair: 'IMPLEMENTED',
-  clothPhysics: 'IMPLEMENTED',
-  sdfCollision: 'IMPLEMENTED',
-  neuralSkin: 'IMPLEMENTED',
-  phaseTracking: 'IMPLEMENTED',
-} as const satisfies Record<string, CapabilityStatus>;
-
-export type Capability = keyof typeof CAPABILITY_MATRIX;
-
-export interface CapabilityEntry {
-  name: Capability;
-  status: CapabilityStatus;
-  productionReady: boolean;
-}
-
-export interface CapabilityReport {
-  total: number;
-  counts: Record<CapabilityStatus, number>;
-  entries: CapabilityEntry[];
-  implemented: Capability[];
-  prototypes: Capability[];
-  planned: Capability[];
-}
-
-export function capabilityReport(): CapabilityReport {
-  const counts: Record<CapabilityStatus, number> = {
-    IMPLEMENTED: 0,
-    PARTIAL: 0,
-    PROTOTYPE: 0,
-    PLANNED: 0,
-  };
-  const entries: CapabilityEntry[] = Object.entries(CAPABILITY_MATRIX).map(([name, status]) => {
-    const typedStatus: CapabilityStatus = status;
-    counts[typedStatus] += 1;
-    return {
-      name: name as Capability,
-      status: typedStatus,
-      productionReady: typedStatus === 'IMPLEMENTED',
-    };
-  });
-  return {
-    total: entries.length,
-    counts,
-    entries,
-    implemented: entries.filter((e) => e.status === 'IMPLEMENTED').map((e) => e.name),
-    prototypes: entries.filter((e) => e.status === 'PROTOTYPE').map((e) => e.name),
-    planned: entries.filter((e) => e.status === 'PLANNED').map((e) => e.name),
-  };
-}
+// Capability matrix (single source of truth; shared with the phase report so no
+// two places can disagree about what is actually implemented).
+export {
+  CAPABILITY_STATUSES,
+  CAPABILITY_MATRIX,
+  capabilityReport,
+  capabilityStatus,
+} from './roadmap/capability-matrix.js';
+export type {
+  CapabilityStatus,
+  Capability,
+  CapabilityEntry,
+  CapabilityReport,
+} from './roadmap/capability-matrix.js';
 
 export const VERSION = '1.0.0';
