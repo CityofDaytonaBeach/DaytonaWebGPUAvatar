@@ -84,6 +84,12 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
   // Resolve a semantic control to a fine or coarse region basis. If neither the
   // granular nor the coarse region exists, the control is a no-op for this
   // topology — that is fine (e.g. body controls on a head-only topology).
+  //
+  // Region selection: use whichever list (fine or coarse) matches the most
+  // regions on this topology, preferring fine on a tie. This matters for
+  // whole-figure controls such as global height, where a fine list can share a
+  // single region (e.g. `neck`) with the block human and would otherwise short
+  // circuit to it instead of the full coarse figure.
   const addFineControl = (
     name: string,
     property: string,
@@ -92,9 +98,9 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
     fn: (vx: number, vy: number, vz: number) => { dx: number; dy: number; dz: number },
     tags?: string[],
   ) => {
-    const regions = fineRegions.filter((r) => canonical.regionRanges.has(r));
-    const fallback = regions.length === 0 ? coarseRegions.filter((r) => canonical.regionRanges.has(r)) : [];
-    const targets = regions.length > 0 ? regions : fallback;
+    const finePresent = fineRegions.filter((r) => canonical.regionRanges.has(r));
+    const coarsePresent = coarseRegions.filter((r) => canonical.regionRanges.has(r));
+    const targets = finePresent.length >= coarsePresent.length ? finePresent : coarsePresent;
     if (targets.length === 0) return null;
     const ids = new Set<number>();
     for (const region of targets) {
@@ -533,13 +539,16 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
   const shoulderBasis = space.bases.getByName('ShoulderWidthBasis')?.id;
   const bodyCorrectiveBasis = (
     name: string,
-    regions: RegionName[],
+    fineRegions: RegionName[],
+    coarseRegions: RegionName[],
     fn: (vx: number, vy: number, vz: number) => { dx: number; dy: number; dz: number },
   ): number | null => {
-    const present = regions.filter((r) => canonical.regionRanges.has(r));
-    if (present.length === 0) return null;
+    const finePresent = fineRegions.filter((r) => canonical.regionRanges.has(r));
+    const coarsePresent = coarseRegions.filter((r) => canonical.regionRanges.has(r));
+    const targets = finePresent.length >= coarsePresent.length ? finePresent : coarsePresent;
+    if (targets.length === 0) return null;
     const ids = new Set<number>();
-    for (const r of present) {
+    for (const r of targets) {
       const range = canonical.regionRanges.get(r)!;
       for (let i = range.start; i < range.start + range.count; i++) ids.add(i);
     }
@@ -550,6 +559,7 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
     const output = bodyCorrectiveBasis(
       'MuscularBroadShouldersCorrective',
       ['shoulder_left', 'shoulder_right', 'chest', 'back', 'upper_arm_left', 'upper_arm_right'],
+      ['torso', 'upperarm_l', 'upperarm_r'],
       (vx, _vy, _vz) => {
         const s = Math.sign(vx || 1e-6);
         const lateral = Math.abs(vx) >= 0.18 ? 0.03 : 0.016;
