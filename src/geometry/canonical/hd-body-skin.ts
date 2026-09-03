@@ -1,4 +1,3 @@
-import type { Vec3 } from '../../core/math/vec.js';
 import type { CanonicalTopologyVertex } from './canonical-topology.js';
 import type { RegionName } from './canonical-human.js';
 

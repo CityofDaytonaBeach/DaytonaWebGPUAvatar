@@ -27,7 +27,7 @@ function blockHuman(): CanonicalHuman {
 
 describe('HD Body shape bases (HD BODY V0.1)', () => {
   it('registers every body identity control as a shape basis', () => {
-    const { space, spec } = buildHdShapeSpace(blockHuman());
+    const { space } = buildHdShapeSpace(blockHuman());
     for (const name of BODY_BASES) {
       const basis = space.bases.getByName(name);
       expect(basis, `missing basis ${name}`).toBeDefined();

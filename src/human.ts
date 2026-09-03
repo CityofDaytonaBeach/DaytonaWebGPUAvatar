@@ -255,9 +255,8 @@ export class Human {
     // Pure bone source: when the head tilts back (roll about the head's z axis a
     // long way from neutral), the chin/lower-face region is pulled toward the
     // neck to keep the mouth roughly level (joint-volume preservation).
-    this.morphs.add('poseHeadTiltChin', 'chin', (vx, vy) => {
-      const lift = vy > 1.7 ? 1 : 0;
-      return { dx: vx * 0.06, dy: -lift * 0.05, dz: lift * -0.05 };
+    this.morphs.add('poseHeadTiltChin', 'chin', (vx, _vy) => {
+      return { dx: vx * 0.12, dy: -0.06, dz: -0.08 };
     });
     this.morphDriver.registerBone('poseHeadTiltChin', 'head', 'z', 0, 30);
 
