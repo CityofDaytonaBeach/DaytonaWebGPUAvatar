@@ -488,7 +488,23 @@ export class Human {
     const skeleton = this.parametricSkeleton();
     if (!this.skinInfluences) this.skinInfluences = buildInfluences(this.canonical, skeleton);
     const matrices = combinedSkinMatrices(skeleton, this.currentPose);
-    return skinMeshCPU(this.canonical.baseGeometry().positions, this.skinInfluences, matrices);
+    // Apply shape morph deltas to the base geometry before skinning so that
+    // both body/identity edits AND pose edits move the rendered skin.
+    const base = this.canonical.baseGeometry().positions;
+    const delta = this.computeMorphDelta();
+    let positions = base;
+    let hasDelta = false;
+    for (let i = 0; i < delta.length; i++) {
+      if (delta[i] !== 0) {
+        hasDelta = true;
+        break;
+      }
+    }
+    if (hasDelta) {
+      positions = new Float32Array(base.length);
+      for (let i = 0; i < base.length; i++) positions[i] = base[i] + delta[i];
+    }
+    return skinMeshCPU(positions, this.skinInfluences, matrices);
   }
 
   /**
