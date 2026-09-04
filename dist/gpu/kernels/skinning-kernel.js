@@ -24,7 +24,9 @@ export class SkinningKernel {
         this.vertexCount = vertexCount;
         this.inBuffer = inputPositions;
         this.inNormalBuffer = inputNormals;
-        this.paramsBuffer = makeStorage(device, 16, makeParams(vertexCount, numBones));
+        // SKIN_COMPUTE_WGSL declares `params` as var<uniform>, so this buffer must
+        // carry UNIFORM usage or CreateBindGroup fails validation (blank render).
+        this.paramsBuffer = makeUniform(device, 16, makeParams(vertexCount, numBones));
         this.indicesBuffer = makeStorage(device, influences.indices.byteLength, influences.indices);
         this.weightsBuffer = makeStorage(device, influences.weights.byteLength, influences.weights);
         this.outBuffer = makeStorage(device, vertexCount * 12);
@@ -72,8 +74,20 @@ export class SkinningKernel {
         return this.outNormalBuffer;
     }
 }
+function makeUniform(device, size, data) {
+    const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST;
+    const buf = device.createBuffer({ size, usage });
+    if (data)
+        device.queue.writeBuffer(buf, 0, data);
+    return buf;
+}
 function makeStorage(device, size, data) {
-    const usage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC;
+    // Skinned outputs are bound as vertex attributes by the renderer, so VERTEX
+    // usage is required in addition to STORAGE.
+    const usage = GPUBufferUsage.STORAGE |
+        GPUBufferUsage.VERTEX |
+        GPUBufferUsage.COPY_DST |
+        GPUBufferUsage.COPY_SRC;
     const buf = device.createBuffer({ size, usage });
     if (data)
         device.queue.writeBuffer(buf, 0, data);
