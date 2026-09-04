@@ -56,6 +56,12 @@ export declare class WebGPURenderer {
     private normalBuffer;
     private uvBuffer;
     private tangentBuffer;
+    /** Optional baked [curvature, thickness] per vertex (photoreal shading only). */
+    private curvatureThicknessBuffer?;
+    /** Zero-filled stand-in so the attribute is always bound; zero = "not baked". */
+    private curvatureThicknessFallback?;
+    /** True when the bound shader declares the location-4 bake attribute. */
+    private readonly usesCurvatureThickness;
     private parts;
     /** Per-part bind groups (params + camera + part color). */
     private partBindGroups;
@@ -77,6 +83,15 @@ export declare class WebGPURenderer {
      * Parts marked hasNormalMap read it; all others ignore it.
      */
     setSharedTangentPerturb(tangentBuffer: GPUBuffer): void;
+    /**
+     * Attach the shared per-vertex baked [curvature, thickness] buffer (stride 2
+     * floats), produced by `bakeCurvatureThickness()`. Ignored by the basic
+     * shading model; when absent the photoreal shader falls back to its head-wide
+     * constants.
+     */
+    setSharedCurvatureThickness(buffer: GPUBuffer): void;
+    /** Lazily created zero buffer used when no bake has been attached. */
+    private curvatureThicknessOrFallback;
     uploadCamera(width: number, height: number): void;
     /**
      * Draw all parts using `deformedBuffer` (positions) and `normalsBuffer`

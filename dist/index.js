@@ -69,6 +69,12 @@ export { distributionGGX, dualLobeSpecular, fresnelSchlick, preIntegratedScatter
 export { hash21, microDetail, perturbNormal, valueNoise2D, } from './render/photoreal/micro-detail.js';
 export { enamelFactor, irisParallaxOffset, limbalRing, pupilRadius, shadeEnamel, shadeIris, shadeSclera, } from './render/photoreal/eye-shading.js';
 export { buildPhotorealMaterials, irisColorPreset, partMaterial, resolveIrisColor, } from './render/photoreal/photoreal-material.js';
+// Image-based lighting: the analytic studio probe that replaces constant ambient.
+export { STUDIO_ENVIRONMENT, STUDIO_IRRADIANCE_SH, environmentBRDF, fibonacciSphere, iblAmbient, prefilteredEnvironment, projectEnvironmentToSH, reflectDirection, sh9Basis, shIrradiance, studioEnvironment, } from './render/photoreal/ibl.js';
+// Per-vertex curvature + tissue thickness bake (drives SSS and transmission).
+export { bakeCurvature, bakeCurvatureThickness, bakeThickness, buildOneRing, } from './render/photoreal/curvature-bake.js';
+// Screen-space subsurface scattering (separable, depth-aware).
+export { SSS_BLUR_WGSL, SSS_FALLOFF, depthRejection, diffusionProfile, sssBlurPass, sssKernel, sssStepUV, } from './render/photoreal/sss-blur.js';
 // Animation
 export { SkeletalAnimation, sampleChannel, quatFromEulerDeg as quatFromEuler, } from './animation/skeleton/skeletal-animation.js';
 export { MotionCompiler, compileMotionCommand, solveIK2Bone, solveLookAt, compileLookAt, compileIKArm, compileIKLeg, compileWalk, blendMotions, transitionTo, retargetPoses, validateMotion, } from './animation/motion/motion-compiler.js';

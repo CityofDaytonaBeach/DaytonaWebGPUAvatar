@@ -25,8 +25,32 @@ export const PHOTOREAL_CONSTANTS = {
   transmissionStrength: 0.45,
   /** Scene exposure applied before tone mapping. */
   exposure: 1.15,
-  /** Constant ambient irradiance stand-in for an IBL probe. */
+  /**
+   * Legacy constant ambient. Retained as the fallback for the `'basic'` shading
+   * model and for surfaces with no probe; the photoreal path uses the SH
+   * environment probe in `ibl.ts` instead.
+   */
   ambient: 0.22,
+  /** Diffuse gain applied to the SH probe irradiance. */
+  iblDiffuseScale: 0.85,
+  /** Specular gain applied to the split-sum probe term. */
+  iblSpecularScale: 0.7,
+  /** Deterministic sphere samples used to bake the probe's 9 SH coefficients. */
+  iblProjectionSamples: 2048,
+  /** Baked curvature clamp (1/m): flattest surface the shader will trust. */
+  curvatureMin: 1.5,
+  /** Baked curvature clamp (1/m): tightest feature (nostril rim, lid edge). */
+  curvatureMax: 220,
+  /** Baked tissue thickness clamp, metres (thin: lid, ear rim). */
+  thicknessMin: 0.0004,
+  /** Baked tissue thickness clamp, metres (thick: cheek, torso). */
+  thicknessMax: 0.03,
+  /** Screen-space SSS diffusion width at unit depth, metres. */
+  sssBlurWidth: 0.012,
+  /** Taps per separable screen-space SSS pass (odd, symmetric). */
+  sssBlurTaps: 17,
+  /** Depth-difference falloff for the SSS blur, 1/metres (stops bleeding across silhouettes). */
+  sssDepthFalloff: 260,
   /** Pore layer frequency in UV space. */
   poreFrequency: 220,
   /** Micro-texture (sub-pore) frequency in UV space. */

@@ -14,6 +14,12 @@
  *   sssColor.rgb    deep-tissue scatter colour
  *   flags           PHOTOREAL_FLAGS bit field (skin / iris / sclera / enamel /
  *                   refractive / normalPerturb)
+ *
+ * Ambient light comes from the spherical-harmonic studio probe baked in
+ * `../photoreal/ibl.ts` (9 RGB coefficients interpolated below), not a constant.
+ * Curvature and tissue thickness arrive per-vertex at location 4 from the bake
+ * in `../photoreal/curvature-bake.ts`; a zeroed attribute falls back to the old
+ * head-wide defaults, so the buffer is optional.
  */
 
 import { HUMAN_PARAM_STRUCT } from './shaders.js';
@@ -22,6 +28,7 @@ import {
   PHOTOREAL_FLAGS,
   PHOTOREAL_LIGHT_RIG,
 } from '../photoreal/constants.js';
+import { STUDIO_ENVIRONMENT, STUDIO_IRRADIANCE_SH } from '../photoreal/ibl.js';
 
 const C = PHOTOREAL_CONSTANTS;
 const F = PHOTOREAL_FLAGS;
@@ -55,6 +62,16 @@ const LIMBUS_START         : f32 = ${f(C.limbusStart)};
 const CORNEA_DEPTH         : f32 = ${f(C.corneaDepth)};
 const ENAMEL_TRANSLUCENCY  : f32 = ${f(C.enamelTranslucency)};
 const SCLERA_VASCULARITY   : f32 = ${f(C.scleraVascularity)};
+const IBL_DIFFUSE_SCALE    : f32 = ${f(C.iblDiffuseScale)};
+const IBL_SPECULAR_SCALE   : f32 = ${f(C.iblSpecularScale)};
+const IBL_PROJECTION_SAMPLES : u32 = ${C.iblProjectionSamples}u;
+const CURVATURE_MIN        : f32 = ${f(C.curvatureMin)};
+const CURVATURE_MAX        : f32 = ${f(C.curvatureMax)};
+const THICKNESS_MIN        : f32 = ${f(C.thicknessMin)};
+const THICKNESS_MAX        : f32 = ${f(C.thicknessMax)};
+const SSS_BLUR_WIDTH       : f32 = ${f(C.sssBlurWidth)};
+const SSS_BLUR_TAPS        : u32 = ${C.sssBlurTaps}u;
+const SSS_DEPTH_FALLOFF    : f32 = ${f(C.sssDepthFalloff)};
 
 // Part flag bits.
 const FLAG_NORMAL_PERTURB : u32 = ${F.normalPerturb}u;
@@ -75,9 +92,28 @@ const RIM_DIR  : vec3f = ${v3(R.rim.direction)};
 const RIM_COL  : vec3f = ${v3(R.rim.color)};
 const RIM_INT  : f32   = ${f(R.rim.intensity)};
 
-// Fixed surface properties for the parametric head (metres / 1-over-metres).
+// Fallback surface properties, used only when no bake is bound (metres / 1/m).
 const SKIN_CURVATURE : f32 = 12.0;
 const SKIN_THICKNESS : f32 = 0.004;
+
+// ─── Studio environment probe (baked by photoreal/ibl.ts) ────────────────────
+// Analytic studio: sky gradient, warm floor bounce, soft key + cool fill panel.
+const ENV_SKY_TOP     : vec3f = ${v3(STUDIO_ENVIRONMENT.skyTop)};
+const ENV_SKY_HORIZON : vec3f = ${v3(STUDIO_ENVIRONMENT.skyHorizon)};
+const ENV_FLOOR       : vec3f = ${v3(STUDIO_ENVIRONMENT.floor)};
+const ENV_KEY_DIR     : vec3f = ${v3(STUDIO_ENVIRONMENT.keyPanel.direction)};
+const ENV_KEY_COL     : vec3f = ${v3(STUDIO_ENVIRONMENT.keyPanel.color)};
+const ENV_KEY_OUTER   : f32   = ${f(STUDIO_ENVIRONMENT.keyPanel.cosOuter)};
+const ENV_KEY_INNER   : f32   = ${f(STUDIO_ENVIRONMENT.keyPanel.cosInner)};
+const ENV_FILL_DIR    : vec3f = ${v3(STUDIO_ENVIRONMENT.fillPanel.direction)};
+const ENV_FILL_COL    : vec3f = ${v3(STUDIO_ENVIRONMENT.fillPanel.color)};
+const ENV_FILL_OUTER  : f32   = ${f(STUDIO_ENVIRONMENT.fillPanel.cosOuter)};
+const ENV_FILL_INNER  : f32   = ${f(STUDIO_ENVIRONMENT.fillPanel.cosInner)};
+
+// Nine RGB irradiance SH coefficients, projected on the CPU at module load.
+const IBL_SH = array<vec3f, 9>(
+${STUDIO_IRRADIANCE_SH.map((c) => `  ${v3(c as readonly [number, number, number])},`).join('\n')}
+);
 
 struct Camera {
   mvp : mat4x4f,
@@ -96,6 +132,9 @@ struct VSIn {
   @location(1) normal   : vec3f,
   @location(2) uv       : vec2f,
   @location(3) tangentPerturb : vec2f,
+  // x = baked mean curvature (1/m), y = baked tissue thickness (m).
+  // All-zero means "not baked" and the fallback constants are used.
+  @location(4) curvatureThickness : vec2f,
 };
 struct VSOut {
   @builtin(position) clip_position : vec4f,
@@ -103,6 +142,7 @@ struct VSOut {
   @location(1) uv : vec2f,
   @location(2) tangent_perturb : vec2f,
   @location(3) part_flags : u32,
+  @location(4) curvature_thickness : vec2f,
 };
 
 @group(0) @binding(0) var<uniform> params : HumanParams;
@@ -117,6 +157,7 @@ fn vs_main(in : VSIn) -> VSOut {
   out.uv = in.uv;
   out.tangent_perturb = in.tangentPerturb;
   out.part_flags = part.flags;
+  out.curvature_thickness = in.curvatureThickness;
   return out;
 }
 
@@ -310,6 +351,75 @@ fn toDisplay(c : vec3f) -> vec3f {
   return vec3f(linearToSrgb(tm.r), linearToSrgb(tm.g), linearToSrgb(tm.b));
 }
 
+// ─── Image-based lighting (mirrors photoreal/ibl.ts) ─────────────────────────
+
+fn envPanel(c : f32, cosOuter : f32, cosInner : f32) -> f32 {
+  return smoothstep(cosOuter, cosInner, c);
+}
+
+fn studioEnvironment(dir : vec3f) -> vec3f {
+  let d = normalize(dir);
+  let up = clamp(d.y * 0.5 + 0.5, 0.0, 1.0);
+  let sky = mix(ENV_SKY_HORIZON, ENV_SKY_TOP, pow(up, 1.5));
+  let below = smoothstep(0.0, 0.45, -d.y);
+  var out = mix(sky, ENV_FLOOR, below);
+  out += ENV_KEY_COL * envPanel(dot(d, normalize(ENV_KEY_DIR)), ENV_KEY_OUTER, ENV_KEY_INNER);
+  out += ENV_FILL_COL * envPanel(dot(d, normalize(ENV_FILL_DIR)), ENV_FILL_OUTER, ENV_FILL_INNER);
+  return out;
+}
+
+fn shIrradiance(n : vec3f) -> vec3f {
+  let d = normalize(n);
+  let a0 = 3.141593;
+  let a1 = 2.094395;
+  let a2 = 0.785398;
+  var basis = array<f32, 9>(
+    0.282095 * a0,
+    0.488603 * d.y * a1,
+    0.488603 * d.z * a1,
+    0.488603 * d.x * a1,
+    1.092548 * d.x * d.y * a2,
+    1.092548 * d.y * d.z * a2,
+    0.315392 * (3.0 * d.z * d.z - 1.0) * a2,
+    1.092548 * d.x * d.z * a2,
+    0.546274 * (d.x * d.x - d.y * d.y) * a2,
+  );
+  var sum = vec3f(0.0);
+  for (var i : u32 = 0u; i < 9u; i = i + 1u) {
+    sum += IBL_SH[i] * basis[i];
+  }
+  return max(sum / 3.141593, vec3f(0.0));
+}
+
+// Karis' analytic split-sum environment BRDF: returns (scale, bias) for F0.
+fn environmentBRDF(ndv : f32, roughness : f32) -> vec2f {
+  let r = clamp(roughness, 0.0, 1.0);
+  let nv = max(ndv, 1e-4);
+  let c0 = vec4f(-1.0, -0.0275, -0.572, 0.022);
+  let c1 = vec4f(1.0, 0.0425, 1.04, -0.04);
+  let rc = r * c0 + c1;
+  let a004 = min(rc.x * rc.x, exp2(-9.28 * nv)) * rc.x + rc.y;
+  // Clamped: the analytic fit dips slightly negative at grazing angles.
+  return max(vec2f(a004 * -1.04 + rc.z, a004 * 1.04 + rc.w), vec2f(0.0));
+}
+
+fn prefilteredEnvironment(reflectDir : vec3f, roughness : f32) -> vec3f {
+  let r = clamp(roughness, 0.0, 1.0);
+  return mix(studioEnvironment(reflectDir), shIrradiance(reflectDir), sqrt(r));
+}
+
+fn iblAmbient(nrm : vec3f, viewDir : vec3f, albedo : vec3f, roughness : f32,
+              f0 : f32, occlusion : f32, specOcclusion : f32) -> vec3f {
+  let ao = clamp(occlusion, 0.0, 1.0);
+  let diffuse = albedo * shIrradiance(nrm) * ao * IBL_DIFFUSE_SCALE;
+  let ndv = max(dot(nrm, viewDir), 1e-4);
+  let ab = environmentBRDF(ndv, roughness);
+  let refl = reflect(-normalize(viewDir), nrm);
+  let spec = prefilteredEnvironment(refl, roughness)
+    * (f0 * ab.x + ab.y) * clamp(specOcclusion, 0.0, 1.0) * IBL_SPECULAR_SCALE;
+  return diffuse + spec;
+}
+
 @fragment
 fn fs_main(in : VSOut) -> @location(0) vec4f {
   var albedo = part.baseColor.rgb;
@@ -324,8 +434,10 @@ fn fs_main(in : VSOut) -> @location(0) vec4f {
 
   var specOcclusion = 1.0;
   var cavity = 1.0;
-  var curvature = SKIN_CURVATURE;
-  var thickness = SKIN_THICKNESS;
+  // Baked per-vertex signals when present, head-wide fallbacks otherwise.
+  let baked = in.curvature_thickness;
+  var curvature = select(SKIN_CURVATURE, clamp(baked.x, CURVATURE_MIN, CURVATURE_MAX), baked.x > 0.0);
+  var thickness = select(SKIN_THICKNESS, clamp(baked.y, THICKNESS_MIN, THICKNESS_MAX), baked.y > 0.0);
 
   // Skin: micro-detail normal + cavity/specular occlusion, aged by params.
   if ((flags & FLAG_SKIN) != 0u) {
@@ -389,7 +501,10 @@ fn fs_main(in : VSOut) -> @location(0) vec4f {
   color += shadeLight(nrm, viewDir, albedo, roughness, specular, part.sssColor.rgb,
                       sssIntensity, curvature, thickness, specOcclusion,
                       RIM_DIR, RIM_COL, RIM_INT);
-  color += albedo * (AMBIENT * cavity);
+  // Environment probe replaces the legacy constant ambient (AMBIENT is kept as
+  // the documented fallback value for the 'basic' shading model).
+  color += iblAmbient(nrm, viewDir, albedo, max(roughness, MIN_ROUGHNESS),
+                      mix(0.028, 0.088, clamp(specular, 0.0, 1.0)), cavity, specOcclusion);
 
   // Corneal dome: refracted iris behind, Fresnel-blended with the dome reflection.
   if ((flags & FLAG_REFRACTIVE) != 0u) {

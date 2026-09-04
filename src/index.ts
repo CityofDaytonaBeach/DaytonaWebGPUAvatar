@@ -365,6 +365,43 @@ export {
 } from './render/photoreal/photoreal-material.js';
 export type { PhotorealPartMaterial } from './render/photoreal/photoreal-material.js';
 
+// Image-based lighting: the analytic studio probe that replaces constant ambient.
+export {
+  STUDIO_ENVIRONMENT,
+  STUDIO_IRRADIANCE_SH,
+  environmentBRDF,
+  fibonacciSphere,
+  iblAmbient,
+  prefilteredEnvironment,
+  projectEnvironmentToSH,
+  reflectDirection,
+  sh9Basis,
+  shIrradiance,
+  studioEnvironment,
+} from './render/photoreal/ibl.js';
+export type { IblSurface, SH9 } from './render/photoreal/ibl.js';
+
+// Per-vertex curvature + tissue thickness bake (drives SSS and transmission).
+export {
+  bakeCurvature,
+  bakeCurvatureThickness,
+  bakeThickness,
+  buildOneRing,
+} from './render/photoreal/curvature-bake.js';
+export type { CurvatureThicknessBake } from './render/photoreal/curvature-bake.js';
+
+// Screen-space subsurface scattering (separable, depth-aware).
+export {
+  SSS_BLUR_WGSL,
+  SSS_FALLOFF,
+  depthRejection,
+  diffusionProfile,
+  sssBlurPass,
+  sssKernel,
+  sssStepUV,
+} from './render/photoreal/sss-blur.js';
+export type { SssSample, SssTap } from './render/photoreal/sss-blur.js';
+
 // Animation
 export {
   SkeletalAnimation,

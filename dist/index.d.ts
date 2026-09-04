@@ -103,6 +103,12 @@ export { enamelFactor, irisParallaxOffset, limbalRing, pupilRadius, shadeEnamel,
 export type { IrisSample } from './render/photoreal/eye-shading.js';
 export { buildPhotorealMaterials, irisColorPreset, partMaterial, resolveIrisColor, } from './render/photoreal/photoreal-material.js';
 export type { PhotorealPartMaterial } from './render/photoreal/photoreal-material.js';
+export { STUDIO_ENVIRONMENT, STUDIO_IRRADIANCE_SH, environmentBRDF, fibonacciSphere, iblAmbient, prefilteredEnvironment, projectEnvironmentToSH, reflectDirection, sh9Basis, shIrradiance, studioEnvironment, } from './render/photoreal/ibl.js';
+export type { IblSurface, SH9 } from './render/photoreal/ibl.js';
+export { bakeCurvature, bakeCurvatureThickness, bakeThickness, buildOneRing, } from './render/photoreal/curvature-bake.js';
+export type { CurvatureThicknessBake } from './render/photoreal/curvature-bake.js';
+export { SSS_BLUR_WGSL, SSS_FALLOFF, depthRejection, diffusionProfile, sssBlurPass, sssKernel, sssStepUV, } from './render/photoreal/sss-blur.js';
+export type { SssSample, SssTap } from './render/photoreal/sss-blur.js';
 export { SkeletalAnimation, sampleChannel, quatFromEulerDeg as quatFromEuler, } from './animation/skeleton/skeletal-animation.js';
 export type { BonePose, AnimationChannel } from './animation/skeleton/skeletal-animation.js';
 export { MotionCompiler, compileMotionCommand, solveIK2Bone, solveLookAt, compileLookAt, compileIKArm, compileIKLeg, compileWalk, blendMotions, transitionTo, retargetPoses, validateMotion, } from './animation/motion/motion-compiler.js';

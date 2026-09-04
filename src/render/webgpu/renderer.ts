@@ -264,6 +264,12 @@ export class WebGPURenderer {
   private normalBuffer!: GPUBuffer;
   private uvBuffer!: GPUBuffer;
   private tangentBuffer!: GPUBuffer;
+  /** Optional baked [curvature, thickness] per vertex (photoreal shading only). */
+  private curvatureThicknessBuffer?: GPUBuffer;
+  /** Zero-filled stand-in so the attribute is always bound; zero = "not baked". */
+  private curvatureThicknessFallback?: GPUBuffer;
+  /** True when the bound shader declares the location-4 bake attribute. */
+  private readonly usesCurvatureThickness: boolean;
   private parts: RenderPart[] = [];
   /** Per-part bind groups (params + camera + part color). */
   private partBindGroups: GPUBindGroup[] = [];
@@ -279,6 +285,9 @@ export class WebGPURenderer {
      */
     private readonly shaderCode: string = HUMAN_RENDER_WGSL,
   ) {
+    // The photoreal module reads baked curvature/thickness at location 4; the
+    // basic module does not, so the extra vertex buffer is added only for it.
+    this.usesCurvatureThickness = shaderCode.includes('curvatureThickness');
     this.init(format);
   }
 
@@ -324,6 +333,16 @@ export class WebGPURenderer {
             arrayStride: 2 * 4,
             attributes: [{ shaderLocation: 3, offset: 0, format: 'float32x2' }],
           },
+          ...(this.usesCurvatureThickness
+            ? [
+                {
+                  arrayStride: 2 * 4,
+                  attributes: [
+                    { shaderLocation: 4, offset: 0, format: 'float32x2' as GPUVertexFormat },
+                  ],
+                } satisfies GPUVertexBufferLayout,
+              ]
+            : []),
         ],
       },
       fragment: {
@@ -398,6 +417,28 @@ export class WebGPURenderer {
     this.tangentBuffer = tangentBuffer;
   }
 
+  /**
+   * Attach the shared per-vertex baked [curvature, thickness] buffer (stride 2
+   * floats), produced by `bakeCurvatureThickness()`. Ignored by the basic
+   * shading model; when absent the photoreal shader falls back to its head-wide
+   * constants.
+   */
+  setSharedCurvatureThickness(buffer: GPUBuffer): void {
+    this.curvatureThicknessBuffer = buffer;
+  }
+
+  /** Lazily created zero buffer used when no bake has been attached. */
+  private curvatureThicknessOrFallback(vertexCount: number): GPUBuffer {
+    if (this.curvatureThicknessBuffer) return this.curvatureThicknessBuffer;
+    if (!this.curvatureThicknessFallback) {
+      this.curvatureThicknessFallback = this.device.createBuffer({
+        size: Math.max(vertexCount, 1) * 2 * 4,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      });
+    }
+    return this.curvatureThicknessFallback;
+  }
+
   uploadCamera(width: number, height: number): void {
     const { mvp, normalMat } = buildCameraMatrices(width, height);
     const data = new Float32Array(28);
@@ -434,6 +475,10 @@ export class WebGPURenderer {
     pass.setVertexBuffer(1, normalsBuffer ?? this.normalBuffer);
     pass.setVertexBuffer(2, this.uvBuffer);
     pass.setVertexBuffer(3, this.tangentBuffer);
+    if (this.usesCurvatureThickness) {
+      const vertexCount = deformedBuffer.size / (3 * 4);
+      pass.setVertexBuffer(4, this.curvatureThicknessOrFallback(vertexCount));
+    }
     for (let i = 0; i < this.parts.length; i++) {
       const p = this.parts[i];
       pass.setBindGroup(0, this.partBindGroups[i]);

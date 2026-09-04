@@ -224,6 +224,12 @@ export class WebGPURenderer {
     normalBuffer;
     uvBuffer;
     tangentBuffer;
+    /** Optional baked [curvature, thickness] per vertex (photoreal shading only). */
+    curvatureThicknessBuffer;
+    /** Zero-filled stand-in so the attribute is always bound; zero = "not baked". */
+    curvatureThicknessFallback;
+    /** True when the bound shader declares the location-4 bake attribute. */
+    usesCurvatureThickness;
     parts = [];
     /** Per-part bind groups (params + camera + part color). */
     partBindGroups = [];
@@ -237,6 +243,9 @@ export class WebGPURenderer {
     shaderCode = HUMAN_RENDER_WGSL) {
         this.device = device;
         this.shaderCode = shaderCode;
+        // The photoreal module reads baked curvature/thickness at location 4; the
+        // basic module does not, so the extra vertex buffer is added only for it.
+        this.usesCurvatureThickness = shaderCode.includes('curvatureThickness');
         this.init(format);
     }
     init(format) {
@@ -281,6 +290,16 @@ export class WebGPURenderer {
                         arrayStride: 2 * 4,
                         attributes: [{ shaderLocation: 3, offset: 0, format: 'float32x2' }],
                     },
+                    ...(this.usesCurvatureThickness
+                        ? [
+                            {
+                                arrayStride: 2 * 4,
+                                attributes: [
+                                    { shaderLocation: 4, offset: 0, format: 'float32x2' },
+                                ],
+                            },
+                        ]
+                        : []),
                 ],
             },
             fragment: {
@@ -353,6 +372,27 @@ export class WebGPURenderer {
     setSharedTangentPerturb(tangentBuffer) {
         this.tangentBuffer = tangentBuffer;
     }
+    /**
+     * Attach the shared per-vertex baked [curvature, thickness] buffer (stride 2
+     * floats), produced by `bakeCurvatureThickness()`. Ignored by the basic
+     * shading model; when absent the photoreal shader falls back to its head-wide
+     * constants.
+     */
+    setSharedCurvatureThickness(buffer) {
+        this.curvatureThicknessBuffer = buffer;
+    }
+    /** Lazily created zero buffer used when no bake has been attached. */
+    curvatureThicknessOrFallback(vertexCount) {
+        if (this.curvatureThicknessBuffer)
+            return this.curvatureThicknessBuffer;
+        if (!this.curvatureThicknessFallback) {
+            this.curvatureThicknessFallback = this.device.createBuffer({
+                size: Math.max(vertexCount, 1) * 2 * 4,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            });
+        }
+        return this.curvatureThicknessFallback;
+    }
     uploadCamera(width, height) {
         const { mvp, normalMat } = buildCameraMatrices(width, height);
         const data = new Float32Array(28);
@@ -381,6 +421,10 @@ export class WebGPURenderer {
         pass.setVertexBuffer(1, normalsBuffer ?? this.normalBuffer);
         pass.setVertexBuffer(2, this.uvBuffer);
         pass.setVertexBuffer(3, this.tangentBuffer);
+        if (this.usesCurvatureThickness) {
+            const vertexCount = deformedBuffer.size / (3 * 4);
+            pass.setVertexBuffer(4, this.curvatureThicknessOrFallback(vertexCount));
+        }
         for (let i = 0; i < this.parts.length; i++) {
             const p = this.parts[i];
             pass.setBindGroup(0, this.partBindGroups[i]);

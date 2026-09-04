@@ -99,7 +99,19 @@ The pipeline now also takes the **runtime `HumanDefinition`** (`definition` opti
 
 Coverage: 43 new tests (`photoreal-shading.test.ts`, `photoreal-material.test.ts`) — energy conservation over swept roughness/specular/normals, Fresnel/GGX/Smith limits, scatter reducing exactly to Lambert at zero intensity, curvature narrowing the scatter, transmission falling off with thickness, micro-detail slope bounds and age/oil statistics, iris parallax zero head-on and non-zero when turned, monotonic limbal ring, pupil response direction, enamel edge/arch behaviour, and the WGSL parity gates. Suite total **493 tests / 57 files**, typecheck / lint / `format:check` / `build` / `build:demo` all clean.
 
-**Deliberate scope cuts (documented):** the ambient term is a constant irradiance stand-in, not an IBL probe (no environment texture pipeline yet); skin curvature/thickness are fixed per material class in the shader rather than baked per-vertex; and screen-space separable SSS blur is not implemented — the pre-integrated approach was chosen precisely because it needs no extra render target. Those three are the next photoreal increments, not gaps in this one.
+**Deliberate scope cuts at the time (now closed — see "Just delivered — photoreal lighting increments" below):** constant ambient instead of an IBL probe, fixed per-material curvature/thickness instead of a per-vertex bake, and no screen-space SSS blur.
+
+## Just delivered — photoreal lighting increments (IBL + curvature/thickness bake + screen-space SSS)
+
+All three documented photoreal scope cuts are closed, without introducing an environment-texture pipeline or an async asset dependency.
+
+- **`src/render/photoreal/ibl.ts`** — the constant ambient term is replaced by an **analytic studio probe** (sky gradient, warm floor bounce, soft key + cool fill panels) that is a pure function of direction, so the CPU and the shader evaluate the same environment. Diffuse ambient is that environment projected onto **9 RGB spherical-harmonic coefficients** (Ramamoorthi/Hanrahan cosine convolution), baked once at module load over a deterministic Fibonacci sphere and interpolated into the generated WGSL — the GPU cannot drift from the tested numbers. Specular ambient uses the **split-sum** approximation: an analytic prefiltered probe (mirror sample blurred toward the SH irradiance as roughness rises, exact at roughness 0) times Karis' analytic environment BRDF, clamped non-negative. Ambient is now direction- and albedo-dependent, which is the second-biggest "CG" tell after single-lobe specular.
+- **`src/render/photoreal/curvature-bake.ts`** — replaces the head-wide `SKIN_CURVATURE` / `SKIN_THICKNESS` constants with a per-vertex bake from the canonical topology: **mean curvature from normal divergence** over the one-ring, and **tissue thickness** by marching inward along `-normal` to the nearest opposing (back-facing) sample through a uniform spatial hash (so cost is linear in vertex count). Results are clamped to shared ranges and interleaved as one `vec2` attribute. Pre-integrated SSS and transmission now vary per surface region: a nostril rim, a lid and a cheek no longer scatter identically.
+- **`src/render/photoreal/sss-blur.ts`** — separable, depth-aware **screen-space SSS** following Jimenez: per-channel Gaussian-sum kernel (red diffuses furthest), non-linear tap placement, step size scaled by `1/depth` so the kernel covers a **constant world width**, and depth/mask rejection so light cannot bleed across a silhouette or off skin. Kernel generation, energy conservation and rejection are unit-tested on the CPU; the same kernel is interpolated into the generated two-pass WGSL.
+- **Pipeline / renderer wiring** — `WebGpuHumanPipeline` bakes and uploads curvature/thickness once (`bakeCurvatureThickness` option, default on under `'photoreal'`); `WebGPURenderer` adds the location-4 vertex buffer **only** when the bound shader declares it, so the `'basic'` module's pipeline layout is untouched. A zeroed attribute means "not baked" and the shader falls back to the previous constants, so the buffer is genuinely optional.
+- **Coverage:** 51 new tests (`ibl.test.ts`, `curvature-bake.test.ts`, `sss-blur.test.ts`) — SH basis orthonormality under the quadrature, constant-environment irradiance identity, probe determinism, split-sum bounds and roughness behaviour, ambient direction dependence, flat-quad zero curvature vs sphere-radius ordering, thin-gap thickness recovery, kernel symmetry/energy/tail ordering, world-constant step scaling, silhouette and mask rejection, and WGSL parity gates asserting the shader uses the probe rather than the old ambient line. Suite total **544 tests / 60 files**; typecheck, lint, `format:check` and `build` clean.
+
+**Remaining photoreal work (unchanged in kind):** the screen-space SSS module supplies the generated passes and the tested kernel, but the render graph still draws in a single pass — wiring the extra lit/depth/mask targets is a renderer-graph change, not a shading one. Hair, cloth, clothing geometry, SDF collision, neural skin and photo-to-human remain prototypes/deferred.
 
 ---
 
@@ -122,7 +134,7 @@ Ordered roughly by priority (highest first). Statuses reflect the capability mat
 
 ### 3. Photoreal increments beyond the delivered shading layer
 
-- IBL / environment probe irradiance (replacing the constant ambient), per-vertex baked curvature + thickness maps, and optional screen-space separable SSS. Not blockers — the delivered pre-integrated path is production-shaped and needs no extra render targets.
+- Multi-target render graph so the delivered screen-space SSS passes can run (lit + depth + skin-mask attachments). IBL probe irradiance and the per-vertex curvature/thickness bake are now implemented and wired.
 
 ### 4. Physics / simulation runtime prototypes
 

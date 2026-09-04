@@ -30,6 +30,13 @@ export interface WebGpuHumanPipelineOptions {
      * `refreshMaterials()` after skin parameters change.
      */
     definition?: HumanDefinition;
+    /**
+     * Bake per-vertex curvature + tissue thickness from the canonical mesh and
+     * bind them for photoreal shading (drives pre-integrated SSS and
+     * transmission per surface region instead of head-wide constants). Defaults
+     * to true under `'photoreal'`; set false to skip the one-time bake cost.
+     */
+    bakeCurvatureThickness?: boolean;
 }
 /**
  * Ties the GPU-resident character path together for one Human:
@@ -59,6 +66,8 @@ export declare class WebGpuHumanPipeline {
     private tangentBuffer;
     private readonly skinPreset;
     private renderParts;
+    /** Baked [curvature, thickness] vertex buffer, when the bake ran. */
+    private curvatureThicknessBuffer?;
     readonly morphNames: string[];
     constructor(canonical: CanonicalHuman, morphs: SparseMorphSet, morphDriver: MorphDriver, opts: WebGpuHumanPipelineOptions);
     /**

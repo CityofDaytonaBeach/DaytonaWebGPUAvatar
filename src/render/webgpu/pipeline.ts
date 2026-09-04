@@ -11,6 +11,7 @@ import {
   PackedMorphBuffers,
 } from '../../gpu/morph/gpu-morph-buffers.js';
 import { CanonicalHuman } from '../../geometry/canonical/canonical-human.js';
+import { bakeCurvatureThickness } from '../photoreal/curvature-bake.js';
 import { SparseMorphSet } from '../../geometry/morph/sparse-morph.js';
 import { MorphDriver } from '../../geometry/morph/morph-driver.js';
 import { HumanDefinition } from '../../core/schema/human-definition.js';
@@ -46,6 +47,13 @@ export interface WebGpuHumanPipelineOptions {
    * `refreshMaterials()` after skin parameters change.
    */
   definition?: HumanDefinition;
+  /**
+   * Bake per-vertex curvature + tissue thickness from the canonical mesh and
+   * bind them for photoreal shading (drives pre-integrated SSS and
+   * transmission per surface region instead of head-wide constants). Defaults
+   * to true under `'photoreal'`; set false to skip the one-time bake cost.
+   */
+  bakeCurvatureThickness?: boolean;
 }
 
 /**
@@ -73,6 +81,8 @@ export class WebGpuHumanPipeline {
   private tangentBuffer!: GPUBuffer;
   private readonly skinPreset: SkinPreset;
   private renderParts: RenderPart[] = [];
+  /** Baked [curvature, thickness] vertex buffer, when the bake ran. */
+  private curvatureThicknessBuffer?: GPUBuffer;
   readonly morphNames: string[];
 
   constructor(
@@ -143,6 +153,21 @@ export class WebGpuHumanPipeline {
     }
     opts.device.queue.writeBuffer(this.tangentBuffer, 0, tangentData as unknown as ArrayBuffer);
     this.renderer.setSharedTangentPerturb(this.tangentBuffer);
+
+    // One-time curvature/thickness bake for the photoreal probe-lit skin model.
+    if (shading === 'photoreal' && (opts.bakeCurvatureThickness ?? true)) {
+      const bake = bakeCurvatureThickness(canonical);
+      this.curvatureThicknessBuffer = opts.device.createBuffer({
+        size: bake.packed.byteLength,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      });
+      opts.device.queue.writeBuffer(
+        this.curvatureThicknessBuffer,
+        0,
+        bake.packed as unknown as ArrayBuffer,
+      );
+      this.renderer.setSharedCurvatureThickness(this.curvatureThicknessBuffer);
+    }
   }
 
   /**

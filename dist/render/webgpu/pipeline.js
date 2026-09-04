@@ -5,6 +5,7 @@ import { SkinningKernel } from '../../gpu/kernels/skinning-kernel.js';
 import { buildInfluences } from '../../gpu/kernels/skin-mesh.js';
 import { combinedSkinMatrices } from '../../anatomy/skeleton/bone-matrix.js';
 import { packSparseMorphs, setMorphWeights, } from '../../gpu/morph/gpu-morph-buffers.js';
+import { bakeCurvatureThickness } from '../photoreal/curvature-bake.js';
 import { HumanDefinition } from '../../core/schema/human-definition.js';
 import { exportSkinMaterial, SkinPreset } from '../../surface/skin/neural-skin.js';
 import { createDefaultRegistry } from '../../core/schema/descriptors.js';
@@ -40,6 +41,8 @@ export class WebGpuHumanPipeline {
     tangentBuffer;
     skinPreset;
     renderParts = [];
+    /** Baked [curvature, thickness] vertex buffer, when the bake ran. */
+    curvatureThicknessBuffer;
     morphNames;
     constructor(canonical, morphs, morphDriver, opts) {
         this.canonical = canonical;
@@ -80,6 +83,16 @@ export class WebGpuHumanPipeline {
         }
         opts.device.queue.writeBuffer(this.tangentBuffer, 0, tangentData);
         this.renderer.setSharedTangentPerturb(this.tangentBuffer);
+        // One-time curvature/thickness bake for the photoreal probe-lit skin model.
+        if (shading === 'photoreal' && (opts.bakeCurvatureThickness ?? true)) {
+            const bake = bakeCurvatureThickness(canonical);
+            this.curvatureThicknessBuffer = opts.device.createBuffer({
+                size: bake.packed.byteLength,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            });
+            opts.device.queue.writeBuffer(this.curvatureThicknessBuffer, 0, bake.packed);
+            this.renderer.setSharedCurvatureThickness(this.curvatureThicknessBuffer);
+        }
     }
     /**
      * Re-derive photoreal per-part materials from `definition` and re-bind them.

@@ -66,6 +66,9 @@ export declare const CAPABILITY_MATRIX: {
     readonly photorealSkinShading: "IMPLEMENTED";
     readonly photorealEyeShading: "IMPLEMENTED";
     readonly photorealMaterials: "IMPLEMENTED";
+    readonly imageBasedLighting: "IMPLEMENTED";
+    readonly curvatureThicknessBake: "IMPLEMENTED";
+    readonly screenSpaceSss: "IMPLEMENTED";
     readonly strandHair: "PROTOTYPE";
     readonly clothPhysics: "PROTOTYPE";
     readonly sdfCollision: "PROTOTYPE";

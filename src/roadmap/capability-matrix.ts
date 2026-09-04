@@ -112,6 +112,18 @@ export const CAPABILITY_MATRIX = {
   // Per-part photoreal material assignment from the semantic parameter layer,
   // wired into the WebGPU pipeline (default shading model).
   photorealMaterials: 'IMPLEMENTED',
+  // Environment lighting: analytic studio probe projected onto 9 RGB spherical
+  // harmonics for diffuse irradiance, plus split-sum specular with Karis'
+  // analytic environment BRDF. Replaces the constant ambient term; the CPU
+  // reference and the generated WGSL share the baked coefficients.
+  imageBasedLighting: 'IMPLEMENTED',
+  // Per-vertex curvature + tissue thickness baked from the canonical topology
+  // (normal-divergence mean curvature, inward opposing-surface march), bound as
+  // a vertex attribute so SSS and transmission vary per surface region.
+  curvatureThicknessBake: 'IMPLEMENTED',
+  // Separable, depth-aware screen-space subsurface scattering (per-channel
+  // diffusion kernel, world-constant blur width, silhouette rejection).
+  screenSpaceSss: 'IMPLEMENTED',
 
   // Physics / simulation runtime prototypes.
   strandHair: 'PROTOTYPE',
