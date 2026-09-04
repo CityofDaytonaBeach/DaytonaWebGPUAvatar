@@ -1,3 +1,4 @@
+import { HEAD_ELLIPSOID, HEAD_NECK_Y, JAW_DRIVEN_REGIONS, headRegionFor, headSkinWeights, } from './hd-head-regions.js';
 // ---------------------------------------------------------------------------
 // Capsule SDF authoring (canonical frame: x right, y up, z front, feet ~0).
 // ---------------------------------------------------------------------------
@@ -64,21 +65,74 @@ function sdCapsule(pt, c) {
     const qz = pt.z - (c.a.z + baz * t);
     return Math.hypot(qx, qy, qz) - c.radius;
 }
-/** Signed distance to the whole body: min over capsules. */
-function sdBody(pt, capsules) {
+/**
+ * Head terms of the union: the cranium/face ellipsoid (same extents as the
+ * layered head shell) plus a neck column that overlaps both the chest capsule
+ * and the cranium, so the min-union produces a continuous neck with no seam.
+ */
+function headPrimitives(neckY) {
+    const dy = neckY - HEAD_NECK_Y; // shift the authored head with the neck base
+    const e = HEAD_ELLIPSOID;
+    return {
+        capsules: [
+            {
+                a: p(0, neckY - 0.08, 0.05),
+                b: p(0, neckY + 0.09, 0.13),
+                radius: 0.055,
+                bone: 'neck',
+            },
+        ],
+        ellipsoids: [
+            {
+                c: p(e.center.x, e.center.y + dy, e.center.z),
+                r: p(e.radii.x, e.radii.y, e.radii.z),
+                bone: 'head',
+            },
+        ],
+    };
+}
+/**
+ * Ellipsoid signed distance (standard scaled-space approximation). Exact at the
+ * surface up to the anisotropy of the radii, which is all the isosurface
+ * extraction needs at iso = 0.
+ */
+function sdEllipsoid(pt, e) {
+    const kx = (pt.x - e.c.x) / e.r.x;
+    const ky = (pt.y - e.c.y) / e.r.y;
+    const kz = (pt.z - e.c.z) / e.r.z;
+    const k = Math.hypot(kx, ky, kz);
+    return (k - 1) * Math.min(e.r.x, e.r.y, e.r.z);
+}
+/** Signed distance to the whole body: min over every union term. */
+function sdBody(pt, field) {
     let best = Infinity;
     let bone = '';
-    for (const c of capsules) {
+    for (const c of field.capsules) {
         const d = sdCapsule(pt, c);
         if (d < best) {
             best = d;
             bone = c.bone;
         }
     }
+    for (const e of field.ellipsoids) {
+        const d = sdEllipsoid(pt, e);
+        if (d < best) {
+            best = d;
+            bone = e.bone;
+        }
+    }
     return { d: best, bone };
 }
-/** Region for a surface vertex given its owning bone and position. */
-function regionFor(bone, qx, qy, qz) {
+/**
+ * Region for a surface vertex given its owning bone and position.
+ *
+ * `neckY` is the fused-head neck base: above it, a vertex owned by the head or
+ * neck term belongs to the head vocabulary and is classified by the shared head
+ * classifier, so a fused vertex lands where the layered shell would have put it.
+ */
+function regionFor(bone, qx, qy, qz, neckY = HEAD_NECK_Y) {
+    if (bone === 'head')
+        return headRegionFor(qy - (neckY - HEAD_NECK_Y), qx, qz);
     switch (bone) {
         case 'spine_01':
             if (qy > 1.1 && qz < 0)
@@ -89,7 +143,12 @@ function regionFor(bone, qx, qy, qz) {
                 return qz < 0 ? 'back' : 'chest';
             return qz < -0.02 && qy > 1.1 ? 'back' : 'chest';
         case 'chest':
+            return qz < 0 && qy > 1.15 ? 'back' : 'chest';
         case 'neck':
+            // Fused path: the neck column reaches above the collar, where it is head
+            // anatomy (jaw/chin/neck skin) rather than upper chest.
+            if (qy > neckY - 0.06)
+                return headRegionFor(qy - (neckY - HEAD_NECK_Y), qx, qz);
             return qz < 0 && qy > 1.15 ? 'back' : 'chest';
         case 'clavicle_l':
             return 'shoulder_left';
@@ -529,13 +588,22 @@ function weld(verts, indices, tol) {
 /** Build the body: see module doc. */
 export function buildHdBodyManifold(opts = {}) {
     const neckY = opts.neckY ?? 1.65;
-    const ySteps = opts.ySteps ?? 96;
-    const capsules = buildCapsules(neckY);
-    const bones = bonePoints(capsules);
-    // Field bounds: gather from capsule extents with margin.
+    const fuseHead = opts.fuseHead ?? false;
+    // A fused canonical carries the face on the same grid, so it needs a finer
+    // cell than the body-only surface to resolve head anatomy.
+    const ySteps = opts.ySteps ?? (fuseHead ? 128 : 96);
+    const head = fuseHead ? headPrimitives(neckY) : { capsules: [], ellipsoids: [] };
+    const field = {
+        capsules: [...buildCapsules(neckY), ...head.capsules],
+        ellipsoids: head.ellipsoids,
+    };
+    const bones = bonePoints(field.capsules);
+    for (const el of field.ellipsoids)
+        bones.push({ bone: el.bone, pt: { ...el.c } });
+    // Field bounds: gather from every union term with margin.
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-    for (const c of capsules) {
+    for (const c of field.capsules) {
         for (const q of [c.a, c.b]) {
             minX = Math.min(minX, q.x - c.radius);
             minY = Math.min(minY, q.y - c.radius);
@@ -544,6 +612,14 @@ export function buildHdBodyManifold(opts = {}) {
             maxY = Math.max(maxY, q.y + c.radius);
             maxZ = Math.max(maxZ, q.z + c.radius);
         }
+    }
+    for (const el of field.ellipsoids) {
+        minX = Math.min(minX, el.c.x - el.r.x);
+        minY = Math.min(minY, el.c.y - el.r.y);
+        minZ = Math.min(minZ, el.c.z - el.r.z);
+        maxX = Math.max(maxX, el.c.x + el.r.x);
+        maxY = Math.max(maxY, el.c.y + el.r.y);
+        maxZ = Math.max(maxZ, el.c.z + el.r.z);
     }
     const pad = 0.02;
     minX -= pad;
@@ -562,7 +638,7 @@ export function buildHdBodyManifold(opts = {}) {
         z: minZ + iz * cellSize,
     });
     const f = (ix, iy, iz) => {
-        return sdBody(posAt(ix, iy, iz), capsules);
+        return sdBody(posAt(ix, iy, iz), field);
     };
     const iso = 0;
     const raw = marchGrid(nx, ny, nz, iso, f, posAt);
@@ -573,12 +649,12 @@ export function buildHdBodyManifold(opts = {}) {
         const pos = cv.pos;
         // central difference normal of the signed distance field (points outward:
         // d decreases toward the interior, so the gradient points outward).
-        const gx = sdBody({ x: pos.x + e, y: pos.y, z: pos.z }, capsules).d -
-            sdBody({ x: pos.x - e, y: pos.y, z: pos.z }, capsules).d;
-        const gy = sdBody({ x: pos.x, y: pos.y + e, z: pos.z }, capsules).d -
-            sdBody({ x: pos.x, y: pos.y - e, z: pos.z }, capsules).d;
-        const gz = sdBody({ x: pos.x, y: pos.y, z: pos.z + e }, capsules).d -
-            sdBody({ x: pos.x, y: pos.y, z: pos.z - e }, capsules).d;
+        const gx = sdBody({ x: pos.x + e, y: pos.y, z: pos.z }, field).d -
+            sdBody({ x: pos.x - e, y: pos.y, z: pos.z }, field).d;
+        const gy = sdBody({ x: pos.x, y: pos.y + e, z: pos.z }, field).d -
+            sdBody({ x: pos.x, y: pos.y - e, z: pos.z }, field).d;
+        const gz = sdBody({ x: pos.x, y: pos.y, z: pos.z + e }, field).d -
+            sdBody({ x: pos.x, y: pos.y, z: pos.z - e }, field).d;
         const gl = Math.hypot(gx, gy, gz) || 1e-12;
         const normal = { x: gx / gl, y: gy / gl, z: gz / gl };
         // inverse-distance skin weights to nearest bones.
@@ -604,7 +680,14 @@ export function buildHdBodyManifold(opts = {}) {
         if (wsum > 1e-12)
             for (const k of Object.keys(weights))
                 weights[k] /= wsum;
-        const region = regionFor(cv.bone, pos.x, pos.y, pos.z);
+        const region = regionFor(cv.bone, pos.x, pos.y, pos.z, neckY);
+        // Lower-face skin keeps the authored head↔jaw split so jaw rotation still
+        // deforms lips/chin on the fused surface exactly as on the shell.
+        const finalWeights = JAW_DRIVEN_REGIONS.includes(region)
+            ? headSkinWeights(region)
+            : region === 'neck'
+                ? { neck: 1.0 }
+                : weights;
         return {
             id: -1,
             position: pos,
@@ -614,7 +697,7 @@ export function buildHdBodyManifold(opts = {}) {
                 v: Math.max(0, Math.min(1, pos.y / 1.8)),
             },
             region,
-            weights,
+            weights: finalWeights,
         };
     });
     // Stable ids (assigned globally by the provider after concatenation, but set

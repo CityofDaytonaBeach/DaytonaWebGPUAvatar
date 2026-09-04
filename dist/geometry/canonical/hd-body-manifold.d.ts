@@ -30,6 +30,13 @@ export interface HdBodyManifoldOptions {
     neckY?: number;
     /** Grid resolution along the longest (y) axis. Higher = smoother / more tris. */
     ySteps?: number;
+    /**
+     * Include the head as a term of the implicit union, so the extracted surface
+     * is ONE watertight manifold from crown to feet with no body/head seam cut.
+     * The eye/teeth/tongue/cavity parts stay separate — they are distinct
+     * anatomy inside the skin, not a seam in it.
+     */
+    fuseHead?: boolean;
 }
 export interface BodyManifold {
     vertices: CanonicalTopologyVertex[];

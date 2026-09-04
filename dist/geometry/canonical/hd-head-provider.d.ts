@@ -5,6 +5,14 @@ export interface HdHeadOptions {
     neckBone?: string;
     rings?: number;
     segments?: number;
+    /**
+     * Fuse the head into the body's implicit surface so the canonical skin is ONE
+     * watertight manifold (default). `false` restores the historical layered
+     * head-shell-over-body build.
+     */
+    fuseHead?: boolean;
+    /** Grid resolution of the fused surface along y. */
+    ySteps?: number;
 }
 /**
  * Procedural DAYTONA HD HUMAN V0.1 provider.
@@ -17,6 +25,10 @@ export interface HdHeadOptions {
  * ~45 surface-relative landmarks and skeleton skin weights — all exposed
  * through the CanonicalHumanProvider seam so the Human runtime consumes it
  * exactly like the block human.
+ *
+ * By default the head is FUSED into the body surface (`fuseHead`), so the skin
+ * is one watertight manifold from crown to feet with no body/head seam cut;
+ * `fuseHead: false` restores the layered head-shell build unchanged.
  */
 export declare class HDCanonicalHumanProvider implements CanonicalHumanProvider {
     readonly version = "DaytonaCanonicalHuman v0.1";
@@ -24,6 +36,8 @@ export declare class HDCanonicalHumanProvider implements CanonicalHumanProvider 
     private readonly neckBone;
     private readonly rings;
     private readonly segments;
+    private readonly fuseHead;
+    private readonly ySteps;
     constructor(opts?: HdHeadOptions);
     load(): Promise<CanonicalHumanAsset>;
     validate(): CanonicalValidationResult;
@@ -33,8 +47,8 @@ export declare class HDCanonicalHumanProvider implements CanonicalHumanProvider 
     private buildSkin;
     /**
      * For any required HD head region the sampling missed, force the vertex
-     * nearest to a sensible anatomical anchor into that region. Guarantees the
-     * semantic vocabulary is non-empty without depending on mesh density.
+     * nearest to a sensible anatomical anchor into that region. Delegates to the
+     * shared head contract so the fused surface behaves identically.
      */
     private ensureRequiredRegions;
     private skinWeights;

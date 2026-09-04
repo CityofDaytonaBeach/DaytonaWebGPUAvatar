@@ -254,6 +254,19 @@ export type {
 } from './geometry/canonical/canonical-provider.js';
 export { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
 export type { HdHeadOptions } from './geometry/canonical/hd-head-provider.js';
+export { buildHdBodyManifold } from './geometry/canonical/hd-body-manifold.js';
+export type { HdBodyManifoldOptions } from './geometry/canonical/hd-body-manifold.js';
+export {
+  HEAD_TOP_Y,
+  HEAD_NECK_Y,
+  HEAD_CENTER_Z,
+  HEAD_ELLIPSOID,
+  JAW_DRIVEN_REGIONS,
+  headRegionFor,
+  headSkinWeights,
+  ensureHeadRegions,
+} from './geometry/canonical/hd-head-regions.js';
+
 export {
   HD_HEAD_REGIONS,
   HD_HEAD_PART_REGIONS,

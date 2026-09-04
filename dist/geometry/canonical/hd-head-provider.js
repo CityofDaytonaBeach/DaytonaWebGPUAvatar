@@ -1,34 +1,7 @@
 import { REQUIRED_HD_HEAD_REGIONS, REQUIRED_HD_BODY_REGIONS } from './regions.js';
 import { validateCanonicalTopology } from './canonical-validator.js';
 import { buildHdBodyManifold } from './hd-body-manifold.js';
-/** Anatomical anchor points used to guarantee required-region coverage. */
-const REGION_ANCHORS = {
-    forehead: { x: 0, y: 1.99, z: 0.26 },
-    temple_left: { x: -0.09, y: 1.9, z: 0.17 },
-    temple_right: { x: 0.09, y: 1.9, z: 0.17 },
-    eye_left: { x: -0.06, y: 1.9, z: 0.28 },
-    eye_right: { x: 0.06, y: 1.9, z: 0.28 },
-    upper_eyelid_left: { x: -0.06, y: 1.912, z: 0.27 },
-    upper_eyelid_right: { x: 0.06, y: 1.912, z: 0.27 },
-    lower_eyelid_left: { x: -0.06, y: 1.89, z: 0.26 },
-    lower_eyelid_right: { x: 0.06, y: 1.89, z: 0.26 },
-    nose_bridge: { x: 0, y: 1.87, z: 0.27 },
-    nose_tip: { x: 0, y: 1.78, z: 0.3 },
-    nose_alar_left: { x: -0.03, y: 1.77, z: 0.26 },
-    nose_alar_right: { x: 0.03, y: 1.77, z: 0.26 },
-    cheek_left: { x: -0.08, y: 1.82, z: 0.22 },
-    cheek_right: { x: 0.08, y: 1.82, z: 0.22 },
-    upper_lip: { x: 0, y: 1.735, z: 0.26 },
-    lower_lip: { x: 0, y: 1.715, z: 0.25 },
-    mouth_corner_left: { x: -0.03, y: 1.74, z: 0.24 },
-    mouth_corner_right: { x: 0.03, y: 1.74, z: 0.24 },
-    jaw_left: { x: -0.08, y: 1.72, z: 0.18 },
-    jaw_right: { x: 0.08, y: 1.72, z: 0.18 },
-    chin: { x: 0, y: 1.7, z: 0.24 },
-    ear_left: { x: -0.11, y: 1.9, z: 0.16 },
-    ear_right: { x: 0.11, y: 1.9, z: 0.16 },
-    neck: { x: 0, y: 1.68, z: 0.18 },
-};
+import { ensureHeadRegions, headRegionFor, headSkinWeights } from './hd-head-regions.js';
 /**
  * Procedural DAYTONA HD HUMAN V0.1 provider.
  *
@@ -40,6 +13,10 @@ const REGION_ANCHORS = {
  * ~45 surface-relative landmarks and skeleton skin weights — all exposed
  * through the CanonicalHumanProvider seam so the Human runtime consumes it
  * exactly like the block human.
+ *
+ * By default the head is FUSED into the body surface (`fuseHead`), so the skin
+ * is one watertight manifold from crown to feet with no body/head seam cut;
+ * `fuseHead: false` restores the layered head-shell build unchanged.
  */
 export class HDCanonicalHumanProvider {
     version = 'DaytonaCanonicalHuman v0.1';
@@ -47,11 +24,15 @@ export class HDCanonicalHumanProvider {
     neckBone;
     rings;
     segments;
+    fuseHead;
+    ySteps;
     constructor(opts = {}) {
         this.headBone = opts.headBone ?? 'head';
         this.neckBone = opts.neckBone ?? 'neck';
         this.rings = opts.rings ?? 18;
         this.segments = opts.segments ?? 20;
+        this.fuseHead = opts.fuseHead ?? true;
+        this.ySteps = opts.ySteps;
     }
     async load() {
         const geometry = this.buildGeometry();
@@ -96,16 +77,26 @@ export class HDCanonicalHumanProvider {
     }
     // ------------------------------------------------------------------ mesh
     buildGeometry() {
-        // HD BODY V0.2: clean-manifold parametric body FIRST so it renders as the
-        // base body, then the HD head skin, then the detail parts (eyes/teeth/...).
-        const body = buildHdBodyManifold({ neckY: 1.68 });
-        const skin = this.buildSkin();
+        // HD BODY V0.3: the skin comes FIRST as one manifold. Fused (default) it
+        // already contains the head, so there is no separate head shell to layer;
+        // unfused it is body-only and the head shell follows. Detail parts
+        // (eyes/teeth/tongue/cavity) are appended last either way.
+        const body = buildHdBodyManifold({
+            neckY: 1.68,
+            fuseHead: this.fuseHead,
+            ...(this.ySteps === undefined ? {} : { ySteps: this.ySteps }),
+        });
+        const skin = this.fuseHead
+            ? { vertices: [], indices: new Uint32Array(0) }
+            : this.buildSkin();
         const append = this.buildDetailParts();
-        const vertices = [
-            ...body.vertices,
-            ...skin.vertices,
-            ...append.vertices,
-        ];
+        // Either path samples the face on a discrete grid/ring set, so a thin region
+        // band can fall between samples; guarantee the semantic vocabulary against
+        // the SKIN only — detail parts (teeth/eyes/...) own their part region and
+        // must never be reclassified.
+        const skinVertices = [...body.vertices, ...skin.vertices];
+        ensureHeadRegions(skinVertices, REQUIRED_HD_HEAD_REGIONS);
+        const vertices = [...skinVertices, ...append.vertices];
         const indices = Uint32Array.from([...body.indices, ...skin.indices, ...append.indices]);
         // Stable vertex ids must equal the global index (the validator enforces this
         // and every consumer keys off index); re-number after concatenation.
@@ -195,45 +186,14 @@ export class HDCanonicalHumanProvider {
     }
     /**
      * For any required HD head region the sampling missed, force the vertex
-     * nearest to a sensible anatomical anchor into that region. Guarantees the
-     * semantic vocabulary is non-empty without depending on mesh density.
+     * nearest to a sensible anatomical anchor into that region. Delegates to the
+     * shared head contract so the fused surface behaves identically.
      */
-    ensureRequiredRegions(vertices, positions) {
-        const present = new Set(vertices.map((v) => v.region));
-        const missing = REQUIRED_HD_HEAD_REGIONS.filter((r) => !present.has(r));
-        for (const region of missing) {
-            const anchor = REGION_ANCHORS[region];
-            if (!anchor)
-                continue;
-            let best = -1;
-            let bestD = Infinity;
-            for (let i = 0; i < vertices.length; i++) {
-                const p = positions[i];
-                const d = (p.x - anchor.x) ** 2 + (p.y - anchor.y) ** 2 + (p.z - anchor.z) ** 2;
-                if (d < bestD) {
-                    bestD = d;
-                    best = i;
-                }
-            }
-            if (best >= 0)
-                vertices[best] = { ...vertices[best], region };
-        }
+    ensureRequiredRegions(vertices, _positions) {
+        ensureHeadRegions(vertices, REQUIRED_HD_HEAD_REGIONS);
     }
     skinWeights(region) {
-        if (region === 'neck')
-            return { [this.neckBone]: 1.0 };
-        // Facial skinned connection (P15): lower-face regions blend head↔jaw so
-        // jaw rotation visibly deforms lips/chin while the upper face stays rigid.
-        if (region === 'jaw_left' || region === 'jaw_right' || region === 'chin') {
-            return { [this.headBone]: 0.45, jaw: 0.55 };
-        }
-        if (region === 'upper_lip' ||
-            region === 'lower_lip' ||
-            region === 'mouth_corner_left' ||
-            region === 'mouth_corner_right') {
-            return { [this.headBone]: 0.6, jaw: 0.4 };
-        }
-        return { [this.headBone]: 1.0 };
+        return headSkinWeights(region, this.headBone, this.neckBone);
     }
     rxAt(y) {
         if (y > 1.98)
@@ -250,77 +210,7 @@ export class HDCanonicalHumanProvider {
     }
     /** Assign fine-grained P4 semantic regions from local geometry. */
     regionFor(y, x, z) {
-        // Back / crown cranium (z behind face plane) → coarse 'head'.
-        if (z < 0.2) {
-            if (y > 1.72 && y < 1.96 && Math.abs(x) > 0.075 && Math.abs(x) < 0.115 && z < 0.155) {
-                return x < 0 ? 'ear_left' : 'ear_right';
-            }
-            return 'head';
-        }
-        const front = z - 0.2; // 0 at face plane, + forward
-        const ay = Math.abs(y - 1.9); // distance from eye height
-        // Forehead.
-        if (y > 1.95) {
-            if (Math.abs(x) < 0.05)
-                return 'forehead';
-            return 'head';
-        }
-        // Eye band: central disc → eye_left/right, top/bottom → upper/lower eyelids.
-        // Must be checked before temples so the eye area is not swallowed.
-        if (ay <= 0.02 && Math.abs(x) >= 0.03 && Math.abs(x) <= 0.095 && front > 0.02) {
-            const side = x < 0 ? 'l' : 'r';
-            const distFromCenter = Math.abs(Math.abs(x) - 0.06);
-            if (distFromCenter <= 0.015) {
-                const dy = y - 1.9;
-                if (dy > 0.007)
-                    return `upper_eyelid_${side}`;
-                if (dy < -0.007)
-                    return `lower_eyelid_${side}`;
-                return side === 'l' ? 'eye_left' : 'eye_right';
-            }
-        }
-        // Temples (upper side-front), outside the eye disc.
-        if (y > 1.86 && y <= 1.92 && Math.abs(x) >= 0.065) {
-            return x < 0 ? 'temple_left' : 'temple_right';
-        }
-        // Nose bridge (front center, mid face).
-        if (Math.abs(x) < 0.017 && y >= 1.82 && y < 1.95) {
-            return 'nose_bridge';
-        }
-        // Nose tip + alars (around y1.78 front).
-        if (Math.abs(x) < 0.017 && y >= 1.74 && y < 1.82) {
-            return 'nose_tip';
-        }
-        if (Math.abs(x) >= 0.017 && Math.abs(x) < 0.05 && y >= 1.74 && y < 1.82) {
-            return x < 0 ? 'nose_alar_left' : 'nose_alar_right';
-        }
-        // Cheeks (mid face, lateral).
-        if (y >= 1.76 && y < 1.9 && Math.abs(x) >= 0.03) {
-            if (Math.abs(x) > 0.09)
-                return x < 0 ? 'cheek_left' : 'cheek_right';
-            return x < 0 ? 'cheek_left' : 'cheek_right';
-        }
-        // Upper lip.
-        if (Math.abs(x) <= 0.035 && y >= 1.7 && y < 1.75) {
-            if (Math.abs(x) > 0.023) {
-                return x < 0 ? 'mouth_corner_left' : 'mouth_corner_right';
-            }
-            const lipSplit = 1.725;
-            return y >= lipSplit ? 'lower_lip' : 'upper_lip';
-        }
-        // Jaw downward corners.
-        if (Math.abs(x) >= 0.03 && Math.abs(x) <= 0.1 && y < 1.76) {
-            if (y < 1.7)
-                return x < 0 ? 'jaw_left' : 'jaw_right';
-            return x < 0 ? 'jaw_left' : 'jaw_right';
-        }
-        // Chin (front center, low).
-        if (Math.abs(x) < 0.035 && y < 1.7)
-            return 'chin';
-        // Neck collar.
-        if (y <= 1.7)
-            return 'neck';
-        return 'head';
+        return headRegionFor(y, x, z);
     }
     // ----------------------------------------------------------------- parts
     /** Detailed parts: eyes (sclera/iris/pupil/cornea), teeth, tongue, cavity. */

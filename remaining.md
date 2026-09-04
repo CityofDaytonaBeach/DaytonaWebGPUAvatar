@@ -132,9 +132,10 @@ Ordered roughly by priority (highest first). Statuses reflect the capability mat
 
 ### 1. Production canonical topology (canonicalHuman = PARTIAL)
 
-- **Body scope delivered** (this session): the procedural body is now a **clean-manifold parametric HD mesh** (SDF union → single watertight marching-cubes surface, non-self-overlapping at rest; P22 hard body-region gate pairs == 0). See "Just delivered — Clean-manifold parametric body" above.
-- Still blocking `canonicalHuman → IMPLEMENTED`: the head + detail shells (eyes/teeth/tongue) remain **separate authored layers** over the body, so the full canonical is not yet ONE unified manifold (documented body-head seam cut). Closing that means either fusing the head skin into the body's surface at the neck seam, or accepting the layered model as production for a parametric avatar.
-- Runtime/adapter/validation/parts are IMPLEMENTED; authored weight gradients on the body are now procedural inverse-distance blends.
+- **Body scope delivered**: the procedural body is a **clean-manifold parametric HD mesh** (SDF union → single watertight marching-cubes surface, non-self-overlapping at rest; P22 hard body-region gate pairs == 0). See "Just delivered — Clean-manifold parametric body" above.
+- **Head/body seam CLOSED** (this session): the head is now a **term of the body's implicit union** (`buildHdBodyManifold({ fuseHead: true })`, default in `HDCanonicalHumanProvider`), so the skin is ONE connected surface from crown to feet with no seam cut and no duplicate head shell. Shared head contract lives in `src/geometry/canonical/hd-head-regions.ts` (head volume, P4 region classifier, head↔jaw skin weights, anatomical anchors) and is consumed by both the fused surface and the legacy shell, so a fused vertex classifies exactly as the shell vertex would. `fuseHead: false` restores the layered build unchanged. Covered by `hd-fusion.test.ts` (single connected component, crown→feet extent, no additional open edges vs body-only, unit normals, normalized weights, full HD head + body region vocabulary, legacy path parity).
+- Remaining for `canonicalHuman → IMPLEMENTED`: the detail parts (eyes/teeth/tongue/mouth cavity) stay separate by design — they are distinct anatomy inside the skin, not a seam in it — plus real-GPU visual validation of the fused surface.
+- Runtime/adapter/validation/parts are IMPLEMENTED; authored weight gradients on the body are procedural inverse-distance blends, with the lower face keeping the authored head↔jaw split.
 
 ### 2. Benchmarks / integration → delivered this session (see below)
 
