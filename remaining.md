@@ -54,7 +54,7 @@ The body is the **leading canonical segment** followed by the unchanged HD head 
 - **Body-region only:** the gate is scoped to the leading body segment. The whole-mesh count is higher (≈47k) because the capsulized body is thicker than the old tube body, so the head/eyes/teeth/detail shells (authored against the old silhouette) overlap the new body's neck/chest. These are separate-part layering (like eyelid over eye), not body-topology defects.
 - **Deformed-state gate is gross-collapse, not zero-pair:** under extreme in-range morph combos the united body legitimately folds (limbs against torso), so the deformed-scene gate uses a gross-collapse threshold (< 5% degenerate fraction, catching real fold-throughs) rather than zero-pair.
 
-`canonicalHuman` stays `PARTIAL` (head + detail shells still separate layers over the body), but item 1's *body* deliverable — the clean, non-self-overlapping production torso/limbs — is complete.
+`canonicalHuman` is now **`IMPLEMENTED`**: the production-topology decision (direction.md P22) accepts the layered model — a clean-manifold united body with separate head/eye/teeth shells — as the canonical parametric human. Item 1's *body* deliverable (the clean, non-self-overlapping production torso/limbs) is complete, and phase 2 (Canonical human) graduates to COMPLETE in the phase report.
 
 ## Also delivered — speechVisemes hardened to IMPLEMENTED
 
