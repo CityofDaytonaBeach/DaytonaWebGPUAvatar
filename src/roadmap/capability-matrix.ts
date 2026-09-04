@@ -33,10 +33,13 @@ export const CAPABILITY_MATRIX = {
   identitySolver: 'IMPLEMENTED',
   constraintSolver: 'IMPLEMENTED',
 
-  // Canonical human: the runtime + adapter/validation/parts are implemented, but
-  // the shipped default topology is still the procedural block human rather than
-  // a production HD canonical mesh (direction.md: "Daytona-generated HD human:
-  // active; production topology").
+  // Canonical human: the runtime + adapter/validation/parts are implemented, the
+  // body is now a CLEAN-MANIFOLD parametric HD mesh (SDF union -> single
+  // watertight marching-cubes surface, non-self-overlapping at rest; P22 hard
+  // body-region gate pairs == 0), and the head is the HD parametric skin with
+  // inverse-distance weight gradients. Still PARTIAL only because the head +
+  // detail shells remain separate authored layers over the body (documented
+  // body-head seam cut), so the full canonical is not yet ONE unified manifold.
   canonicalHuman: 'PARTIAL',
   canonicalValidation: 'IMPLEMENTED',
   canonicalAssetAdapter: 'IMPLEMENTED',

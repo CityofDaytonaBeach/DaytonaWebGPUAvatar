@@ -49,8 +49,15 @@ function sub(
  * (`maxPairs`), keeping it cheap enough to run every fuzz seed.
  *
  * `regionScope` optionally restricts analysis to triangles whose *three*
- * vertices all lie in the listed regions.
+ * vertices all lie in the listed regions. `triangleRange` optionally restricts
+ * to a contiguous triangle-id range `[start, end)` (used to isolate the leading
+ * body segment of the canonical mesh). When both are supplied they are ANDed.
  */
+export interface IntersectionScope {
+  regionScope?: ReadonlySet<string>;
+  triangleRange?: [number, number];
+}
+
 export class MeshIntersectionAnalyzer {
   private readonly triId: number[] = [];
   private readonly triVertex: Array<[number, number, number]> = [];
@@ -62,13 +69,16 @@ export class MeshIntersectionAnalyzer {
    */
   private readonly triNeighbors: Array<Set<number>> = [];
 
-  constructor(canonical: CanonicalHuman, regionScope?: ReadonlySet<string>) {
+  constructor(canonical: CanonicalHuman, scope: IntersectionScope = {}) {
     const idx = canonical.indices;
     const T = canonical.indices.length / 3;
     const scoped: number[] = [];
+    const regionScope = scope.regionScope;
+    const range = scope.triangleRange ?? [0, T];
 
-    if (regionScope) {
-      for (let t = 0; t < T; t++) {
+    for (let t = 0; t < T; t++) {
+      if (t < range[0] || t >= range[1]) continue;
+      if (regionScope) {
         const a = idx[t * 3];
         const b = idx[t * 3 + 1];
         const c = idx[t * 3 + 2];
@@ -79,9 +89,9 @@ export class MeshIntersectionAnalyzer {
         ) {
           scoped.push(t);
         }
+      } else {
+        scoped.push(t);
       }
-    } else {
-      for (let t = 0; t < T; t++) scoped.push(t);
     }
 
     this.triBaseArea = new Float32Array(scoped.length);
