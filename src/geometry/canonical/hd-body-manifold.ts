@@ -378,7 +378,7 @@ function weld(
 export function marchingCubesProbe(
   n = 24,
   tol = 0.02,
-): { vertices: CellVert[]; indices: Uint32Array; chi: number; boundaryEdges: number } {
+): { vertices: CellVert[]; indices: Uint32Array; chi: number; boundaryEdges: number; rawBoundary: number; rawChi: number; rawV: number } {
   const min = -1.2, max = 1.2;
   const size = max - min;
   const cell = size / n;
