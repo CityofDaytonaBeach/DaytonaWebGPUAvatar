@@ -57,7 +57,7 @@ describe('probe new body manifold', () => {
   it('verifies marching-tetra on an analytic sphere is watertight (chi=2)', async () => {
     const { marchingCubesProbe } = await import('./hd-body-manifold.js');
     const r = marchingCubesProbe(32, 0.01);
-    console.log(`SPHERE: V=${r.vertices.length} T=${r.indices.length / 3} chi=${r.chi.toFixed(1)} boundary=${r.boundaryEdges}`);
+    console.log(`SPHERE: V=${r.vertices.length} T=${r.indices.length / 3} chi=${r.chi.toFixed(1)} boundary=${r.boundaryEdges} | rawV=${r.rawV} rawChi=${r.rawChi?.toFixed(1)} rawBoundary=${r.rawBoundary}`);
     expect(true).toBe(true);
   });
 });
