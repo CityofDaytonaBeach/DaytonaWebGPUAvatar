@@ -99,18 +99,23 @@ function biologicalBase(t: number): number {
   return (1 - Math.cos(Math.PI * t)) * 0.5;
 }
 
+/** Damped spring, pinned at both endpoints so the value settles on target. */
 function springBase(t: number, amplitude: number, frequency: number): number {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
   return 1 - Math.exp(-6 * t) * Math.cos(frequency * Math.PI * t) * amplitude;
 }
 
+/**
+ * Decaying elastic ease-out. Pinned at both endpoints (0 -> 0, 1 -> 1) so a
+ * transition always settles exactly on its target value; `amplitude` and
+ * `frequency` only shape the overshoot in between.
+ */
 function elasticBase(t: number, amplitude: number, frequency: number): number {
-  if (t === 0 || t === 1) return t;
-  const p = 0.3 / (2 * Math.PI);
-  const a = amplitude;
-  const s = p / 4;
-  return (
-    -a * Math.pow(2, 10 * (t - 1)) * Math.sin(((t - 1 - s) * (2 * Math.PI)) / p) * frequency * 0.1
-  );
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  const omega = ((2 * Math.PI) / 3) * Math.max(0.1, frequency * 0.1);
+  return amplitude * Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * omega) + 1;
 }
 
 function bounceOutBase(t: number): number {
@@ -168,11 +173,17 @@ function applyCurve(
       shaped = t >= STEP_THRESHOLD ? 1 : 0;
       break;
     case 'elastic':
-      shaped = 1 + elasticBase(t, amp, freq);
+      shaped = elasticBase(t, amp, freq);
       break;
     case 'bounce':
       shaped =
-        t < 0.5 ? (1 - bounceOutBase(1 - 2 * t)) * 0.5 : 0.5 + bounceOutBase(2 * t - 1) * 0.5;
+        t <= 0
+          ? 0
+          : t >= 1
+            ? 1
+            : t < 0.5
+              ? (1 - bounceOutBase(1 - 2 * t)) * 0.5
+              : 0.5 + bounceOutBase(2 * t - 1) * 0.5;
       break;
     case 'sine':
       shaped = sineBase(t);
@@ -391,4 +402,151 @@ export function validateTransitionDeterminism(
   tolerance: number = 1e-6,
 ): TransitionBenchmark[] {
   return transitions.map((t) => verifyTransitionDeterminism(t, tolerance));
+}
+
+// ---------------------------------------------------------------------------
+// Long replay & timeline scrubbing
+// ---------------------------------------------------------------------------
+
+export interface LongReplayReport {
+  transitionId: string;
+  /** Frames sampled across the whole replay window. */
+  frames: number;
+  /** Sample rate used, in Hz. */
+  sampleRate: number;
+  /** Value at the final sampled frame. */
+  endValue: PrimitiveValue;
+  /** |endValue - targetValue| once the window has passed the duration. */
+  absoluteError: number;
+  /** True when a second, identical replay produced byte-identical frames. */
+  deterministic: boolean;
+  /** Largest deviation between the two replay passes. */
+  maxReplayDeviation: number;
+  /** True when every frame is finite. */
+  finite: boolean;
+  /** True when the value never moves after the transition has completed. */
+  settled: boolean;
+}
+
+/**
+ * Replay a transition over a long window (default 10 simulated minutes at
+ * 120Hz) twice and compare the passes. Catches accumulated-time drift, late
+ * jitter after completion, and any non-determinism in the curve evaluation.
+ */
+export function verifyLongReplay(
+  transition: ParameterTransition,
+  options: { sampleRate?: number; durationSeconds?: number; tolerance?: number } = {},
+): LongReplayReport {
+  const sampleRate = Math.max(1, options.sampleRate ?? 120);
+  const window = Math.max(transition.duration, options.durationSeconds ?? 600);
+  const tolerance = options.tolerance ?? 1e-9;
+  const frameCount = Math.floor(window * sampleRate) + 1;
+
+  const pass = (): PrimitiveValue[] => {
+    const out: PrimitiveValue[] = new Array(frameCount);
+    for (let i = 0; i < frameCount; i++) {
+      // Absolute time per frame (never accumulated) so drift cannot creep in.
+      out[i] = sampleTransition(transition, transition.startTime + i / sampleRate);
+    }
+    return out;
+  };
+
+  const first = pass();
+  const second = pass();
+
+  let maxDeviation = 0;
+  let finite = true;
+  for (let i = 0; i < frameCount; i++) {
+    maxDeviation = Math.max(maxDeviation, Math.abs(first[i] - second[i]));
+    if (!Number.isFinite(first[i])) finite = false;
+  }
+
+  const settleFrame = Math.ceil(transition.duration * sampleRate);
+  let settled = true;
+  for (let i = settleFrame; i < frameCount; i++) {
+    if (Math.abs(first[i] - transition.targetValue) > tolerance) settled = false;
+  }
+
+  const endValue = first[frameCount - 1];
+  return {
+    transitionId: transition.id,
+    frames: frameCount,
+    sampleRate,
+    endValue,
+    absoluteError: Math.abs(endValue - transition.targetValue),
+    deterministic: maxDeviation <= tolerance,
+    maxReplayDeviation: maxDeviation,
+    finite,
+    settled,
+  };
+}
+
+export interface ScrubReport {
+  transitionId: string;
+  /** Times requested, in the order requested. */
+  times: number[];
+  /** Value sampled at each requested time. */
+  values: PrimitiveValue[];
+  /** True when scrubbing in a shuffled order yields the same per-time values. */
+  orderIndependent: boolean;
+  /** Largest per-time difference between ordered and shuffled scrubs. */
+  maxOrderDeviation: number;
+  /** True when values before the start and after the end are clamped. */
+  clamped: boolean;
+}
+
+/**
+ * Scrub a transition at arbitrary times, forwards or backwards. Sampling is
+ * stateless, so a shuffled scrub must reproduce the ordered scrub exactly —
+ * this is what makes timeline scrubbing safe in an editor.
+ */
+export function scrubTransition(
+  transition: ParameterTransition,
+  times: readonly number[],
+  options: { tolerance?: number } = {},
+): ScrubReport {
+  const tolerance = options.tolerance ?? 1e-12;
+  const ordered = times.map((t) => sampleTransition(transition, t));
+
+  // Deterministic shuffle (no Math.random) so the check itself is reproducible.
+  const indices = times.map((_, i) => i);
+  for (let i = indices.length - 1 > 0 ? indices.length - 1 : 0; i > 0; i--) {
+    const j = (i * 2654435761) % (i + 1);
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const shuffled = new Array<PrimitiveValue>(times.length);
+  for (const i of indices) shuffled[i] = sampleTransition(transition, times[i]);
+
+  let maxOrderDeviation = 0;
+  for (let i = 0; i < ordered.length; i++) {
+    maxOrderDeviation = Math.max(maxOrderDeviation, Math.abs(ordered[i] - shuffled[i]));
+  }
+
+  // Out-of-range scrubs must clamp to the endpoints (t is clamped to [0,1]).
+  const atStart = sampleTransition(transition, transition.startTime);
+  const atEnd = sampleTransition(transition, transition.startTime + transition.duration);
+  const before = sampleTransition(transition, transition.startTime - 5);
+  const after = sampleTransition(transition, transition.startTime + transition.duration + 5);
+  const clamped = Math.abs(before - atStart) <= tolerance && Math.abs(after - atEnd) <= tolerance;
+
+  return {
+    transitionId: transition.id,
+    times: [...times],
+    values: ordered,
+    orderIndependent: maxOrderDeviation <= tolerance,
+    maxOrderDeviation,
+    clamped,
+  };
+}
+
+/**
+ * Scrub every active transition on a timeline to one point in time. Returns the
+ * per-path values; repeated calls at the same time are identical, and calls at
+ * decreasing times are as valid as increasing ones (no internal cursor).
+ */
+export function scrubTimeline(
+  timeline: TransitionTimeline,
+  times: readonly number[],
+): Map<string, PrimitiveValue>[] {
+  return times.map((t) => timeline.sampleAll(t));
 }

@@ -10,7 +10,7 @@ export { PROPERTY_CATEGORIES, } from './core/schema/property.js';
 // Events & timeline
 export { createEvent, applyEventToDefinition } from './core/events/character-event.js';
 export { CharacterTimeline } from './core/timeline/character-timeline.js';
-export { createParameterTransition, sampleTransition, transitionComplete, TransitionTimeline, replayTransition, verifyTransitionDeterminism, validateTransitionDeterminism, } from './core/transitions/parameter-transition.js';
+export { createParameterTransition, sampleTransition, transitionComplete, TransitionTimeline, replayTransition, verifyTransitionDeterminism, validateTransitionDeterminism, verifyLongReplay, scrubTransition, scrubTimeline, } from './core/transitions/parameter-transition.js';
 // Constraints
 export { ConstraintSolver, CONSTRAINT_PROFILES } from './core/constraints/solver.js';
 // Math
@@ -64,6 +64,11 @@ export { MORPH_COMPUTE_WGSL } from './render/wgsl/morph-wgsl.js';
 // Animation
 export { SkeletalAnimation, sampleChannel, quatFromEulerDeg as quatFromEuler, } from './animation/skeleton/skeletal-animation.js';
 export { MotionCompiler, compileMotionCommand, solveIK2Bone, solveLookAt, compileLookAt, compileIKArm, compileIKLeg, compileWalk, blendMotions, transitionTo, retargetPoses, validateMotion, } from './animation/motion/motion-compiler.js';
+// Kinematics / IK / retargeting
+export { forwardKinematics, boneWorldPosition, topologicalBoneOrder, resolveBoneChain, quatToEulerDeg, eulerDegToQuat, } from './animation/skeleton/kinematics.js';
+export { solveChainIK, solveLimbIK } from './animation/ik/ik-solver.js';
+export { solveLookAtChain, measureGazeError, worldPointFromBone } from './animation/ik/look-at.js';
+export { buildRetargetMap, retargetPose, retargetClip, retargetFidelity, skeletonHeight, retargetedPoseMap, } from './animation/retarget/retargeting.js';
 export { FacialExpressionSystem } from './animation/facial/facial-expression.js';
 export { SpeechSolver, simpleTTS } from './animation/speech/speech-solver.js';
 // Attachments

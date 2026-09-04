@@ -14,8 +14,8 @@ export { createEvent, applyEventToDefinition } from './core/events/character-eve
 export type { CharacterEvent, CharacterEventType, EventSource, } from './core/events/character-event.js';
 export { CharacterTimeline } from './core/timeline/character-timeline.js';
 export type { Snapshot } from './core/timeline/character-timeline.js';
-export { createParameterTransition, sampleTransition, transitionComplete, TransitionTimeline, replayTransition, verifyTransitionDeterminism, validateTransitionDeterminism, } from './core/transitions/parameter-transition.js';
-export type { ParameterTransition, TransitionCurve, TransitionSpec, EaseVariant, OvershootConfig, TransitionSummary, TransitionBenchmark, } from './core/transitions/parameter-transition.js';
+export { createParameterTransition, sampleTransition, transitionComplete, TransitionTimeline, replayTransition, verifyTransitionDeterminism, validateTransitionDeterminism, verifyLongReplay, scrubTransition, scrubTimeline, } from './core/transitions/parameter-transition.js';
+export type { ParameterTransition, TransitionCurve, TransitionSpec, EaseVariant, OvershootConfig, TransitionSummary, TransitionBenchmark, LongReplayReport, ScrubReport, } from './core/transitions/parameter-transition.js';
 export { ConstraintSolver, CONSTRAINT_PROFILES } from './core/constraints/solver.js';
 export type { ConstraintProfile, ConstraintResult } from './core/constraints/types.js';
 export { vec3, IDENTITY_QUAT, identityMatrix, multiplyMatrices } from './core/math/vec.js';
@@ -93,6 +93,14 @@ export { SkeletalAnimation, sampleChannel, quatFromEulerDeg as quatFromEuler, } 
 export type { BonePose, AnimationChannel } from './animation/skeleton/skeletal-animation.js';
 export { MotionCompiler, compileMotionCommand, solveIK2Bone, solveLookAt, compileLookAt, compileIKArm, compileIKLeg, compileWalk, blendMotions, transitionTo, retargetPoses, validateMotion, } from './animation/motion/motion-compiler.js';
 export type { MotionKind, MotionPlan, MotionCompilerConfig, IKChain, GestureName, } from './animation/motion/motion-compiler.js';
+export { forwardKinematics, boneWorldPosition, topologicalBoneOrder, resolveBoneChain, quatToEulerDeg, eulerDegToQuat, } from './animation/skeleton/kinematics.js';
+export type { BoneTransform } from './animation/skeleton/kinematics.js';
+export { solveChainIK, solveLimbIK } from './animation/ik/ik-solver.js';
+export type { IKSolveOptions, IKSolveResult } from './animation/ik/ik-solver.js';
+export { solveLookAtChain, measureGazeError, worldPointFromBone } from './animation/ik/look-at.js';
+export type { LookAtOptions, LookAtResult } from './animation/ik/look-at.js';
+export { buildRetargetMap, retargetPose, retargetClip, retargetFidelity, skeletonHeight, retargetedPoseMap, } from './animation/retarget/retargeting.js';
+export type { RetargetMap, RetargetOptions, RetargetResult, } from './animation/retarget/retargeting.js';
 export { FacialExpressionSystem } from './animation/facial/facial-expression.js';
 export type { SemanticExpression } from './animation/facial/facial-expression.js';
 export { SpeechSolver, simpleTTS } from './animation/speech/speech-solver.js';

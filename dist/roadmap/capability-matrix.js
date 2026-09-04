@@ -45,7 +45,11 @@ export const CAPABILITY_MATRIX = {
     parametricAnatomy: 'IMPLEMENTED',
     internalAnatomyModes: 'PROTOTYPE',
     skeletalAnimation: 'IMPLEMENTED',
-    motionCompiler: 'PROTOTYPE',
+    // Motion + IK is now complete: FK evaluator (kinematics.ts), FABRIK chain/limb
+    // IK with pole vectors and joint limits, FK-verified look-at, and rest-relative
+    // retargeting — all layered into MotionRuntime and covered by deterministic,
+    // FK-measured tests instead of the earlier heuristic recipes.
+    motionCompiler: 'IMPLEMENTED',
     // Motion runtime: compiler now drives the animation frame loop (cross-fade,
     // walk phase, rejection) and is covered by deterministic tests.
     motionRuntime: 'IMPLEMENTED',
@@ -61,11 +65,11 @@ export const CAPABILITY_MATRIX = {
     timelineEventSourcing: 'IMPLEMENTED',
     timelineDirtyReporting: 'IMPLEMENTED',
     nonPropertyEventDirtyReporting: 'IMPLEMENTED',
-    // Transitions are now validated frame-by-frame through the real GPU morph
-    // packing/dispatch path (transitionGpuValidation), not only as isolated curve
-    // maths. Still PARTIAL until deterministic long replay and timeline scrub
-    // coverage land — the remaining phase-13 exit criteria.
-    parameterTransitions: 'PARTIAL',
+    // Transitions are validated frame-by-frame through the real GPU morph
+    // packing/dispatch path (transitionGpuValidation), plus deterministic long
+    // replay (10 simulated minutes at 120Hz, two identical passes, exact settle)
+    // and order-independent timeline scrubbing — the phase-13 exit criteria.
+    parameterTransitions: 'IMPLEMENTED',
     transitionGpuValidation: 'IMPLEMENTED',
     snapshotRestore: 'IMPLEMENTED',
     undoRedo: 'IMPLEMENTED',

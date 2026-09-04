@@ -59,6 +59,9 @@ export {
   replayTransition,
   verifyTransitionDeterminism,
   validateTransitionDeterminism,
+  verifyLongReplay,
+  scrubTransition,
+  scrubTimeline,
 } from './core/transitions/parameter-transition.js';
 export type {
   ParameterTransition,
@@ -68,6 +71,8 @@ export type {
   OvershootConfig,
   TransitionSummary,
   TransitionBenchmark,
+  LongReplayReport,
+  ScrubReport,
 } from './core/transitions/parameter-transition.js';
 
 // Constraints
@@ -333,6 +338,35 @@ export type {
   IKChain,
   GestureName,
 } from './animation/motion/motion-compiler.js';
+
+// Kinematics / IK / retargeting
+export {
+  forwardKinematics,
+  boneWorldPosition,
+  topologicalBoneOrder,
+  resolveBoneChain,
+  quatToEulerDeg,
+  eulerDegToQuat,
+} from './animation/skeleton/kinematics.js';
+export type { BoneTransform } from './animation/skeleton/kinematics.js';
+export { solveChainIK, solveLimbIK } from './animation/ik/ik-solver.js';
+export type { IKSolveOptions, IKSolveResult } from './animation/ik/ik-solver.js';
+export { solveLookAtChain, measureGazeError, worldPointFromBone } from './animation/ik/look-at.js';
+export type { LookAtOptions, LookAtResult } from './animation/ik/look-at.js';
+export {
+  buildRetargetMap,
+  retargetPose,
+  retargetClip,
+  retargetFidelity,
+  skeletonHeight,
+  retargetedPoseMap,
+} from './animation/retarget/retargeting.js';
+export type {
+  RetargetMap,
+  RetargetOptions,
+  RetargetResult,
+} from './animation/retarget/retargeting.js';
+
 export { FacialExpressionSystem } from './animation/facial/facial-expression.js';
 export type { SemanticExpression } from './animation/facial/facial-expression.js';
 export { SpeechSolver, simpleTTS } from './animation/speech/speech-solver.js';

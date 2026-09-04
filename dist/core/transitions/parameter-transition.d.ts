@@ -80,4 +80,60 @@ export declare function verifyTransitionDeterminism(transition: ParameterTransit
  * Batch-verify determinism across multiple transitions.
  */
 export declare function validateTransitionDeterminism(transitions: ParameterTransition[], tolerance?: number): TransitionBenchmark[];
+export interface LongReplayReport {
+    transitionId: string;
+    /** Frames sampled across the whole replay window. */
+    frames: number;
+    /** Sample rate used, in Hz. */
+    sampleRate: number;
+    /** Value at the final sampled frame. */
+    endValue: PrimitiveValue;
+    /** |endValue - targetValue| once the window has passed the duration. */
+    absoluteError: number;
+    /** True when a second, identical replay produced byte-identical frames. */
+    deterministic: boolean;
+    /** Largest deviation between the two replay passes. */
+    maxReplayDeviation: number;
+    /** True when every frame is finite. */
+    finite: boolean;
+    /** True when the value never moves after the transition has completed. */
+    settled: boolean;
+}
+/**
+ * Replay a transition over a long window (default 10 simulated minutes at
+ * 120Hz) twice and compare the passes. Catches accumulated-time drift, late
+ * jitter after completion, and any non-determinism in the curve evaluation.
+ */
+export declare function verifyLongReplay(transition: ParameterTransition, options?: {
+    sampleRate?: number;
+    durationSeconds?: number;
+    tolerance?: number;
+}): LongReplayReport;
+export interface ScrubReport {
+    transitionId: string;
+    /** Times requested, in the order requested. */
+    times: number[];
+    /** Value sampled at each requested time. */
+    values: PrimitiveValue[];
+    /** True when scrubbing in a shuffled order yields the same per-time values. */
+    orderIndependent: boolean;
+    /** Largest per-time difference between ordered and shuffled scrubs. */
+    maxOrderDeviation: number;
+    /** True when values before the start and after the end are clamped. */
+    clamped: boolean;
+}
+/**
+ * Scrub a transition at arbitrary times, forwards or backwards. Sampling is
+ * stateless, so a shuffled scrub must reproduce the ordered scrub exactly —
+ * this is what makes timeline scrubbing safe in an editor.
+ */
+export declare function scrubTransition(transition: ParameterTransition, times: readonly number[], options?: {
+    tolerance?: number;
+}): ScrubReport;
+/**
+ * Scrub every active transition on a timeline to one point in time. Returns the
+ * per-path values; repeated calls at the same time are identical, and calls at
+ * decreasing times are as valid as increasing ones (no internal cursor).
+ */
+export declare function scrubTimeline(timeline: TransitionTimeline, times: readonly number[]): Map<string, PrimitiveValue>[];
 //# sourceMappingURL=parameter-transition.d.ts.map

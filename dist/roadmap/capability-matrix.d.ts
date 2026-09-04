@@ -37,7 +37,7 @@ export declare const CAPABILITY_MATRIX: {
     readonly parametricAnatomy: "IMPLEMENTED";
     readonly internalAnatomyModes: "PROTOTYPE";
     readonly skeletalAnimation: "IMPLEMENTED";
-    readonly motionCompiler: "PROTOTYPE";
+    readonly motionCompiler: "IMPLEMENTED";
     readonly motionRuntime: "IMPLEMENTED";
     readonly gpuSkinning: "IMPLEMENTED";
     readonly attachmentCoordinates: "IMPLEMENTED";
@@ -48,7 +48,7 @@ export declare const CAPABILITY_MATRIX: {
     readonly timelineEventSourcing: "IMPLEMENTED";
     readonly timelineDirtyReporting: "IMPLEMENTED";
     readonly nonPropertyEventDirtyReporting: "IMPLEMENTED";
-    readonly parameterTransitions: "PARTIAL";
+    readonly parameterTransitions: "IMPLEMENTED";
     readonly transitionGpuValidation: "IMPLEMENTED";
     readonly snapshotRestore: "IMPLEMENTED";
     readonly undoRedo: "IMPLEMENTED";

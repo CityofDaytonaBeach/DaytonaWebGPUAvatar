@@ -1,6 +1,14 @@
-import type { BoneDef } from '../../anatomy/skeleton/skeleton.js';
+import type { Vec3 } from '../../core/math/vec.js';
+import type { BoneDef, BoneName } from '../../anatomy/skeleton/skeleton.js';
 import type { BonePose } from '../skeleton/skeletal-animation.js';
 import { nlerp } from '../skeleton/skeletal-animation.js';
+import {
+  solveChainIK,
+  solveLimbIK,
+  type IKSolveResult,
+  type IKSolveOptions,
+} from '../ik/ik-solver.js';
+import { solveLookAtChain, type LookAtOptions, type LookAtResult } from '../ik/look-at.js';
 import {
   MotionCompiler,
   validateMotion,
@@ -71,6 +79,45 @@ export interface MotionRuntimeFrame {
   continuous: boolean;
   /** Bones written this frame (stable, sorted). */
   bones: string[];
+  /** Per-limb IK outcome for this frame (FK-measured), empty when no IK is active. */
+  ik: MotionIkFrame[];
+  /** Gaze outcome for this frame (FK-measured), or null when no gaze target is set. */
+  lookAt: MotionLookAtFrame | null;
+}
+
+/** IK layered onto a frame, with the FK-measured result. */
+export interface MotionIkFrame {
+  id: string;
+  chain: BoneName[];
+  target: Vec3;
+  error: number;
+  reached: boolean;
+  targetUnreachable: boolean;
+}
+
+/** Gaze layered onto a frame, with the FK-measured result. */
+export interface MotionLookAtFrame {
+  target: Vec3;
+  chain: BoneName[];
+  angleErrorDeg: number;
+  clamped: boolean;
+}
+
+export type MotionIkLimb = 'arm_l' | 'arm_r' | 'leg_l' | 'leg_r';
+
+export interface MotionIkRequest {
+  /** Stable id; re-using an id replaces that constraint. Defaults to the limb/chain. */
+  id?: string;
+  /** Named limb shorthand, or an explicit root/effector pair. */
+  limb?: MotionIkLimb;
+  root?: BoneName;
+  effector?: BoneName;
+  target: Vec3;
+  poleVector?: Vec3;
+  tolerance?: number;
+  iterations?: number;
+  passes?: number;
+  respectLimits?: boolean;
 }
 
 export interface MotionRuntimeStatus {
@@ -83,6 +130,10 @@ export interface MotionRuntimeStatus {
   rejected: number;
   frames: number;
   rejections: MotionRejection[];
+  /** IK constraints currently layered on every frame. */
+  ikConstraints: MotionIkFrame[];
+  /** Gaze constraint currently layered on every frame, if any. */
+  lookAt: MotionLookAtFrame | null;
 }
 
 const CONTINUOUS_KINDS: ReadonlySet<MotionPlan['kind']> = new Set(['walk']);
@@ -103,6 +154,13 @@ export class MotionRuntime {
   private blendElapsed = 0;
   private blendDuration = 0;
   private walkPhase = 0;
+
+  /** IK constraints layered on top of the blended motion pose, in insertion order. */
+  private ikRequests = new Map<string, MotionIkRequest>();
+  private lastIkFrames: MotionIkFrame[] = [];
+  /** Persistent gaze constraint, layered last so it wins over motion. */
+  private lookAtRequest: (LookAtOptions & { target: Vec3 }) | null = null;
+  private lastLookAtFrame: MotionLookAtFrame | null = null;
 
   constructor(
     private readonly skeleton: BoneDef[],
@@ -163,6 +221,38 @@ export class MotionRuntime {
     this.blendElapsed = 0;
   }
 
+  // ─── IK / gaze constraints (layered on every frame, above the motion blend) ──
+
+  /**
+   * Install (or replace) an IK constraint. Constraints are persistent: every
+   * subsequent `tick` re-solves them against that frame's blended motion pose, so
+   * a hand can stay pinned to a world point while the body walks.
+   */
+  setIkTarget(request: MotionIkRequest): string {
+    const id = request.id ?? request.limb ?? `${request.root ?? '?'}->${request.effector ?? '?'}`;
+    this.ikRequests.set(id, { ...request, id });
+    return id;
+  }
+
+  clearIkTarget(id: string): boolean {
+    return this.ikRequests.delete(id);
+  }
+
+  clearIkTargets(): void {
+    this.ikRequests.clear();
+    this.lastIkFrames = [];
+  }
+
+  /** Install a persistent gaze target; the head/neck chain tracks it every frame. */
+  setLookAtTarget(target: Vec3, options: Omit<LookAtOptions, 'target' | 'basePoses'> = {}): void {
+    this.lookAtRequest = { ...options, target };
+  }
+
+  clearLookAtTarget(): void {
+    this.lookAtRequest = null;
+    this.lastLookAtFrame = null;
+  }
+
   /** Advance the runtime by `dt` seconds and produce the pose for this frame. */
   tick(dt: number): MotionRuntimeFrame {
     const step = Number.isFinite(dt) && dt > 0 ? dt : 0;
@@ -171,15 +261,18 @@ export class MotionRuntime {
 
     const plan = this.activePlan;
     if (!plan) {
+      const restLayered = this.applyConstraints([]);
       return {
         time: this.clock,
-        poses: [],
+        poses: restLayered.poses,
         command: null,
         kind: 'rest',
         blend: 1,
         blending: false,
         continuous: false,
-        bones: [],
+        bones: restLayered.poses.map((p) => p.name).sort(),
+        ik: restLayered.ik,
+        lookAt: restLayered.lookAt,
       };
     }
 
@@ -210,16 +303,87 @@ export class MotionRuntime {
       }
     }
 
+    // Constraints layer on top of the blended motion. `fromPoses` deliberately
+    // keeps the *unconstrained* pose so cross-fades stay pure motion maths and a
+    // pinned hand never bakes itself into the next gesture's start pose.
+    const layered = this.applyConstraints(poses);
+
     return {
       time: this.clock,
-      poses,
+      poses: layered.poses,
       command: this.activeCommand,
       kind: this.activePlan?.kind ?? 'rest',
       blend: Math.min(1, blend),
       blending: blend < 1,
       continuous,
-      bones: poses.map((p) => p.name).sort(),
+      bones: layered.poses.map((p) => p.name).sort(),
+      ik: layered.ik,
+      lookAt: layered.lookAt,
     };
+  }
+
+  /**
+   * Solve every active IK constraint, then the gaze, against `poses`.
+   * Pure with respect to runtime timing: the same pose + constraints always
+   * produce the same layered output.
+   */
+  private applyConstraints(poses: BonePose[]): {
+    poses: BonePose[];
+    ik: MotionIkFrame[];
+    lookAt: MotionLookAtFrame | null;
+  } {
+    let working = poses;
+    const ikFrames: MotionIkFrame[] = [];
+
+    for (const [id, request] of this.ikRequests) {
+      const shared: Omit<IKSolveOptions, 'target'> = {
+        poleVector: request.poleVector,
+        tolerance: request.tolerance,
+        iterations: request.iterations,
+        passes: request.passes,
+        respectLimits: request.respectLimits,
+        basePoses: working,
+      };
+      let result: IKSolveResult;
+      if (request.limb) {
+        result = solveLimbIK(this.skeleton, request.limb, request.target, shared);
+      } else if (request.root && request.effector) {
+        result = solveChainIK(this.skeleton, request.root, request.effector, {
+          ...shared,
+          target: request.target,
+        });
+      } else {
+        continue;
+      }
+      working = result.mergedPoses;
+      ikFrames.push({
+        id,
+        chain: result.chain,
+        target: { ...request.target },
+        error: result.error,
+        reached: result.reached,
+        targetUnreachable: result.targetUnreachable,
+      });
+    }
+
+    let lookAtFrame: MotionLookAtFrame | null = null;
+    if (this.lookAtRequest) {
+      const gaze: LookAtResult = solveLookAtChain(this.skeleton, {
+        ...this.lookAtRequest,
+        basePoses: working,
+      });
+      working = gaze.mergedPoses;
+      lookAtFrame = {
+        target: { ...this.lookAtRequest.target },
+        chain: gaze.chain,
+        angleErrorDeg: gaze.angleErrorDeg,
+        clamped: gaze.clamped,
+      };
+    }
+
+    this.lastIkFrames = ikFrames;
+    this.lastLookAtFrame = lookAtFrame;
+    return { poses: working, ik: ikFrames, lookAt: lookAtFrame };
   }
 
   /** Pose as of the last tick (used as the source of the next cross-fade). */
@@ -241,6 +405,10 @@ export class MotionRuntime {
       rejected: this.rejections.length,
       frames: this.frames,
       rejections: [...this.rejections],
+      ikConstraints: this.lastIkFrames.map((f) => ({ ...f, target: { ...f.target } })),
+      lookAt: this.lastLookAtFrame
+        ? { ...this.lastLookAtFrame, target: { ...this.lastLookAtFrame.target } }
+        : null,
     };
   }
 
@@ -255,6 +423,10 @@ export class MotionRuntime {
     this.blendElapsed = 0;
     this.blendDuration = 0;
     this.walkPhase = 0;
+    this.ikRequests.clear();
+    this.lastIkFrames = [];
+    this.lookAtRequest = null;
+    this.lastLookAtFrame = null;
   }
 }
 

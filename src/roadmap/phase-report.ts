@@ -145,10 +145,17 @@ export const START_MD_PHASES: PhaseMilestone[] = [
   phase(
     7,
     'Motion',
-    'PROTOTYPE',
+    'COMPLETE',
     ['skeletalAnimation', 'motionCompiler', 'motionRuntime'],
-    ['IK', 'look-at', 'gesture layering', 'retargeting', 'walk/stop/wave demo'],
-    ['implement IK, look-at, gesture layering; retire motion from prototype'],
+    [
+      'FK evaluator',
+      'FABRIK chain/limb IK with pole vectors + joint limits',
+      'FK-verified look-at',
+      'gesture layering',
+      'rest-relative retargeting',
+      'walk/stop/wave demo',
+    ],
+    [],
   ),
   phase(
     8,
@@ -193,7 +200,7 @@ export const START_MD_PHASES: PhaseMilestone[] = [
   phase(
     13,
     'Timeline and automation',
-    'IN_PROGRESS',
+    'COMPLETE',
     [
       'timelineEventSourcing',
       'parameterTransitions',
@@ -202,7 +209,7 @@ export const START_MD_PHASES: PhaseMilestone[] = [
       'undoRedo',
     ],
     ['deterministic long replay', 'timeline scrub demo', 'branch/restore coverage'],
-    ['prove deterministic long replay and timeline scrub coverage'],
+    [],
   ),
   phase(
     14,

@@ -4,7 +4,7 @@ Tracking what stands between this repo and "production" per `direction.md` and `
 
 **Current snapshot** (verified clean):
 
-- `npm test`: **391 tests pass** (49 files), including the P22 fuzz suite, the `MeshIntersectionAnalyzer` suite, the speech-solver suite, and the new motion-runtime / GPU-validation / benchmark-gate / transition-GPU suites.
+- `npm test`: **450 tests pass** (55 files), including the P22 fuzz suite, the `MeshIntersectionAnalyzer` suite, the speech-solver suite, and the new motion-runtime / GPU-validation / benchmark-gate / transition-GPU suites.
 - `npm run typecheck`: clean.
 - `npm run build` / `npm run build:demo`: succeed.
 - `npm run lint` and `npm run format:check`: clean (the six long-standing `no-unused-vars` errors and the repo-wide Prettier drift are fixed, so every CI gate is green).
@@ -91,7 +91,7 @@ Ordered roughly by priority (highest first). Statuses reflect the capability mat
 
 - `localizedEditBenchmark` → **IMPLEMENTED**: CI-enforced via `benchmarkGates` (absolute per-case budgets + baseline regression detection, `npm run benchmark:ci` fails the job).
 - `gpuTimestampBenchmark`: still **PROTOTYPE** — the timing path exists and is exercised, but graduating it needs a CI runner with a real GPU (`timestamp-query`). Nothing app-side blocks it.
-- `parameterTransitions` → **PARTIAL**: now validated frame-by-frame through the real GPU morph packing/dispatch path (`transitionGpuValidation` = IMPLEMENTED). Remaining for IMPLEMENTED: deterministic long replay + timeline scrub coverage.
+- `parameterTransitions` → **IMPLEMENTED**: GPU-validated frame-by-frame (`transitionGpuValidation`), plus deterministic long replay (10 simulated minutes at 120Hz, two byte-identical passes, exact settle on target) and order-independent timeline scrubbing (`verifyLongReplay`, `scrubTransition`, `scrubTimeline`). Phase 13 is COMPLETE.
 - `motionCompiler`: capability stays **PROTOTYPE** because phase 7's IK / look-at / retargeting deliverables are still open, but it is no longer standalone — `motionRuntime` (**IMPLEMENTED**) runs it inside the character's animation loop.
 
 ### 3. Physics / simulation runtime prototypes
@@ -153,4 +153,22 @@ The curve maths were already proven in isolation; what was missing was a _runnin
 
 ### Deliberately still open
 
-- `gpuTimestampBenchmark` (needs a GPU CI runner), phase 7's IK / look-at / retargeting, phase 13's long-replay + scrub coverage, coverage raise on hot paths, and the P23 deferred prototypes (hair, cloth, SDF collision, neural skin, internal anatomy, tattoos, clothing) — untouched by design until HD HEAD V0.1 acceptance.
+- `gpuTimestampBenchmark` (needs a GPU CI runner), coverage raise on hot paths, and the P23 deferred prototypes (hair, cloth, SDF collision, neural skin, internal anatomy, tattoos, clothing) — untouched by design until HD HEAD V0.1 acceptance.
+
+## Just delivered — Motion + IK complete (phase 7) and transition replay/scrub (phase 13)
+
+**Motion + IK** (`motionCompiler: PROTOTYPE → IMPLEMENTED`, phase 7 `PROTOTYPE → COMPLETE`). The old motion path only had heuristic IK/look-at recipes in `MotionCompiler` with no forward-kinematics layer, so nothing could be _measured_. Now:
+
+- **`src/animation/skeleton/kinematics.ts`** — deterministic FK evaluator (`forwardKinematics`, `boneWorldPosition`), topological bone ordering, chain resolution, and a quaternion/vector toolkit (`quatBetween`, `quatToEulerDeg` / `eulerDegToQuat`, matching the existing euler convention exactly).
+- **`src/animation/ik/ik-solver.ts`** — FABRIK chain and limb IK (`solveChainIK`, `solveLimbIK`) with pole-vector control of elbow/knee orientation, authored joint-limit clamping, and multi-pass convergence **verified against the real FK pipeline** (the returned `error` is FK-measured, not solver-internal). Out-of-reach targets are flagged (`targetUnreachable`) and extended along the root→target axis instead of tearing the limb.
+- **`src/animation/ik/look-at.ts`** — FK-verified gaze: rotation is distributed across the neck/head chain by share weights, clamped by `maxAngleDeg` and joint limits, parent-aware (tracks correctly through a twisted torso), with an `intensity` blend.
+- **`src/animation/retarget/retargeting.ts`** — rest-pose-relative retargeting (`retargetPose`, `retargetClip`) with measured height-based translation scaling and an objective `retargetFidelity` drift metric.
+- **`src/animation/motion/motion-runtime.ts`** — persistent IK and gaze constraints (`setIkTarget`, `setLookAtTarget`) layered additively on top of the blended motion pose; every frame and `status()` reports the FK-measured outcome (`error`, `angleErrorDeg`, `reached`, `targetUnreachable`), and `reset()` drops constraints with the rest of the state.
+
+Coverage: `kinematics.test.ts` (10), `ik-solver.test.ts` (10), `look-at.test.ts` (8), `retargeting.test.ts` (11), `motion-runtime-ik.test.ts` (10) — FK-measured reach, pole-vector side switching, joint-limit boxes, swept-target NaN fuzzing, composition with a walking base pose, and cross-runtime determinism.
+
+**Transitions** (`parameterTransitions: PARTIAL → IMPLEMENTED`, phase 13 `IN_PROGRESS → COMPLETE`):
+
+- `verifyLongReplay` replays a transition over a long window (default 600s at 120Hz) **twice** from absolute per-frame times, reporting determinism, max pass deviation, finiteness, and whether the value settles exactly on target and never moves again.
+- `scrubTransition` / `scrubTimeline` prove scrubbing is stateless: a deterministically shuffled scrub reproduces an ordered scrub bit-for-bit, backwards scrubs equal forwards, and out-of-window scrubs clamp to the endpoints.
+- **Bug fixed in the process:** the `elastic` curve was `1 + elasticBase(t)`, so it started at 1 and ended at 2 — a transition using it never landed on its target (observed: 1.12 instead of 0.8). `elastic` is now a decaying ease-out pinned at both endpoints, and `spring` / `bounce` are endpoint-pinned too, so every curve settles exactly.

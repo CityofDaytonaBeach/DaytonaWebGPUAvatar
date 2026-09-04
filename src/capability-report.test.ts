@@ -17,7 +17,6 @@ describe('capability report', () => {
     // Runtime prototypes that direction.md/start.md explicitly say are not yet
     // integrated/validated must never be reported as production-ready.
     for (const cap of [
-      'motionCompiler',
       'strandHair',
       'clothPhysics',
       'sdfCollision',
