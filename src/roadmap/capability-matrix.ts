@@ -55,9 +55,9 @@ export const CAPABILITY_MATRIX = {
   tattooDecals: 'PROTOTYPE',
   clothingGeometry: 'PROTOTYPE',
 
-  // Facial + speech (foundation implemented; performance/co-articulation pending).
+  // Facial + speech (production-shaped: co-articulation + expression blending).
   facialExpression: 'IMPLEMENTED',
-  speechVisemes: 'PARTIAL',
+  speechVisemes: 'IMPLEMENTED',
 
   // Timeline / history.
   timelineEventSourcing: 'IMPLEMENTED',

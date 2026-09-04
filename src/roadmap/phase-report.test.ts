@@ -22,7 +22,9 @@ describe('start.md phase report', () => {
     expect(byPhase.get(7)!.status).toBe('PROTOTYPE'); // motionCompiler is a prototype
     expect(byPhase.get(9)!.status).toBe('PROTOTYPE'); // hair/clothing/cloth are prototypes
     // A required capability that is PARTIAL yields IN_PROGRESS.
-    expect(byPhase.get(6)!.status).toBe('IN_PROGRESS');
+    expect(byPhase.get(2)!.status).toBe('IN_PROGRESS'); // canonicalHuman is PARTIAL
+    // Speech graduated: its only required capability is now IMPLEMENTED.
+    expect(byPhase.get(6)!.status).toBe('COMPLETE');
     // Fully implemented phases stay COMPLETE.
     expect(byPhase.get(4)!.status).toBe('COMPLETE');
     expect(byPhase.get(11)!.status).toBe('COMPLETE');

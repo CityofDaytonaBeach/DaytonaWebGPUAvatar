@@ -135,10 +135,10 @@ export const START_MD_PHASES: PhaseMilestone[] = [
   phase(
     6,
     'Speech',
-    'IN_PROGRESS',
+    'COMPLETE',
     ['speechVisemes'],
     ['phoneme timing adapter', 'co-articulation', 'expression blending', 'TTS adapter boundary'],
-    ['add co-articulation + expression blending to graduate speech from partial'],
+    [],
   ),
   phase(
     7,

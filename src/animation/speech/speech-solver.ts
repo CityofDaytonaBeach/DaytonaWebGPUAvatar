@@ -30,14 +30,25 @@ const VISEME_WEIGHTS: Record<Viseme, { jawOpen: number; mouthPucker: number; mou
     kk: { jawOpen: 0.4, mouthPucker: 0.2, mouthSmile: 0.1 },
   };
 
+export interface SpeechPose {
+  jawOpen: number;
+  mouthPucker: number;
+  mouthSmileLeft: number;
+  mouthSmileRight: number;
+}
+
 /**
  * Viseme solver with co-articulation. Renders speech into facial controls at
  * time `t`, blending between neighbouring phonemes instead of hard-switching
  * mouth shapes. TTS providers are adapters that produce a SpeechTrack.
  */
 export class SpeechSolver {
-  /** Apply the speech track at time t into the definition (co-articulated). */
-  apply(definition: HumanDefinition, track: SpeechTrack, t: number): void {
+  /**
+   * Resolve the co-articulated speech pose at time `t` without touching any
+   * definition: a weighted blend of every nearby phoneme's viseme so mouth
+   * motion glides between shapes instead of snapping.
+   */
+  poseAt(track: SpeechTrack, t: number): SpeechPose {
     const jawOpen: number[] = [];
     const pucker: number[] = [];
     const smile: number[] = [];
@@ -60,24 +71,50 @@ export class SpeechSolver {
     const p = totalWeight > 0 ? sum(pucker) / totalWeight : 0;
     const s = totalWeight > 0 ? sum(smile) / totalWeight : 0;
 
-    definition.set('expression.jawOpen', j);
-    definition.set('expression.mouthPucker', p);
-    definition.set('expression.mouthSmileLeft', s);
-    definition.set('expression.mouthSmileRight', s);
+    // The speech-only mouth is symmetric (both smile sides driven together).
+    return { jawOpen: j, mouthPucker: p, mouthSmileLeft: s, mouthSmileRight: s };
   }
 
-  /** A run to blend expression + speech simultaneously (layering). */
+  /** Apply the speech track at time t into the definition (co-articulated). */
+  apply(definition: HumanDefinition, track: SpeechTrack, t: number): void {
+    this.applyWithExpression(definition, track, t, 0);
+  }
+
+  /**
+   * Blend speech and a persistent expression simultaneously (layering), so the
+   * character keeps its resting/allotted expression while talking instead of
+   * going dead-faced. `expressionWeight` in [0,1] interpolates each mouth
+   * control between the co-articulated speech pose (0) and the base expression
+   * already present in the definition (1). The base expression controls are
+   * read BEFORE writing, so consecutive calls layer deterministically and a
+   * spoken syllable can only push the mouth as far as `1 - expressionWeight`.
+   */
   applyWithExpression(
     definition: HumanDefinition,
     track: SpeechTrack,
     t: number,
     expressionWeight: number,
   ): void {
-    void definition;
-    void track;
-    void t;
-    void expressionWeight;
+    const w = expressionWeight <= 0 ? 0 : expressionWeight >= 1 ? 1 : expressionWeight;
+
+    // Base expression present before this frame of speech.
+    const baseJaw = definition.get('expression.jawOpen') ?? 0;
+    const basePucker = definition.get('expression.mouthPucker') ?? 0;
+    const baseSmileL = definition.get('expression.mouthSmileLeft') ?? 0;
+    const baseSmileR = definition.get('expression.mouthSmileRight') ?? 0;
+
+    const speech = this.poseAt(track, t);
+
+    // final = lerp(speech, base, w) per channel.
+    definition.set('expression.jawOpen', lerp(speech.jawOpen, baseJaw, w));
+    definition.set('expression.mouthPucker', lerp(speech.mouthPucker, basePucker, w));
+    definition.set('expression.mouthSmileLeft', lerp(speech.mouthSmileLeft, baseSmileL, w));
+    definition.set('expression.mouthSmileRight', lerp(speech.mouthSmileRight, baseSmileR, w));
   }
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
 }
 
 function sum(arr: number[]): number {

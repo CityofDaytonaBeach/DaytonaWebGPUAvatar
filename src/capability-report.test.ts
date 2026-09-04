@@ -38,10 +38,15 @@ describe('capability report', () => {
   it('marks partial systems as PARTIAL, not IMPLEMENTED', () => {
     const report = capabilityReport();
     const entry = report.entries.find((e) => e.name === 'canonicalHuman');
-    const speech = report.entries.find((e) => e.name === 'speechVisemes');
     expect(entry!.status).toBe('PARTIAL');
     expect(entry!.productionReady).toBe(false);
-    expect(speech!.status).toBe('PARTIAL');
+  });
+
+  it('reports speech as production-shaped (IMPLEMENTED)', () => {
+    const report = capabilityReport();
+    const speech = report.entries.find((e) => e.name === 'speechVisemes');
+    expect(speech!.status).toBe('IMPLEMENTED');
+    expect(speech!.productionReady).toBe(true);
   });
 
   it('production-ready (IMPLEMENTED) excludes all prototypes/partials', () => {
@@ -69,6 +74,7 @@ describe('capability report', () => {
       'undoRedo',
       'timelineEventSourcing',
       'identitySolver',
+      'speechVisemes',
     ]) {
       expect(report.implemented).toContain(cap);
       expect(report.entries.find((e) => e.name === cap)!.productionReady).toBe(true);
