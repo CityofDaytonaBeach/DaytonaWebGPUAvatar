@@ -102,12 +102,17 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
     const coarsePresent = coarseRegions.filter((r) => canonical.regionRanges.has(r));
     const targets = finePresent.length >= coarsePresent.length ? finePresent : coarsePresent;
     if (targets.length === 0) return null;
-    const ids = new Set<number>();
-    for (const region of targets) {
-      const range = canonical.regionRanges.get(region)!;
-      for (let i = range.start; i < range.start + range.count; i++) ids.add(i);
+    // Collect vertices by their ACTUAL region (not by assuming each region is a
+    // contiguous vertex-id block). `regionRanges` only tracks totals, so the
+    // naive `[start, start+count)` walk grabs non-region vertices whenever a
+    // region is emitted non-contiguously (e.g. junction fillets sharing rings
+    // with neighbours). Filtering by region makes every topology safe.
+    const regionSet = new Set(targets);
+    const ids: number[] = [];
+    for (let i = 0; i < canonical.vertexCount; i++) {
+      if (regionSet.has(canonical.vertices[i].region)) ids.push(i);
     }
-    const basis = space.addVertexBasis(name, property, [...ids], fn, tags);
+    const basis = space.addVertexBasis(name, property, ids, fn, tags);
     spec.propertyPaths.push(property);
     return basis.id;
   };

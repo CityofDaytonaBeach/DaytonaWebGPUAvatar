@@ -13,7 +13,7 @@ import type {
   CanonicalValidationResult,
 } from './canonical-provider.js';
 import type { HumanLandmark } from './landmark.js';
-import { buildHdBodySkin } from './hd-body-skin.js';
+import { buildHdBodyManifold } from './hd-body-manifold.js';
 
 /** Coordinate frame shared with the block human's skeleton (head bone ~y1.86). */
 export interface HdHeadOptions {
@@ -138,9 +138,9 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
     indices: Uint32Array;
     parts: CanonicalTopologyPart[];
   } {
-    // HD BODY V0.1: full torso + limb skin FIRST so it renders as the base body,
-    // then the HD head skin, then the detail parts (eyes/teeth/tongue/cavity).
-    const body = buildHdBodySkin({ neckY: 1.68 });
+    // HD BODY V0.2: clean-manifold parametric body FIRST so it renders as the
+    // base body, then the HD head skin, then the detail parts (eyes/teeth/...).
+    const body = buildHdBodyManifold({ neckY: 1.68 });
     const skin = this.buildSkin();
     const append = this.buildDetailParts();
 
