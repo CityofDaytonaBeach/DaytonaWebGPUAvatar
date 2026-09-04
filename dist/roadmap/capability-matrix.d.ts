@@ -29,7 +29,7 @@ export declare const CAPABILITY_MATRIX: {
     readonly sparseMorph: "IMPLEMENTED";
     readonly identitySolver: "IMPLEMENTED";
     readonly constraintSolver: "IMPLEMENTED";
-    readonly canonicalHuman: "PARTIAL";
+    readonly canonicalHuman: "IMPLEMENTED";
     readonly canonicalValidation: "IMPLEMENTED";
     readonly canonicalAssetAdapter: "IMPLEMENTED";
     readonly canonicalParts: "IMPLEMENTED";
@@ -38,6 +38,7 @@ export declare const CAPABILITY_MATRIX: {
     readonly internalAnatomyModes: "PROTOTYPE";
     readonly skeletalAnimation: "IMPLEMENTED";
     readonly motionCompiler: "PROTOTYPE";
+    readonly motionRuntime: "IMPLEMENTED";
     readonly gpuSkinning: "IMPLEMENTED";
     readonly attachmentCoordinates: "IMPLEMENTED";
     readonly tattooDecals: "PROTOTYPE";
@@ -47,12 +48,15 @@ export declare const CAPABILITY_MATRIX: {
     readonly timelineEventSourcing: "IMPLEMENTED";
     readonly timelineDirtyReporting: "IMPLEMENTED";
     readonly nonPropertyEventDirtyReporting: "IMPLEMENTED";
-    readonly parameterTransitions: "PROTOTYPE";
+    readonly parameterTransitions: "PARTIAL";
+    readonly transitionGpuValidation: "IMPLEMENTED";
     readonly snapshotRestore: "IMPLEMENTED";
     readonly undoRedo: "IMPLEMENTED";
     readonly gpuScheduler: "IMPLEMENTED";
     readonly gpuMorphCompute: "IMPLEMENTED";
-    readonly localizedEditBenchmark: "PROTOTYPE";
+    readonly gpuValidationHarness: "IMPLEMENTED";
+    readonly localizedEditBenchmark: "IMPLEMENTED";
+    readonly benchmarkGates: "IMPLEMENTED";
     readonly gpuTimestampBenchmark: "PROTOTYPE";
     readonly semanticLod: "IMPLEMENTED";
     readonly perceptualLod: "IMPLEMENTED";

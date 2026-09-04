@@ -557,8 +557,14 @@ export function computeSSSApproximation(vertexId, region, aging, preset) {
 export function generateNormalPerturbation(vertexId, uv, region, aging, poreDetailCombined, wrinkleDepthVal, strength = 1) {
     const regionMat = REGION_MATERIALS[region] ?? REGION_MATERIALS.torso;
     const regionScale = regionMat.poreScale;
-    const poreNx = (fbm2D(vertexId * 11 + 700, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) * 0.06 * regionScale * poreDetailCombined;
-    const poreNy = (fbm2D(vertexId * 11 + 800, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) * 0.06 * regionScale * poreDetailCombined;
+    const poreNx = (fbm2D(vertexId * 11 + 700, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) *
+        0.06 *
+        regionScale *
+        poreDetailCombined;
+    const poreNy = (fbm2D(vertexId * 11 + 800, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) *
+        0.06 *
+        regionScale *
+        poreDetailCombined;
     const wrinkleNx = (fbm2D(vertexId * 13 + 900, uv.u, uv.v, 2, 2.0, 0.5) - 0.5) *
         0.1 *
         regionMat.wrinkleSusceptibility *

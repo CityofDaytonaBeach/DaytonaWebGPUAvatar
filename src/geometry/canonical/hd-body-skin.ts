@@ -57,11 +57,7 @@ interface BodyColumn {
 }
 
 /** Build a column of k ring rows × segments cols as a quad strip. */
-function column(
-  offsetX: number,
-  rings: RingSpec[],
-  segments: number,
-): BodyColumn {
+function column(offsetX: number, rings: RingSpec[], segments: number): BodyColumn {
   const vertices: CanonicalTopologyVertex[] = [];
   for (let i = 0; i < rings.length; i++) {
     const ring = rings[i];
@@ -124,15 +120,15 @@ export function buildHdBodySkin(opts: HdBodySkinOptions = {}): {
 
   // ------------------------------------------------------------------ torso
   const torso: RingSpec[] = [
-    ring(neckY, 0.115, 0.10, 0, 'chest', { chest: 1 }),
-    ring(1.58, 0.115, 0.10, 0, 'chest', { chest: 1 }),
+    ring(neckY, 0.115, 0.1, 0, 'chest', { chest: 1 }),
+    ring(1.58, 0.115, 0.1, 0, 'chest', { chest: 1 }),
     ring(1.5, 0.112, 0.098, 0, 'chest', { chest: 1 }),
     ring(1.38, 0.11, 0.095, 0, 'chest', { chest: 1 }),
     ring(1.28, 0.108, 0.09, 0, 'abdomen', { spine_02: 1 }),
     ring(1.18, 0.105, 0.088, 0, 'abdomen', { spine_02: 1 }),
     ring(1.08, 0.106, 0.09, 0, 'abdomen', { spine_01: 1 }),
     ring(0.99, 0.112, 0.096, 0, 'pelvis', { pelvis: 1 }),
-    ring(0.932, 0.118, 0.10, 0, 'pelvis', { pelvis: 1 }),
+    ring(0.932, 0.118, 0.1, 0, 'pelvis', { pelvis: 1 }),
   ];
   let torsoCol = column(0, torso, S);
 
@@ -181,11 +177,39 @@ export function buildHdBodySkin(opts: HdBodySkinOptions = {}): {
     const prefix = (n: string) => n + (l ? '_l' : '_r');
     const ox = side * 0.215;
     const armRings: RingSpec[] = [
-      ring(1.5, 0.048, 0.052, 0, l ? 'upper_arm_left' : 'upper_arm_right', boneOnly(prefix('upperarm'))),
-      ring(1.4, 0.047, 0.05, 0, l ? 'upper_arm_left' : 'upper_arm_right', boneOnly(prefix('upperarm'))),
-      ring(1.26, 0.045, 0.048, 0, l ? 'upper_arm_left' : 'upper_arm_right', normWeights({ [prefix('upperarm')]: 0.8, [prefix('forearm')]: 0.2 })),
+      ring(
+        1.5,
+        0.048,
+        0.052,
+        0,
+        l ? 'upper_arm_left' : 'upper_arm_right',
+        boneOnly(prefix('upperarm')),
+      ),
+      ring(
+        1.4,
+        0.047,
+        0.05,
+        0,
+        l ? 'upper_arm_left' : 'upper_arm_right',
+        boneOnly(prefix('upperarm')),
+      ),
+      ring(
+        1.26,
+        0.045,
+        0.048,
+        0,
+        l ? 'upper_arm_left' : 'upper_arm_right',
+        normWeights({ [prefix('upperarm')]: 0.8, [prefix('forearm')]: 0.2 }),
+      ),
       ring(1.12, 0.04, 0.042, 0, l ? 'forearm_left' : 'forearm_right', boneOnly(prefix('forearm'))),
-      ring(0.98, 0.036, 0.038, 0, l ? 'forearm_left' : 'forearm_right', boneOnly(prefix('forearm'))),
+      ring(
+        0.98,
+        0.036,
+        0.038,
+        0,
+        l ? 'forearm_left' : 'forearm_right',
+        boneOnly(prefix('forearm')),
+      ),
       ring(0.9, 0.035, 0.037, 0, l ? 'hand_left' : 'hand_right', boneOnly(prefix('hand'))),
     ];
     const c = column(ox, armRings, S);
@@ -211,7 +235,14 @@ export function buildHdBodySkin(opts: HdBodySkinOptions = {}): {
     const legRings: RingSpec[] = [
       ring(1.0, 0.062, 0.07, 0, l ? 'thigh_left' : 'thigh_right', boneOnly(prefix('thigh'))),
       ring(0.86, 0.058, 0.066, 0, l ? 'thigh_left' : 'thigh_right', boneOnly(prefix('thigh'))),
-      ring(0.7, 0.052, 0.06, 0, l ? 'thigh_left' : 'thigh_right', normWeights({ [prefix('thigh')]: 0.6, [prefix('shin')]: 0.4 })),
+      ring(
+        0.7,
+        0.052,
+        0.06,
+        0,
+        l ? 'thigh_left' : 'thigh_right',
+        normWeights({ [prefix('thigh')]: 0.6, [prefix('shin')]: 0.4 }),
+      ),
       ring(0.5, 0.042, 0.048, 0, l ? 'shin_left' : 'shin_right', boneOnly(prefix('shin'))),
       ring(0.32, 0.036, 0.042, 0, l ? 'shin_left' : 'shin_right', boneOnly(prefix('shin'))),
       ring(0.16, 0.032, 0.04, 0, l ? 'shin_left' : 'shin_right', boneOnly(prefix('shin'))),
@@ -219,7 +250,10 @@ export function buildHdBodySkin(opts: HdBodySkinOptions = {}): {
     const c = column(ox, legRings, S);
     // Top thigh ring blends toward pelvis.
     for (let j = 0; j < S; j++) {
-      c.vertices[j] = { ...c.vertices[j], weights: normWeights({ [prefix('thigh')]: 0.85, pelvis: 0.15 }) };
+      c.vertices[j] = {
+        ...c.vertices[j],
+        weights: normWeights({ [prefix('thigh')]: 0.85, pelvis: 0.15 }),
+      };
     }
     return c;
   };
@@ -232,15 +266,36 @@ export function buildHdBodySkin(opts: HdBodySkinOptions = {}): {
     const prefix = (n: string) => n + (l ? '_l' : '_r');
     const ringR = 0.05;
     const feetCol = (ox: number): BodyColumn =>
-      column(ox, [
-        ring(0.16, ringR, ringR, 0.06, l ? 'foot_left' : 'foot_right', boneOnly(prefix('foot'))),
-        ring(0.06, ringR * 1.05, ringR * 1.05, 0.06, l ? 'foot_left' : 'foot_right', boneOnly(prefix('foot'))),
-        ring(0.02, ringR * 1.1, ringR * 1.4, 0.1, l ? 'foot_left' : 'foot_right', boneOnly(prefix('foot'))),
-      ], S);
+      column(
+        ox,
+        [
+          ring(0.16, ringR, ringR, 0.06, l ? 'foot_left' : 'foot_right', boneOnly(prefix('foot'))),
+          ring(
+            0.06,
+            ringR * 1.05,
+            ringR * 1.05,
+            0.06,
+            l ? 'foot_left' : 'foot_right',
+            boneOnly(prefix('foot')),
+          ),
+          ring(
+            0.02,
+            ringR * 1.1,
+            ringR * 1.4,
+            0.1,
+            l ? 'foot_left' : 'foot_right',
+            boneOnly(prefix('foot')),
+          ),
+        ],
+        S,
+      );
     const c = feetCol(side * 0.075);
     // Blend ankle into foot.
     for (let j = 0; j < S; j++) {
-      c.vertices[j] = { ...c.vertices[j], weights: normWeights({ [prefix('foot')]: 0.85, [prefix('shin')]: 0.15 }) };
+      c.vertices[j] = {
+        ...c.vertices[j],
+        weights: normWeights({ [prefix('foot')]: 0.85, [prefix('shin')]: 0.15 }),
+      };
     }
     return c;
   };

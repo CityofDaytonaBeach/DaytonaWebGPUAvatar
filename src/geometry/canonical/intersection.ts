@@ -13,8 +13,12 @@ export interface SelfIntersectionReport {
 const EPS = 1e-9;
 
 function cross(
-  ax: number, ay: number, az: number,
-  bx: number, by: number, bz: number,
+  ax: number,
+  ay: number,
+  az: number,
+  bx: number,
+  by: number,
+  bz: number,
 ): [number, number, number] {
   return [ay * bz - az * by, az * bx - ax * bz, ax * by - ay * bx];
 }
@@ -24,8 +28,12 @@ function dot(ax: number, ay: number, az: number, bx: number, by: number, bz: num
 }
 
 function sub(
-  ax: number, ay: number, az: number,
-  bx: number, by: number, bz: number,
+  ax: number,
+  ay: number,
+  az: number,
+  bx: number,
+  by: number,
+  bz: number,
 ): [number, number, number] {
   return [ax - bx, ay - by, az - bz];
 }
@@ -178,8 +186,12 @@ export class MeshIntersectionAnalyzer {
     const cellKey = (gx: number, gy: number, gz: number): string => `${gx},${gy},${gz}`;
     for (let t = 0; t < K; t++) {
       const [a, b, c] = this.triVertex[t];
-      let minX = Infinity, minY = Infinity, minZ = Infinity;
-      let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+      let minX = Infinity,
+        minY = Infinity,
+        minZ = Infinity;
+      let maxX = -Infinity,
+        maxY = -Infinity,
+        maxZ = -Infinity;
       for (const v of [a, b, c]) {
         const x = positions[v * 3];
         const y = positions[v * 3 + 1];
@@ -221,8 +233,13 @@ export class MeshIntersectionAnalyzer {
           if (this.triNeighbors[tb].has(ta)) continue;
           if (
             triangleIntersect(
-              positions, this.triVertex[ta][0], this.triVertex[ta][1], this.triVertex[ta][2],
-              this.triVertex[tb][0], this.triVertex[tb][1], this.triVertex[tb][2],
+              positions,
+              this.triVertex[ta][0],
+              this.triVertex[ta][1],
+              this.triVertex[ta][2],
+              this.triVertex[tb][0],
+              this.triVertex[tb][1],
+              this.triVertex[tb][2],
             )
           ) {
             intersectingPairs++;
@@ -244,8 +261,12 @@ export class MeshIntersectionAnalyzer {
   private cellSize(positions: Float32Array): number {
     // World-scale stable cell from the mesh bbox (thirds of the diagonal-minus
     // dominant axis). Keeps per-cell occupancy low without tuning constants.
-    let minX = Infinity, minY = Infinity, minZ = Infinity;
-    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      minZ = Infinity;
+    let maxX = -Infinity,
+      maxY = -Infinity,
+      maxZ = -Infinity;
     for (let i = 0; i < positions.length; i += 3) {
       const x = positions[i];
       const y = positions[i + 1];
@@ -272,8 +293,12 @@ function triPos(positions: Float32Array, v: number): [number, number, number] {
  */
 function triangleIntersect(
   positions: Float32Array,
-  a0: number, a1: number, a2: number,
-  b0: number, b1: number, b2: number,
+  a0: number,
+  a1: number,
+  a2: number,
+  b0: number,
+  b1: number,
+  b2: number,
 ): boolean {
   const p0 = triPos(positions, a0);
   const p1 = triPos(positions, a1);

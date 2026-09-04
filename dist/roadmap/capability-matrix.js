@@ -29,11 +29,14 @@ export const CAPABILITY_MATRIX = {
     sparseMorph: 'IMPLEMENTED',
     identitySolver: 'IMPLEMENTED',
     constraintSolver: 'IMPLEMENTED',
-    // Canonical human: the runtime + adapter/validation/parts are implemented, but
-    // the shipped default topology is still the procedural block human rather than
-    // a production HD canonical mesh (direction.md: "Daytona-generated HD human:
-    // active; production topology").
-    canonicalHuman: 'PARTIAL',
+    // Canonical human: the runtime + adapter/validation/parts are IMPLEMENTED, the
+    // body is a CLEAN-MANIFOLD parametric HD mesh (SDF union -> single watertight
+    // marching-cubes surface, non-self-overlapping at rest; P22 hard body-region
+    // gate pairs == 0), and the head is the HD parametric skin with inverse-distance
+    // weight gradients. Production topology decision (direction.md P22): head,
+    // eyes, and teeth are accepted as separate authored shells layered over the
+    // unified body (like eyelid-over-eye) rather than a single fused manifold.
+    canonicalHuman: 'IMPLEMENTED',
     canonicalValidation: 'IMPLEMENTED',
     canonicalAssetAdapter: 'IMPLEMENTED',
     canonicalParts: 'IMPLEMENTED',
@@ -43,6 +46,9 @@ export const CAPABILITY_MATRIX = {
     internalAnatomyModes: 'PROTOTYPE',
     skeletalAnimation: 'IMPLEMENTED',
     motionCompiler: 'PROTOTYPE',
+    // Motion runtime: compiler now drives the animation frame loop (cross-fade,
+    // walk phase, rejection) and is covered by deterministic tests.
+    motionRuntime: 'IMPLEMENTED',
     gpuSkinning: 'IMPLEMENTED',
     // Surface / attachments (runtime prototypes, not yet production-rendered).
     attachmentCoordinates: 'IMPLEMENTED',
@@ -55,13 +61,22 @@ export const CAPABILITY_MATRIX = {
     timelineEventSourcing: 'IMPLEMENTED',
     timelineDirtyReporting: 'IMPLEMENTED',
     nonPropertyEventDirtyReporting: 'IMPLEMENTED',
-    parameterTransitions: 'PROTOTYPE',
+    // Transitions are now validated frame-by-frame through the real GPU morph
+    // packing/dispatch path (transitionGpuValidation), not only as isolated curve
+    // maths. Still PARTIAL until deterministic long replay and timeline scrub
+    // coverage land — the remaining phase-13 exit criteria.
+    parameterTransitions: 'PARTIAL',
+    transitionGpuValidation: 'IMPLEMENTED',
     snapshotRestore: 'IMPLEMENTED',
     undoRedo: 'IMPLEMENTED',
     // GPU / performance.
     gpuScheduler: 'IMPLEMENTED',
     gpuMorphCompute: 'IMPLEMENTED',
-    localizedEditBenchmark: 'PROTOTYPE',
+    gpuValidationHarness: 'IMPLEMENTED',
+    // Benchmarks are CI-enforced: absolute per-case budgets + baseline regression
+    // gates, failing the job on violation.
+    localizedEditBenchmark: 'IMPLEMENTED',
+    benchmarkGates: 'IMPLEMENTED',
     gpuTimestampBenchmark: 'PROTOTYPE',
     // LOD / validation.
     semanticLod: 'IMPLEMENTED',

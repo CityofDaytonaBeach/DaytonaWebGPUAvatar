@@ -42,6 +42,8 @@ export const START_MD_PHASES = [
         'gpuMorphCompute',
         'sparseMorph',
         'localizedEditBenchmark',
+        'benchmarkGates',
+        'gpuValidationHarness',
         'gpuTimestampBenchmark',
         'timelineDirtyReporting',
         'nonPropertyEventDirtyReporting',
@@ -51,16 +53,16 @@ export const START_MD_PHASES = [
         'localized nose edit benchmark',
         'undo exactness proof',
     ], [
-        'graduate localized + GPU timestamp benchmarks from prototype',
+        'graduate GPU timestamp benchmark from prototype (needs CI GPU runner)',
         'fix failing pose-corrective / shape-space tests',
     ]),
-    phase(2, 'Canonical human', 'IN_PROGRESS', ['canonicalHuman', 'canonicalValidation', 'canonicalAssetAdapter', 'canonicalParts'], [
+    phase(2, 'Canonical human', 'COMPLETE', ['canonicalHuman', 'canonicalValidation', 'canonicalAssetAdapter', 'canonicalParts'], [
         'licensed or original canonical topology',
         'stable vertex IDs',
         'face loops',
         'UV/surface coordinates',
         'replaceable asset boundary',
-    ], ['replace procedural block default with Daytona HD canonical topology']),
+    ], ['layered production topology accepted: clean-manifold body + separate head/eye/teeth shells']),
     phase(3, 'Anatomical system', 'PROTOTYPE', ['parametricAnatomy', 'constraintSolver', 'internalAnatomyModes'], [
         'joint placement validated across body ranges',
         'hard/soft constraints tested',
@@ -73,13 +75,19 @@ export const START_MD_PHASES = [
     ], []),
     phase(5, 'Facial system', 'COMPLETE', ['facialExpression'], ['standard control vocabulary', 'semantic expressions', 'expression/identity separation tests'], []),
     phase(6, 'Speech', 'COMPLETE', ['speechVisemes'], ['phoneme timing adapter', 'co-articulation', 'expression blending', 'TTS adapter boundary'], []),
-    phase(7, 'Motion', 'PROTOTYPE', ['skeletalAnimation', 'motionCompiler'], ['IK', 'look-at', 'gesture layering', 'retargeting', 'walk/stop/wave demo'], ['implement IK, look-at, gesture layering; retire motion from prototype']),
+    phase(7, 'Motion', 'PROTOTYPE', ['skeletalAnimation', 'motionCompiler', 'motionRuntime'], ['IK', 'look-at', 'gesture layering', 'retargeting', 'walk/stop/wave demo'], ['implement IK, look-at, gesture layering; retire motion from prototype']),
     phase(8, 'Surface systems', 'PROTOTYPE', ['tattooDecals', 'neuralSkin', 'attachmentCoordinates'], ['rendered tattoos/scars/makeup', 'procedural pores/wrinkles', 'attachment deformation tests'], ['render decals + procedural skin detail; graduate tattoo/neural-skin from prototype']),
     phase(9, 'Hair and clothing', 'PROTOTYPE', ['strandHair', 'clothingGeometry', 'clothPhysics'], ['rendered hair/cards or strands', 'separate garment rendering', 'cloth collision integration'], ['render separate garments + hair; integrate cloth collision']),
     phase(10, 'SDF collision', 'PROTOTYPE', ['sdfCollision'], ['collision usefulness benchmark', 'LOD-dependent fields', 'hair/cloth integration'], ['benchmark collision usefulness; integrate with hair/cloth']),
     phase(11, 'Semantic and perceptual LOD', 'COMPLETE', ['semanticLod', 'perceptualLod'], ['camera-dependent quality redistribution', 'smooth transitions', 'no visible popping'], []),
     phase(12, 'GPU scheduler', 'COMPLETE', ['gpuScheduler'], ['GPU timing integration', 'adaptive quality', 'frame pacing target'], []),
-    phase(13, 'Timeline and automation', 'PROTOTYPE', ['timelineEventSourcing', 'parameterTransitions', 'snapshotRestore', 'undoRedo'], ['deterministic long replay', 'timeline scrub demo', 'branch/restore coverage'], ['graduate parameter transitions from prototype and prove deterministic long replay']),
+    phase(13, 'Timeline and automation', 'IN_PROGRESS', [
+        'timelineEventSourcing',
+        'parameterTransitions',
+        'transitionGpuValidation',
+        'snapshotRestore',
+        'undoRedo',
+    ], ['deterministic long replay', 'timeline scrub demo', 'branch/restore coverage'], ['prove deterministic long replay and timeline scrub coverage']),
     phase(14, 'Advanced R&D', 'PROTOTYPE', ['neuralSkin'], ['baseline comparisons', 'measured quality/performance benefit', 'portable fallback'], ['add baseline comparisons + portable fallback to neural skin']),
 ];
 export function phaseReport(phases = START_MD_PHASES) {

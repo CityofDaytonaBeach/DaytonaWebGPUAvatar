@@ -7,6 +7,7 @@ import { KernelWork } from './compiler/delta/delta-compiler.js';
 import { AffectedSystem } from './compiler/dependency/affected-systems.js';
 import { CanonicalHuman } from './geometry/canonical/canonical-human.js';
 import type { CanonicalHumanProvider } from './geometry/canonical/canonical-provider.js';
+import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { HumanProfiler } from './gpu/profiler/profiler.js';
 import { SemanticExpression } from './animation/facial/facial-expression.js';
 import { SemanticLOD } from './lod/index.js';
@@ -21,6 +22,7 @@ import { HumanSdfField } from './physics/sdf/human-sdf.js';
 import { ClothMesh, ClothStepOptions } from './physics/cloth/cloth-sim.js';
 import { SkinResidualField, SkinResidualOptions } from './surface/skin/neural-skin.js';
 import { MotionPlan } from './animation/motion/motion-compiler.js';
+import { MotionRuntime, type MotionRuntimeConfig, type MotionRuntimeFrame } from './animation/motion/motion-runtime.js';
 import { PerceptualValidationReport } from './validation/perceptual-validator.js';
 import { TattooDecal } from './surface/tattoo/tattoo-decal.js';
 import { GarmentMesh } from './surface/clothing/garment.js';
@@ -62,6 +64,7 @@ export declare class Human {
     private identity;
     private canonical;
     private morphs;
+    private motionRuntime?;
     private morphDriver;
     private morphKernel;
     private shapeSpace;
@@ -112,6 +115,8 @@ export declare class Human {
     private registerCanonicalMorphs;
     get definitionRef(): HumanDefinition;
     get canonicalRef(): CanonicalHuman;
+    /** Registered sparse morphs, read-only handle for validation/telemetry. */
+    get morphsRef(): SparseMorphSet;
     get constraintsRef(): ConstraintSolver;
     get semanticLodRef(): SemanticLOD;
     get(path: string): number;
@@ -163,6 +168,20 @@ export declare class Human {
     animate(t: number): void;
     compileMotion(command: string): MotionPlan;
     perform(command: string, source?: EventSource): HumanModifyResult;
+    /**
+     * Continuous motion (P17): `perform()` applies a compiled plan as a single
+     * snapped pose, which is right for a one-shot event but cannot cross-fade or
+     * cycle. `startMotion()` hands the command to a MotionRuntime that is ticked
+     * from `update(dt)`, so gestures blend in and locomotion actually walks.
+     * `perform()` and clip playback keep working exactly as before.
+     */
+    startMotion(command: string, config?: Partial<MotionRuntimeConfig>): boolean;
+    /** Cross-fade the active continuous motion back to rest. */
+    stopMotion(): void;
+    /** Runtime handle for status/diagnostics; null until startMotion() is called. */
+    get motionRuntimeRef(): MotionRuntime | null;
+    /** Advance the motion runtime by `dt` and apply the resulting pose. */
+    tickMotion(dt: number): MotionRuntimeFrame | null;
     /**
      * CPU skinning reference: transform the canonical base positions by the
      * current pose's bone matrices. At rest this equals the base geometry, so

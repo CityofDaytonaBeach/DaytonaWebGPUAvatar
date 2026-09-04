@@ -8,27 +8,6 @@ function dot(ax, ay, az, bx, by, bz) {
 function sub(ax, ay, az, bx, by, bz) {
     return [ax - bx, ay - by, az - bz];
 }
-/**
- * Topology-aware self-intersection analyzer (P22 infrastructure).
- *
- * Built once from a canonical mesh, then `analyze()` is called per deformed
- * frame. It detects two failure modes of a distorted mesh:
- *
- *   1. Degenerate triangles (near-zero area -> the surface collapsed locally).
- *   2. Explicit interpenetration of two non-adjacent triangles (spatially
- *      pruned with a uniform grid, so only near-coincident candidates are
- *      tested with a full Möller triangle-triangle intersection test, with
- *      vertex-sharing neighbours excluded as legitimate contact).
- *
- * The result is reported, not asserted: the *current* coarse procedural body
- * is intrinsically self-overlapping at rest (thousands of baseline
- * interpenetrations), so callers must decide what stricter-than-baseline delta
- * is meaningful for their topology. The intersection pass is early-exit capped
- * (`maxPairs`), keeping it cheap enough to run every fuzz seed.
- *
- * `regionScope` optionally restricts analysis to triangles whose *three*
- * vertices all lie in the listed regions.
- */
 export class MeshIntersectionAnalyzer {
     triId = [];
     triVertex = [];
@@ -39,12 +18,16 @@ export class MeshIntersectionAnalyzer {
      * treated as a self-intersection.
      */
     triNeighbors = [];
-    constructor(canonical, regionScope) {
+    constructor(canonical, scope = {}) {
         const idx = canonical.indices;
         const T = canonical.indices.length / 3;
         const scoped = [];
-        if (regionScope) {
-            for (let t = 0; t < T; t++) {
+        const regionScope = scope.regionScope;
+        const range = scope.triangleRange ?? [0, T];
+        for (let t = 0; t < T; t++) {
+            if (t < range[0] || t >= range[1])
+                continue;
+            if (regionScope) {
                 const a = idx[t * 3];
                 const b = idx[t * 3 + 1];
                 const c = idx[t * 3 + 2];
@@ -54,10 +37,9 @@ export class MeshIntersectionAnalyzer {
                     scoped.push(t);
                 }
             }
-        }
-        else {
-            for (let t = 0; t < T; t++)
+            else {
                 scoped.push(t);
+            }
         }
         this.triBaseArea = new Float32Array(scoped.length);
         for (let k = 0; k < scoped.length; k++) {

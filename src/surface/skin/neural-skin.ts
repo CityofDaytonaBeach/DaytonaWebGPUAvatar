@@ -799,9 +799,15 @@ export function generateNormalPerturbation(
   const regionScale = regionMat.poreScale;
 
   const poreNx =
-    (fbm2D(vertexId * 11 + 700, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) * 0.06 * regionScale * poreDetailCombined;
+    (fbm2D(vertexId * 11 + 700, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) *
+    0.06 *
+    regionScale *
+    poreDetailCombined;
   const poreNy =
-    (fbm2D(vertexId * 11 + 800, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) * 0.06 * regionScale * poreDetailCombined;
+    (fbm2D(vertexId * 11 + 800, uv.u, uv.v, 3, 4.0, 0.45) - 0.5) *
+    0.06 *
+    regionScale *
+    poreDetailCombined;
 
   const wrinkleNx =
     (fbm2D(vertexId * 13 + 900, uv.u, uv.v, 2, 2.0, 0.5) - 0.5) *
@@ -816,8 +822,10 @@ export function generateNormalPerturbation(
     wrinkleDepthVal *
     aging.wrinkleDepth;
 
-  const grainNx = (fbm2D(vertexId * 17 + 1100, uv.u * 3, uv.v * 3, 2, 5.0, 0.35) - 0.5) * 0.02 * regionScale;
-  const grainNy = (fbm2D(vertexId * 17 + 1200, uv.u * 3, uv.v * 3, 2, 5.0, 0.35) - 0.5) * 0.02 * regionScale;
+  const grainNx =
+    (fbm2D(vertexId * 17 + 1100, uv.u * 3, uv.v * 3, 2, 5.0, 0.35) - 0.5) * 0.02 * regionScale;
+  const grainNy =
+    (fbm2D(vertexId * 17 + 1200, uv.u * 3, uv.v * 3, 2, 5.0, 0.35) - 0.5) * 0.02 * regionScale;
 
   const totalX = clamp((poreNx + wrinkleNx + grainNx) * strength, -0.35, 0.35);
   const totalY = clamp((poreNy + wrinkleNy + grainNy) * strength, -0.35, 0.35);

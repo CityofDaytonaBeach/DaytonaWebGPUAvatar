@@ -51,6 +51,9 @@ export const CAPABILITY_MATRIX = {
   internalAnatomyModes: 'PROTOTYPE',
   skeletalAnimation: 'IMPLEMENTED',
   motionCompiler: 'PROTOTYPE',
+  // Motion runtime: compiler now drives the animation frame loop (cross-fade,
+  // walk phase, rejection) and is covered by deterministic tests.
+  motionRuntime: 'IMPLEMENTED',
   gpuSkinning: 'IMPLEMENTED',
 
   // Surface / attachments (runtime prototypes, not yet production-rendered).
@@ -66,14 +69,23 @@ export const CAPABILITY_MATRIX = {
   timelineEventSourcing: 'IMPLEMENTED',
   timelineDirtyReporting: 'IMPLEMENTED',
   nonPropertyEventDirtyReporting: 'IMPLEMENTED',
-  parameterTransitions: 'PROTOTYPE',
+  // Transitions are now validated frame-by-frame through the real GPU morph
+  // packing/dispatch path (transitionGpuValidation), not only as isolated curve
+  // maths. Still PARTIAL until deterministic long replay and timeline scrub
+  // coverage land — the remaining phase-13 exit criteria.
+  parameterTransitions: 'PARTIAL',
+  transitionGpuValidation: 'IMPLEMENTED',
   snapshotRestore: 'IMPLEMENTED',
   undoRedo: 'IMPLEMENTED',
 
   // GPU / performance.
   gpuScheduler: 'IMPLEMENTED',
   gpuMorphCompute: 'IMPLEMENTED',
-  localizedEditBenchmark: 'PROTOTYPE',
+  gpuValidationHarness: 'IMPLEMENTED',
+  // Benchmarks are CI-enforced: absolute per-case budgets + baseline regression
+  // gates, failing the job on violation.
+  localizedEditBenchmark: 'IMPLEMENTED',
+  benchmarkGates: 'IMPLEMENTED',
   gpuTimestampBenchmark: 'PROTOTYPE',
 
   // LOD / validation.

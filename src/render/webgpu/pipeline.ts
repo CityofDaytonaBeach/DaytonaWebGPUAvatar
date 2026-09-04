@@ -107,11 +107,7 @@ export class WebGpuHumanPipeline {
       tangentData[i * 2] = this.skinMaterial.normalPerturbX[i] ?? 0;
       tangentData[i * 2 + 1] = this.skinMaterial.normalPerturbY[i] ?? 0;
     }
-    opts.device.queue.writeBuffer(
-      this.tangentBuffer,
-      0,
-      tangentData as unknown as ArrayBuffer,
-    );
+    opts.device.queue.writeBuffer(this.tangentBuffer, 0, tangentData as unknown as ArrayBuffer);
     this.renderer.setSharedTangentPerturb(this.tangentBuffer);
   }
 

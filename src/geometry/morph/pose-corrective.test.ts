@@ -25,7 +25,12 @@ describe('pose/skeleton correctives (P15)', () => {
     const { driver, definition } = makeDriver();
     driver.registerBone('poseHeadTiltChin', 'head', 'z', 0, 30);
     const bones = [
-      { name: 'head', parent: 'neck', localPosition: { x: 0, y: 0, z: 0 }, restRotation: { x: 0, y: 0, z: 0, w: 1 } },
+      {
+        name: 'head',
+        parent: 'neck',
+        localPosition: { x: 0, y: 0, z: 0 },
+        restRotation: { x: 0, y: 0, z: 0, w: 1 },
+      },
     ];
 
     // No pose -> bone at rest -> coefficient 0.
@@ -45,7 +50,14 @@ describe('pose/skeleton correctives (P15)', () => {
       { property: 'expression.jawOpen' },
       { boneName: 'head', axis: 'x', neutralDeg: 0, spanDeg: 25 },
     ]);
-    const bones = [{ name: 'head', parent: 'neck', localPosition: { x: 0, y: 0, z: 0 }, restRotation: { x: 0, y: 0, z: 0, w: 1 } }];
+    const bones = [
+      {
+        name: 'head',
+        parent: 'neck',
+        localPosition: { x: 0, y: 0, z: 0 },
+        restRotation: { x: 0, y: 0, z: 0, w: 1 },
+      },
+    ];
 
     // Jaw open but head rest -> product 0.
     definition.set('expression.jawOpen', 0.8);

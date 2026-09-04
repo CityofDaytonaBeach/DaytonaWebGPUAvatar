@@ -26,8 +26,6 @@ describe('capability report', () => {
       'clothingGeometry',
       'perceptualValidation',
       'internalAnatomyModes',
-      'parameterTransitions',
-      'localizedEditBenchmark',
       'gpuTimestampBenchmark',
     ]) {
       expect(prototypes.has(cap as Capability), `${cap} should be PROTOTYPE`).toBe(true);

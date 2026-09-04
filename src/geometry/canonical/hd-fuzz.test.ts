@@ -102,13 +102,18 @@ describe('Randomized face/body fuzzing (direction.md P22)', () => {
       const problems: string[] = [];
 
       const delta = human.computeMorphDelta();
-      if (delta.length !== N * 3) problems.push(`${label}: morphDelta length ${delta.length} != ${N * 3}`);
+      if (delta.length !== N * 3)
+        problems.push(`${label}: morphDelta length ${delta.length} != ${N * 3}`);
       const scene = human.skinScene();
-      if (scene.length !== N * 3) problems.push(`${label}: skinScene length ${scene.length} != ${N * 3}`);
+      if (scene.length !== N * 3)
+        problems.push(`${label}: skinScene length ${scene.length} != ${N * 3}`);
       const normals = human.skinNormals();
-      if (normals.length !== N * 3) problems.push(`${label}: skinNormals length ${normals.length} != ${N * 3}`);
-      if (basePositions.length !== N * 3) problems.push(`${label}: basePositions length ${basePositions.length}`);
-      if (baseNormals.length !== N * 3) problems.push(`${label}: baseNormals length ${baseNormals.length}`);
+      if (normals.length !== N * 3)
+        problems.push(`${label}: skinNormals length ${normals.length} != ${N * 3}`);
+      if (basePositions.length !== N * 3)
+        problems.push(`${label}: basePositions length ${basePositions.length}`);
+      if (baseNormals.length !== N * 3)
+        problems.push(`${label}: baseNormals length ${baseNormals.length}`);
 
       const markBadFloats = (arr: Float32Array, where: string): void => {
         for (let i = 0; i < arr.length; i++) {
@@ -136,7 +141,9 @@ describe('Randomized face/body fuzzing (direction.md P22)', () => {
           scene[i * 3 + 2] - basePositions[i * 3 + 2],
         );
         if (!Number.isFinite(mag) || mag > MAX_DISPLACEMENT) {
-          problems.push(`${label}: vertex ${i} displaced ${mag.toFixed(3)} (>${MAX_DISPLACEMENT.toFixed(3)})`);
+          problems.push(
+            `${label}: vertex ${i} displaced ${mag.toFixed(3)} (>${MAX_DISPLACEMENT.toFixed(3)})`,
+          );
           break;
         }
       }
@@ -200,7 +207,8 @@ describe('Randomized face/body fuzzing (direction.md P22)', () => {
       expect(r.cancelled, `seed ${seed} cancelled: ${r.reason}`).toBe(false);
       const clampProblems: string[] = [];
       for (const [k, v] of Object.entries(patch)) {
-        if (Math.abs(human.get(k) - v) > 1e-6) clampProblems.push(`seed ${seed} ${k}=${human.get(k)} (want ${v})`);
+        if (Math.abs(human.get(k) - v) > 1e-6)
+          clampProblems.push(`seed ${seed} ${k}=${human.get(k)} (want ${v})`);
       }
       expect(clampProblems).toEqual([]);
 

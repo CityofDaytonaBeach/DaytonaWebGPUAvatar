@@ -48,7 +48,16 @@ describe('HDCanonicalHumanProvider (HD HUMAN V0.1)', () => {
       for (const b of Object.keys(v.weights)) bones.add(b);
     }
     // Head + neck + a representative set of body bones.
-    for (const b of ['head', 'neck', 'chest', 'upperarm_l', 'forearm_r', 'thigh_l', 'shin_r', 'foot_l']) {
+    for (const b of [
+      'head',
+      'neck',
+      'chest',
+      'upperarm_l',
+      'forearm_r',
+      'thigh_l',
+      'shin_r',
+      'foot_l',
+    ]) {
       expect(bones.has(b), `missing bone ${b}`).toBe(true);
     }
   });

@@ -73,6 +73,11 @@ import {
 } from './surface/skin/neural-skin.js';
 import { MotionCompiler, MotionPlan } from './animation/motion/motion-compiler.js';
 import {
+  MotionRuntime,
+  type MotionRuntimeConfig,
+  type MotionRuntimeFrame,
+} from './animation/motion/motion-runtime.js';
+import {
   PerceptualValidationReport,
   validatePerceptualHuman,
 } from './validation/perceptual-validator.js';
@@ -154,6 +159,7 @@ export class Human {
   private identity: IdentitySolver;
   private canonical: CanonicalHuman;
   private morphs: SparseMorphSet;
+  private motionRuntime?: MotionRuntime;
   private morphDriver: MorphDriver;
   private morphKernel: MorphKernel;
   private shapeSpace: HumanShapeSpace;
@@ -346,6 +352,11 @@ export class Human {
   get canonicalRef(): CanonicalHuman {
     return this.canonical;
   }
+  /** Registered sparse morphs, read-only handle for validation/telemetry. */
+  get morphsRef(): SparseMorphSet {
+    return this.morphs;
+  }
+
   get constraintsRef(): ConstraintSolver {
     return this.constraints;
   }
@@ -366,9 +377,7 @@ export class Human {
   computeMorphDelta(): Float32Array {
     const delta = new Float32Array(this.canonical.vertexCount * 3);
     this.morphKernel.accumulate(this.definition, delta);
-    this.currentAffectedVertices = this.shapeSpace.affectedVertexIds(
-      this.shapeCoefficients(),
-    );
+    this.currentAffectedVertices = this.shapeSpace.affectedVertexIds(this.shapeCoefficients());
     return delta;
   }
 
@@ -476,6 +485,40 @@ export class Human {
     return this.applyEvent(
       createEvent('pose', source, { payload: { command, plan, poses: plan.poses } }),
     );
+  }
+
+  // ------------------------------------------------- continuous motion runtime
+
+  /**
+   * Continuous motion (P17): `perform()` applies a compiled plan as a single
+   * snapped pose, which is right for a one-shot event but cannot cross-fade or
+   * cycle. `startMotion()` hands the command to a MotionRuntime that is ticked
+   * from `update(dt)`, so gestures blend in and locomotion actually walks.
+   * `perform()` and clip playback keep working exactly as before.
+   */
+  startMotion(command: string, config: Partial<MotionRuntimeConfig> = {}): boolean {
+    if (!this.motionRuntime) {
+      this.motionRuntime = new MotionRuntime(this.parametricSkeleton(), config);
+    }
+    return this.motionRuntime.push(command).accepted;
+  }
+
+  /** Cross-fade the active continuous motion back to rest. */
+  stopMotion(): void {
+    this.motionRuntime?.release();
+  }
+
+  /** Runtime handle for status/diagnostics; null until startMotion() is called. */
+  get motionRuntimeRef(): MotionRuntime | null {
+    return this.motionRuntime ?? null;
+  }
+
+  /** Advance the motion runtime by `dt` and apply the resulting pose. */
+  tickMotion(dt: number): MotionRuntimeFrame | null {
+    if (!this.motionRuntime) return null;
+    const frame = this.motionRuntime.tick(dt);
+    if (frame.poses.length > 0) this.setPose(frame.poses);
+    return frame;
   }
 
   /**
@@ -775,6 +818,8 @@ export class Human {
   /** Advance speech/simulation time. */
   update(dt: number): void {
     this.advanceTime(dt, 'simulation');
+    // Continuous motion, when active, advances on the same clock as speech.
+    this.tickMotion(dt);
     // Extract current speech track from timeline if a speak event exists.
     const track = this.currentSpeechTrack();
     if (track) {

@@ -28,8 +28,8 @@ describe('start.md phase report', () => {
     // Fully implemented phases stay COMPLETE.
     expect(byPhase.get(4)!.status).toBe('COMPLETE');
     expect(byPhase.get(11)!.status).toBe('COMPLETE');
-    // parameterTransitions is a prototype, so the timeline phase is too.
-    expect(byPhase.get(13)!.status).toBe('PROTOTYPE');
+    // parameterTransitions is PARTIAL (GPU-validated, replay coverage pending) too.
+    expect(byPhase.get(13)!.status).toBe('IN_PROGRESS');
   });
 
   it('reports a non-null active phase because not everything is finished', () => {

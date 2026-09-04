@@ -73,6 +73,8 @@ npm run dev        # open the interactive demo
 npm test           # run the unit + integration suite
 npm run build      # compile the SDK library (dist/)
 npm run build:demo # build the demo app (dist-demo/)
+npm run benchmark  # run the performance suite against its budgets
+npm run benchmark:ci # same, plus JSON/JUnit/Markdown artifacts; non-zero exit on regression
 ```
 
 ## CDN (jsDelivr)
@@ -333,6 +335,15 @@ looking toward the camera, and returning to neutral. `perform()` routes through
 as other character changes. Tests verify command compilation, prompt routing,
 animation dirty-region reporting, and undo restoring the rest pose.
 
+`MotionRuntime` (`human.startMotion(command)`, `human.stopMotion()`,
+`human.motionRuntimeRef`) runs the compiler inside the character's own frame
+loop: `human.update(dt)` cross-fades from the pose currently on screen into the
+compiled plan, advances a walk phase so locomotion cycles instead of snapping,
+and rejects unknown, low-confidence, or invalid plans without disturbing the
+active pose. It is purely additive — `perform()` and clip playback behave exactly
+as before. Deterministic: identical command + `dt` sequences produce identical
+poses.
+
 ### Time-based parameter transitions (Phase 4c)
 
 `createParameterTransition`, `sampleTransition`, `human.transition(...)`, and
@@ -340,7 +351,11 @@ animation dirty-region reporting, and undo restoring the rest pose.
 `linear`, `ease`, and `biological` curves. Transition and time advancement are
 `CharacterEvent`s, so progressive edits such as hair growth, body composition,
 or a timed expression parameter can replay through the same timeline/undo path
-instead of mutating geometry directly. The deterministic prompt interpreter now
+instead of mutating geometry directly. `validateTransitionThroughGpu` /
+`runTransitionGpuValidationSuite` step a live transition frame by frame and
+re-derive what the GPU would consume each frame (sparse-morph packing → packed
+buffers → dispatch bounds), so transitions are proven through the real morph
+path and not only as isolated curve maths. The deterministic prompt interpreter now
 routes commands such as "grow her hair naturally for six months" and "age her
 fifteen years" into these transition events.
 
@@ -440,6 +455,22 @@ issue list, and optional `CharacterEvent` corrective requests that callers may
 feed back through `human.applyEvent()` after review. Tests verify clean defaults,
 issue detection, non-mutation, and correction routing through the normal event
 pipeline.
+
+### Performance gates and GPU validation
+
+`evaluateBenchmarkGates` turns the benchmark suite's measurements into a verdict:
+absolute per-case mean and p95 budgets, a peak-memory ceiling, optional baseline
+regression detection, and hard failures for a timed-out or cancelled run. CI runs
+`npm run benchmark:ci` and fails on any violation, so performance is enforced
+rather than reported.
+
+`GpuValidationHarness` covers the WebGPU boundary itself. `validateDispatch`,
+`validateBufferBinding`, `validateComputeResources`, and
+`validatePackedMorphBounds` check dispatch grids, binding ranges, alignment, and
+packed sparse-morph offsets/vertex indices with no GPU present, so the gate runs
+in ordinary CI; when a device is available the harness additionally wraps real
+work in `pushErrorScope('validation')` and reports device errors as structured
+issues.
 
 ## References to the spec
 

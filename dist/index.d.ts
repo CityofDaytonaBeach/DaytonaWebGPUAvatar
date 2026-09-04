@@ -31,6 +31,12 @@ export { ComputeGraph } from './compiler/compute/compute-graph.js';
 export type { GraphNode } from './compiler/compute/compute-graph.js';
 export { defaultSkeleton, placeSkeletonFromDefinition } from './anatomy/skeleton/skeleton.js';
 export type { BoneDef, BoneName, JointLimits } from './anatomy/skeleton/skeleton.js';
+export { adaptSkeletonToPositions, boneWorldPositions, regionVertexIds, rotateVec3, skeletonAdaptationReportLines, JOINT_ANCHORS, SYMMETRIC_BONE_PAIRS, } from './anatomy/skeleton/skeleton-adaptation.js';
+export type { JointAnchor, JointAnchorMode, JointAdaptation, SkeletonAdaptationOptions, SkeletonAdaptationReport, } from './anatomy/skeleton/skeleton-adaptation.js';
+export { buildBoneSegments, distanceToSegment, solveSkinWeights, applySkinWeights, validateSkinWeights, REGION_BONE_PRIOR, } from './anatomy/skeleton/skin-weight-solver.js';
+export type { BoneSegment, SkinWeightSet, SkinWeightOptions, SkinWeightReport, SkinWeightValidation, } from './anatomy/skeleton/skin-weight-solver.js';
+export { RigAdapter, deformedPositions, bindPoseError } from './anatomy/skeleton/rig-adaptation.js';
+export type { RigAdaptationOptions, RigAdaptationResult, } from './anatomy/skeleton/rig-adaptation.js';
 export { resolveAnatomy, validateAnatomy, anatomySatisfaction, } from './anatomy/parametric/parametric-anatomy.js';
 export type { AnatomyDimensions, AnatomyConstraint, } from './anatomy/parametric/parametric-anatomy.js';
 export { buildBoneMatrices, combinedSkinMatrices, composeMatrix, invertMatrix, } from './anatomy/skeleton/bone-matrix.js';
@@ -119,5 +125,13 @@ export { START_MD_PHASES, PHASE_STATUSES, phaseReport } from './roadmap/phase-re
 export type { PhaseMilestone, PhaseReport, PhaseStatus } from './roadmap/phase-report.js';
 export { CAPABILITY_STATUSES, CAPABILITY_MATRIX, capabilityReport, capabilityStatus, } from './roadmap/capability-matrix.js';
 export type { CapabilityStatus, Capability, CapabilityEntry, CapabilityReport, } from './roadmap/capability-matrix.js';
+export { MotionRuntime, DEFAULT_MOTION_RUNTIME_CONFIG, blendPoses, withPhase, } from './animation/motion/motion-runtime.js';
+export type { MotionRuntimeConfig, MotionRuntimeFrame, MotionRuntimeStatus, MotionRejection, } from './animation/motion/motion-runtime.js';
+export { GpuValidationHarness, DEFAULT_GPU_LIMITS, resolveLimits, validateDispatch, validateBufferBinding, validateComputeResources, validatePackedMorphBounds, } from './gpu/device/gpu-validation-harness.js';
+export type { GpuValidationIssue, GpuValidationSeverity, GpuBoundsReport, GpuLimitsLike, DispatchSpec, BufferBindingSpec, ComputeResourceSpec, } from './gpu/device/gpu-validation-harness.js';
+export { validateTransitionThroughGpuPath, runTransitionGpuValidationSuite, DEFAULT_TRANSITION_GPU_CASES, } from './gpu/morph/transition-gpu-validation.js';
+export type { TransitionGpuFrame, TransitionGpuValidationReport, TransitionGpuValidationOptions, TransitionGpuSuiteReport, } from './gpu/morph/transition-gpu-validation.js';
+export { evaluateBenchmarkGates, baselineFromSummary, formatGateResult, DEFAULT_BENCHMARK_BUDGETS, DEFAULT_BENCHMARK_GATE_CONFIG, } from './testing/performance/benchmark-gates.js';
+export type { BenchmarkBudget, BenchmarkGateConfig, BenchmarkGateResult, GateViolation, GateViolationKind, } from './testing/performance/benchmark-gates.js';
 export declare const VERSION = "1.0.0";
 //# sourceMappingURL=index.d.ts.map

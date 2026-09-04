@@ -149,7 +149,15 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
   addFineControl(
     'JawWidthBasis',
     'face.jaw.width',
-    ['jaw_left', 'jaw_right', 'cheek_left', 'cheek_right', 'chin', 'mouth_corner_left', 'mouth_corner_right'],
+    [
+      'jaw_left',
+      'jaw_right',
+      'cheek_left',
+      'cheek_right',
+      'chin',
+      'mouth_corner_left',
+      'mouth_corner_right',
+    ],
     ['jaw', 'cheek_left', 'cheek_right'],
     (vx, _vy, _vz) => {
       const s = Math.sign(vx || 1e-6);
@@ -237,7 +245,7 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
     'face.upperLip.thickness',
     ['upper_lip', 'mouth_corner_left', 'mouth_corner_right'],
     ['mouth', 'face'],
-    (_vx, vy, _vz) => ({ dx: 0, dy: (1.74 - vy) > 0 ? (1.74 - vy) * 0.5 : 0.015, dz: 0 }),
+    (_vx, vy, _vz) => ({ dx: 0, dy: 1.74 - vy > 0 ? (1.74 - vy) * 0.5 : 0.015, dz: 0 }),
     ['lip', 'correlated'],
   );
   // Lower lip thickness: lower lip grows downward.
@@ -246,7 +254,7 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
     'face.lowerLip.thickness',
     ['lower_lip', 'mouth_corner_left', 'mouth_corner_right'],
     ['mouth', 'face'],
-    (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.72) > 0 ? (vy - 1.72) * -0.5 : -0.015, dz: 0 }),
+    (_vx, vy, _vz) => ({ dx: 0, dy: vy - 1.72 > 0 ? (vy - 1.72) * -0.5 : -0.015, dz: 0 }),
     ['lip', 'correlated'],
   );
 
@@ -277,7 +285,14 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
   if (jawBasis && mouthBasis) {
     const output = correctiveBasis(
       'WideJawWideMouthCorrective',
-      ['jaw_left', 'jaw_right', 'cheek_left', 'cheek_right', 'mouth_corner_left', 'mouth_corner_right'],
+      [
+        'jaw_left',
+        'jaw_right',
+        'cheek_left',
+        'cheek_right',
+        'mouth_corner_left',
+        'mouth_corner_right',
+      ],
       (vx, _vy, _vz) => ({ dx: Math.sign(vx || 1e-6) * 0.025, dy: 0.006, dz: 0 }),
     );
     if (output != null) {
@@ -287,10 +302,7 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
       });
       spec.correctiveMorphs.push({
         name: 'shape_WideJawWideMouthCorrective',
-        inputs: [
-          { property: 'face.jaw.width' },
-          { property: 'face.mouth.width' },
-        ],
+        inputs: [{ property: 'face.jaw.width' }, { property: 'face.mouth.width' }],
       });
     }
   }
@@ -309,10 +321,7 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
       });
       spec.correctiveMorphs.push({
         name: 'shape_WideJawWideNoseCorrective',
-        inputs: [
-          { property: 'face.jaw.width' },
-          { property: 'face.nose.width' },
-        ],
+        inputs: [{ property: 'face.jaw.width' }, { property: 'face.nose.width' }],
       });
     }
   }
@@ -331,10 +340,7 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
       });
       spec.correctiveMorphs.push({
         name: 'shape_WideCheeksWideJawCorrective',
-        inputs: [
-          { property: 'face.cheek.width' },
-          { property: 'face.jaw.width' },
-        ],
+        inputs: [{ property: 'face.cheek.width' }, { property: 'face.jaw.width' }],
       });
     }
   }
@@ -505,7 +511,14 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
   addFineControl(
     'ArmLengthBasis',
     'skeleton.armLength',
-    ['upper_arm_left', 'upper_arm_right', 'forearm_left', 'forearm_right', 'hand_left', 'hand_right'],
+    [
+      'upper_arm_left',
+      'upper_arm_right',
+      'forearm_left',
+      'forearm_right',
+      'hand_left',
+      'hand_right',
+    ],
     ['upperarm_l', 'upperarm_r', 'forearm_l', 'forearm_r', 'hand_l', 'hand_r'],
     (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.45) * 0.4, dz: 0 }),
     ['arm', 'correlated'],
@@ -578,10 +591,7 @@ export function buildHdShapeSpace(canonical: CanonicalHuman): {
       });
       spec.correctiveMorphs.push({
         name: 'shape_MuscularBroadShouldersCorrective',
-        inputs: [
-          { property: 'body.muscularity' },
-          { property: 'skeleton.shoulderWidth' },
-        ],
+        inputs: [{ property: 'body.muscularity' }, { property: 'skeleton.shoulderWidth' }],
       });
     }
   }

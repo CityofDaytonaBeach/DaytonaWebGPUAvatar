@@ -106,7 +106,15 @@ export function buildHdShapeSpace(canonical) {
         dz: vz >= 0.26 ? 0.04 : vz >= 0.24 ? 0.02 : 0.008,
     }), ['nose', 'correlated']);
     // Jaw width: jaw angles widen laterally, cheeks and chin transition with it.
-    addFineControl('JawWidthBasis', 'face.jaw.width', ['jaw_left', 'jaw_right', 'cheek_left', 'cheek_right', 'chin', 'mouth_corner_left', 'mouth_corner_right'], ['jaw', 'cheek_left', 'cheek_right'], (vx, _vy, _vz) => {
+    addFineControl('JawWidthBasis', 'face.jaw.width', [
+        'jaw_left',
+        'jaw_right',
+        'cheek_left',
+        'cheek_right',
+        'chin',
+        'mouth_corner_left',
+        'mouth_corner_right',
+    ], ['jaw', 'cheek_left', 'cheek_right'], (vx, _vy, _vz) => {
         const s = Math.sign(vx || 1e-6);
         const strength = Math.abs(vx) > 0.05 ? 0.05 : 0.035;
         return { dx: s * strength, dy: 0, dz: 0 };
@@ -150,9 +158,9 @@ export function buildHdShapeSpace(canonical) {
         return { dx: s * strength, dy: 0, dz: 0 };
     }, ['mouth', 'correlated']);
     // Upper lip thickness: upper lip grows vertically (up = +y toward mouth).
-    addFineControl('UpperLipThicknessBasis', 'face.upperLip.thickness', ['upper_lip', 'mouth_corner_left', 'mouth_corner_right'], ['mouth', 'face'], (_vx, vy, _vz) => ({ dx: 0, dy: (1.74 - vy) > 0 ? (1.74 - vy) * 0.5 : 0.015, dz: 0 }), ['lip', 'correlated']);
+    addFineControl('UpperLipThicknessBasis', 'face.upperLip.thickness', ['upper_lip', 'mouth_corner_left', 'mouth_corner_right'], ['mouth', 'face'], (_vx, vy, _vz) => ({ dx: 0, dy: 1.74 - vy > 0 ? (1.74 - vy) * 0.5 : 0.015, dz: 0 }), ['lip', 'correlated']);
     // Lower lip thickness: lower lip grows downward.
-    addFineControl('LowerLipThicknessBasis', 'face.lowerLip.thickness', ['lower_lip', 'mouth_corner_left', 'mouth_corner_right'], ['mouth', 'face'], (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.72) > 0 ? (vy - 1.72) * -0.5 : -0.015, dz: 0 }), ['lip', 'correlated']);
+    addFineControl('LowerLipThicknessBasis', 'face.lowerLip.thickness', ['lower_lip', 'mouth_corner_left', 'mouth_corner_right'], ['mouth', 'face'], (_vx, vy, _vz) => ({ dx: 0, dy: vy - 1.72 > 0 ? (vy - 1.72) * -0.5 : -0.015, dz: 0 }), ['lip', 'correlated']);
     // ---- Combination correctives (P11) ----
     // A corrective is a reusable basis that only activates when several linear
     // inputs are simultaneously active (continuous product activation).
@@ -174,7 +182,14 @@ export function buildHdShapeSpace(canonical) {
     const cheekBasis = space.bases.getByName('CheekWidthBasis')?.id;
     // Wide jaw + wide mouth: jaw cheeks and mouth corners push wider together.
     if (jawBasis && mouthBasis) {
-        const output = correctiveBasis('WideJawWideMouthCorrective', ['jaw_left', 'jaw_right', 'cheek_left', 'cheek_right', 'mouth_corner_left', 'mouth_corner_right'], (vx, _vy, _vz) => ({ dx: Math.sign(vx || 1e-6) * 0.025, dy: 0.006, dz: 0 }));
+        const output = correctiveBasis('WideJawWideMouthCorrective', [
+            'jaw_left',
+            'jaw_right',
+            'cheek_left',
+            'cheek_right',
+            'mouth_corner_left',
+            'mouth_corner_right',
+        ], (vx, _vy, _vz) => ({ dx: Math.sign(vx || 1e-6) * 0.025, dy: 0.006, dz: 0 }));
         if (output != null) {
             spec.correctiveRules.push({
                 inputs: [{ basisId: jawBasis }, { basisId: mouthBasis }],
@@ -182,10 +197,7 @@ export function buildHdShapeSpace(canonical) {
             });
             spec.correctiveMorphs.push({
                 name: 'shape_WideJawWideMouthCorrective',
-                inputs: [
-                    { property: 'face.jaw.width' },
-                    { property: 'face.mouth.width' },
-                ],
+                inputs: [{ property: 'face.jaw.width' }, { property: 'face.mouth.width' }],
             });
         }
     }
@@ -199,10 +211,7 @@ export function buildHdShapeSpace(canonical) {
             });
             spec.correctiveMorphs.push({
                 name: 'shape_WideJawWideNoseCorrective',
-                inputs: [
-                    { property: 'face.jaw.width' },
-                    { property: 'face.nose.width' },
-                ],
+                inputs: [{ property: 'face.jaw.width' }, { property: 'face.nose.width' }],
             });
         }
     }
@@ -216,10 +225,7 @@ export function buildHdShapeSpace(canonical) {
             });
             spec.correctiveMorphs.push({
                 name: 'shape_WideCheeksWideJawCorrective',
-                inputs: [
-                    { property: 'face.cheek.width' },
-                    { property: 'face.jaw.width' },
-                ],
+                inputs: [{ property: 'face.cheek.width' }, { property: 'face.jaw.width' }],
             });
         }
     }
@@ -321,7 +327,14 @@ export function buildHdShapeSpace(canonical) {
     addFineControl('NeckLengthBasis', 'skeleton.neckLength', ['neck', 'chest', 'shoulder_left', 'shoulder_right'], ['neck'], (_vx, vy, _vz) => ({ dx: 0, dy: vy - 1.78, dz: 0 }), ['neck', 'correlated']);
     // Arm length: vertical stretch of the upper arm + forearm about the shoulder,
     // with the hand settling below (transition). skeleton.armLength default 1.0.
-    addFineControl('ArmLengthBasis', 'skeleton.armLength', ['upper_arm_left', 'upper_arm_right', 'forearm_left', 'forearm_right', 'hand_left', 'hand_right'], ['upperarm_l', 'upperarm_r', 'forearm_l', 'forearm_r', 'hand_l', 'hand_r'], (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.45) * 0.4, dz: 0 }), ['arm', 'correlated']);
+    addFineControl('ArmLengthBasis', 'skeleton.armLength', [
+        'upper_arm_left',
+        'upper_arm_right',
+        'forearm_left',
+        'forearm_right',
+        'hand_left',
+        'hand_right',
+    ], ['upperarm_l', 'upperarm_r', 'forearm_l', 'forearm_r', 'hand_l', 'hand_r'], (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.45) * 0.4, dz: 0 }), ['arm', 'correlated']);
     // Leg length: vertical stretch of thigh + shin about the hip, foot settling
     // below. skeleton.legLength default 1.0.
     addFineControl('LegLengthBasis', 'skeleton.legLength', ['thigh_left', 'thigh_right', 'shin_left', 'shin_right', 'foot_left', 'foot_right'], ['thigh_l', 'thigh_r', 'shin_l', 'shin_r', 'foot_left', 'foot_right'], (_vx, vy, _vz) => ({ dx: 0, dy: (vy - 1.0) * 0.4, dz: 0 }), ['leg', 'correlated']);
@@ -364,10 +377,7 @@ export function buildHdShapeSpace(canonical) {
             });
             spec.correctiveMorphs.push({
                 name: 'shape_MuscularBroadShouldersCorrective',
-                inputs: [
-                    { property: 'body.muscularity' },
-                    { property: 'skeleton.shoulderWidth' },
-                ],
+                inputs: [{ property: 'body.muscularity' }, { property: 'skeleton.shoulderWidth' }],
             });
         }
     }

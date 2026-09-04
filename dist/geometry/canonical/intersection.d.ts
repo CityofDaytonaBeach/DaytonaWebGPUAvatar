@@ -27,8 +27,14 @@ export interface SelfIntersectionReport {
  * (`maxPairs`), keeping it cheap enough to run every fuzz seed.
  *
  * `regionScope` optionally restricts analysis to triangles whose *three*
- * vertices all lie in the listed regions.
+ * vertices all lie in the listed regions. `triangleRange` optionally restricts
+ * to a contiguous triangle-id range `[start, end)` (used to isolate the leading
+ * body segment of the canonical mesh). When both are supplied they are ANDed.
  */
+export interface IntersectionScope {
+    regionScope?: ReadonlySet<string>;
+    triangleRange?: [number, number];
+}
 export declare class MeshIntersectionAnalyzer {
     private readonly triId;
     private readonly triVertex;
@@ -39,7 +45,7 @@ export declare class MeshIntersectionAnalyzer {
      * treated as a self-intersection.
      */
     private readonly triNeighbors;
-    constructor(canonical: CanonicalHuman, regionScope?: ReadonlySet<string>);
+    constructor(canonical: CanonicalHuman, scope?: IntersectionScope);
     get triangleCount(): number;
     analyze(positions: Float32Array, maxPairs?: number): SelfIntersectionReport;
     private cellSize;

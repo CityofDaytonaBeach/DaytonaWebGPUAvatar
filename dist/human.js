@@ -31,6 +31,7 @@ import { buildHumanSdfField } from './physics/sdf/human-sdf.js';
 import { createTorsoCloth, simulateCloth, } from './physics/cloth/cloth-sim.js';
 import { generateSkinResiduals, } from './surface/skin/neural-skin.js';
 import { MotionCompiler } from './animation/motion/motion-compiler.js';
+import { MotionRuntime, } from './animation/motion/motion-runtime.js';
 import { validatePerceptualHuman, } from './validation/perceptual-validator.js';
 import { projectTattooDecals } from './surface/tattoo/tattoo-decal.js';
 import { generateGarments } from './surface/clothing/garment.js';
@@ -76,6 +77,7 @@ export class Human {
     identity;
     canonical;
     morphs;
+    motionRuntime;
     morphDriver;
     morphKernel;
     shapeSpace;
@@ -251,6 +253,10 @@ export class Human {
     get canonicalRef() {
         return this.canonical;
     }
+    /** Registered sparse morphs, read-only handle for validation/telemetry. */
+    get morphsRef() {
+        return this.morphs;
+    }
     get constraintsRef() {
         return this.constraints;
     }
@@ -360,6 +366,37 @@ export class Human {
             };
         }
         return this.applyEvent(createEvent('pose', source, { payload: { command, plan, poses: plan.poses } }));
+    }
+    // ------------------------------------------------- continuous motion runtime
+    /**
+     * Continuous motion (P17): `perform()` applies a compiled plan as a single
+     * snapped pose, which is right for a one-shot event but cannot cross-fade or
+     * cycle. `startMotion()` hands the command to a MotionRuntime that is ticked
+     * from `update(dt)`, so gestures blend in and locomotion actually walks.
+     * `perform()` and clip playback keep working exactly as before.
+     */
+    startMotion(command, config = {}) {
+        if (!this.motionRuntime) {
+            this.motionRuntime = new MotionRuntime(this.parametricSkeleton(), config);
+        }
+        return this.motionRuntime.push(command).accepted;
+    }
+    /** Cross-fade the active continuous motion back to rest. */
+    stopMotion() {
+        this.motionRuntime?.release();
+    }
+    /** Runtime handle for status/diagnostics; null until startMotion() is called. */
+    get motionRuntimeRef() {
+        return this.motionRuntime ?? null;
+    }
+    /** Advance the motion runtime by `dt` and apply the resulting pose. */
+    tickMotion(dt) {
+        if (!this.motionRuntime)
+            return null;
+        const frame = this.motionRuntime.tick(dt);
+        if (frame.poses.length > 0)
+            this.setPose(frame.poses);
+        return frame;
     }
     /**
      * CPU skinning reference: transform the canonical base positions by the
@@ -606,6 +643,8 @@ export class Human {
     /** Advance speech/simulation time. */
     update(dt) {
         this.advanceTime(dt, 'simulation');
+        // Continuous motion, when active, advances on the same clock as speech.
+        this.tickMotion(dt);
         // Extract current speech track from timeline if a speak event exists.
         const track = this.currentSpeechTrack();
         if (track) {

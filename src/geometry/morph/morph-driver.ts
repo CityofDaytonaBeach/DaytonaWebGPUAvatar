@@ -53,8 +53,7 @@ export interface MorphCorrectiveWeight {
    * pipeline (P15 pose correctives).
    */
   inputs: Array<
-    | { property: string; influence?: (c: number) => number }
-    | Omit<MorphBoneWeight, 'kind'>
+    { property: string; influence?: (c: number) => number } | Omit<MorphBoneWeight, 'kind'>
   >;
 }
 
@@ -115,7 +114,13 @@ export class MorphDriver {
    * Register a bone-driven (pose) morph: its weight is the deflection coefficient
    * of the named bone about `axis` relative to rest. Pose is supplied via setPose().
    */
-  registerBone(name: string, boneName: string, axis: 'x' | 'y' | 'z', neutralDeg: number, spanDeg: number): void {
+  registerBone(
+    name: string,
+    boneName: string,
+    axis: 'x' | 'y' | 'z',
+    neutralDeg: number,
+    spanDeg: number,
+  ): void {
     this.morphToProperty.set(name, { kind: 'bone', boneName, axis, neutralDeg, spanDeg });
   }
 
@@ -125,10 +130,7 @@ export class MorphDriver {
    * exposed as a normal sparse morph so the existing GPU morph pipeline consumes
    * it (weight == product of inputs).
    */
-  registerCorrective(
-    morphName: string,
-    inputs: MorphCorrectiveWeight['inputs'],
-  ): void {
+  registerCorrective(morphName: string, inputs: MorphCorrectiveWeight['inputs']): void {
     for (const input of inputs) {
       if ((input as { property?: string }).property) {
         void this.registry.require((input as { property: string }).property);

@@ -11,7 +11,7 @@ const solver = new SpeechSolver();
 
 /** A track with a single isolated phoneme so its peak pose is exact. */
 function single(viseme: string, duration = 0.4): Parameters<SpeechSolver['apply']>[1] {
-  const peak = duration / 2;
+  const _peak = duration / 2;
   // Pair of long silences isolates the phoneme from any neighbor blending.
   return {
     text: '',
@@ -74,7 +74,7 @@ describe('SpeechSolver — co-articulation', () => {
     const def3 = freshDefinition();
     solver.apply(def3, track, 0.25);
     const jawMid = def3.get('expression.jawOpen');
-    const puckerMid = def3.get('expression.mouthPucker');
+    const _puckerMid = def3.get('expression.mouthPucker');
 
     expect(jawPeakAa).toBeGreaterThan(0.5);
     expect(puckerPeakOo).toBeGreaterThan(0.5);
@@ -123,7 +123,7 @@ describe('SpeechSolver — expression blending (speechVisemes PARTIAL graduation
   it('interpolates linearly between speech and base for a mid weight', () => {
     const def = freshDefinition();
     def.set('expression.jawOpen', 0.0);
-    const speechJaw = 0.8; // isolated 'aa'
+    const _speechJaw = 0.8; // isolated 'aa'
     solver.applyWithExpression(def, single('aa'), 0.25, 0.5);
     expect(def.get('expression.jawOpen')).toBeCloseTo(0.8 * 0.5, 5);
   });

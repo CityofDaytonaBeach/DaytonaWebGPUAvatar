@@ -10,23 +10,23 @@ Do not redesign or restart the project.
 
 The architecture already contains substantial infrastructure for:
 
-* HumanDefinition
-* CharacterEvent
-* dependency graph
-* delta compiler
-* dirty regions
-* sparse morphs
-* WebGPU morph compute
-* GPU skinning
-* identity preservation
-* anatomical constraints
-* timeline/history
-* attachments
-* LOD
-* animation
-* facial controls
-* speech
-* rendering
+- HumanDefinition
+- CharacterEvent
+- dependency graph
+- delta compiler
+- dirty regions
+- sparse morphs
+- WebGPU morph compute
+- GPU skinning
+- identity preservation
+- anatomical constraints
+- timeline/history
+- attachments
+- LOD
+- animation
+- facial controls
+- speech
+- rendering
 
 STOP adding broad new feature categories.
 
@@ -48,10 +48,11 @@ Before changing code:
 2. Inspect the complete repository.
 3. Run:
 
-   * tests
-   * type checking
-   * build
-   * demo build
+   - tests
+   - type checking
+   - build
+   - demo build
+
 4. Identify the current canonical-human interfaces.
 5. Identify the topology asset adapter.
 6. Identify semantic region handling.
@@ -310,11 +311,7 @@ interface HumanLandmark {
 
   triangleId: number;
 
-  barycentric: [
-    number,
-    number,
-    number
-  ];
+  barycentric: [number, number, number];
 
   normalOffset: number;
 }
@@ -1173,8 +1170,8 @@ Once the head can change identity parameters, smile, blink, speak, undo those ch
 
 Implement that before expanding feature breadth.
 
+added
 
-added 
 # DaytonaWebGPUAvatar: Architecture Direction & No-Upload Human SDK Mandate
 
 ## Mission
@@ -1416,7 +1413,7 @@ Do not create competing architectures for functionality that already exists.
 Keep the existing:
 
 ```ts
-CanonicalHumanProvider
+CanonicalHumanProvider;
 ```
 
 abstraction.
@@ -1476,7 +1473,7 @@ other future formats
 But imported geometry must NEVER become required for:
 
 ```ts
-Human.create()
+Human.create();
 ```
 
 ---
@@ -3474,15 +3471,15 @@ The finished SDK should let another application do something roughly this simple
 import { Human } from "daytona-webgpu-avatar";
 
 const human = await Human.create({
-  quality: "cinematic"
+quality: "cinematic"
 });
 
 human.modify({
-  age: 34,
-  height: 1.82,
-  "face.jaw.width": 0.63,
-  "face.eye.spacing": 0.52,
-  "body.muscularity": 0.58
+age: 34,
+height: 1.82,
+"face.jaw.width": 0.63,
+"face.eye.spacing": 0.52,
+"body.muscularity": 0.58
 });
 
 human.setExpression("smile", 0.7);
@@ -3497,23 +3494,23 @@ Not Unreal. Not a required uploaded GLB. Not a server rendering the character.
 Your architecture is aiming for:
 
 AI / Application
-        ↓
+↓
 HumanDefinition
-        ↓
+↓
 Human Compiler
-        ↓
+↓
 Anatomy + Identity + Shape Space
-        ↓
+↓
 Skeleton + Facial Rig + Animation
-        ↓
+↓
 Sparse/Localized GPU Updates
-        ↓
+↓
 WebGPU Compute
-        ↓
+↓
 Skin + Eyes + Hair + Clothing
-        ↓
+↓
 WebGPU Renderer
-        ↓
+↓
 HD Digital Human
 
 Your current repository already has much of the machinery underneath that idea, including semantic state, dependency/delta compilation, GPU sparse morphing, GPU skinning, identity preservation, animation, facial controls, speech visemes and WebGPU rendering. The HD provider is also now procedurally constructing its own human rather than requiring an uploaded character.
@@ -3602,7 +3599,7 @@ And because the character is persistent state, you could theoretically do someth
 human.speak("Watch this.");
 
 human.modify({
-  "face.jaw.width": 0.68
+"face.jaw.width": 0.68
 });
 
 while the character is talking and moving.
@@ -3618,24 +3615,24 @@ Lip sync would also be native
 Your eventual speech pipeline should be:
 
 Text
- ↓
+↓
 TTS
- ↓
+↓
 Audio
- ↓
+↓
 Phoneme timing
- ↓
+↓
 Viseme Solver
- ↓
+↓
 Co-articulation
- ↓
+↓
 Jaw
 Lips
 Tongue
 Cheeks
- ↓
+↓
 Expression blending
- ↓
+↓
 WebGPU facial deformation
 
 Then add:
@@ -3677,18 +3674,18 @@ Daytona Renderer
 ├── Muscle/Tissue
 │
 ├── Skin
-│   ├── pigmentation
-│   ├── pores
-│   ├── wrinkles
-│   ├── roughness
-│   └── SSS
+│ ├── pigmentation
+│ ├── pores
+│ ├── wrinkles
+│ ├── roughness
+│ └── SSS
 │
 ├── Eyes
-│   ├── sclera
-│   ├── iris
-│   ├── pupil
-│   ├── cornea
-│   └── tear film
+│ ├── sclera
+│ ├── iris
+│ ├── pupil
+│ ├── cornea
+│ └── tear film
 │
 ├── Hair
 │
@@ -3720,7 +3717,7 @@ Instead:
 becomes:
 
 AI
- ↓
+↓
 HumanDefinition
 
 age = 35
@@ -3744,8 +3741,7 @@ You can then tell it:
 
 and the AI generates a change, not another human.
 
-Current Human
-+
+Current Human +
 Age Event
 ↓
 Human Dependency Graph
@@ -3770,28 +3766,17 @@ I also would not claim nobody has ever combined similar techniques without a muc
 
 What can be genuinely distinctive is the architecture you're assembling around them:
 
-Human Definition Language
-+
-Human Dependency Graph
-+
-Human Delta Compiler
-+
-Human Shape Space
-+
-Identity Preservation
-+
-Anatomical Constraints
-+
-Sparse Human Deformation
-+
-GPU-resident Character State
-+
-Human-specific GPU Scheduler
-+
-Persistent Timeline
-+
-Prompt/API/Event control
-+
+Human Definition Language +
+Human Dependency Graph +
+Human Delta Compiler +
+Human Shape Space +
+Identity Preservation +
+Anatomical Constraints +
+Sparse Human Deformation +
+GPU-resident Character State +
+Human-specific GPU Scheduler +
+Persistent Timeline +
+Prompt/API/Event control +
 Browser-native WebGPU rendering
 
 Especially this idea:
@@ -3915,43 +3900,43 @@ This is something I'd add to your architecture.
 Every Daytona parameter should carry metadata such as:
 
 {
-  id: 1042,
+id: 1042,
 
-  path: "face.nose.tip.projection",
+path: "face.nose.tip.projection",
 
-  type: "number",
+type: "number",
 
-  range: [-1, 1],
-  default: 0,
+range: [-1, 1],
+default: 0,
 
-  units: "normalized",
+units: "normalized",
 
-  description:
-    "Controls forward projection of the nasal tip",
+description:
+"Controls forward projection of the nasal tip",
 
-  semanticAliases: [
-    "nose projection",
-    "projected nose",
-    "prominent nose tip"
-  ],
+semanticAliases: [
+"nose projection",
+"projected nose",
+"prominent nose tip"
+],
 
-  anatomicalRegion: "nose_tip",
+anatomicalRegion: "nose_tip",
 
-  affects: [
-    "nose_tip",
-    "nose_alar_left",
-    "nose_alar_right"
-  ],
+affects: [
+"nose_tip",
+"nose_alar_left",
+"nose_alar_right"
+],
 
-  identityImportance: 0.82,
+identityImportance: 0.82,
 
-  persistence: "identity",
+persistence: "identity",
 
-  constraints: [...],
+constraints: [...],
 
-  dependencies: [...],
+dependencies: [...],
 
-  gpuOffset: 81
+gpuOffset: 81
 }
 
 Now an AI agent doesn't need special training to understand Daytona.
@@ -3973,7 +3958,7 @@ Daytona.schema();
 Daytona.searchProperties("nose");
 
 Daytona.describeProperty(
-  "face.nose.tip.projection"
+"face.nose.tip.projection"
 );
 
 Daytona.availableExpressions();
@@ -3991,25 +3976,25 @@ Then an AI coding agent can interrogate Daytona before doing anything.
 For example:
 
 const capabilities =
-    Daytona.capabilities();
+Daytona.capabilities();
 
 might return:
 
 {
-  "human": {
-    "identity": true,
-    "anatomy": true,
-    "expressions": true,
-    "speech": true,
-    "animation": true
-  },
+"human": {
+"identity": true,
+"anatomy": true,
+"expressions": true,
+"speech": true,
+"animation": true
+},
 
-  "rendering": {
-    "webgpu": true,
-    "webgl2": true,
-    "skinSSS": true,
-    "strandHair": true
-  }
+"rendering": {
+"webgpu": true,
+"webgl2": true,
+"skinSSS": true,
+"strandHair": true
+}
 }
 
 Now your SDK becomes machine-readable, not merely documented for humans.
@@ -4144,17 +4129,17 @@ For example:
 Human
 │
 ├── Appearance
-│   ├── Face
-│   ├── Body
-│   ├── Skin
-│   ├── Eyes
-│   └── Hair
+│ ├── Face
+│ ├── Body
+│ ├── Skin
+│ ├── Eyes
+│ └── Hair
 │
 ├── Performance
-│   ├── Expression
-│   ├── Speech
-│   ├── Gaze
-│   └── Motion
+│ ├── Expression
+│ ├── Speech
+│ ├── Gaze
+│ └── Motion
 │
 ├── Wardrobe
 │
@@ -4182,35 +4167,35 @@ And expose actions as machine-readable tools
 Conceptually:
 
 {
-  "name": "modify_face",
-  "description": "Modify persistent facial anatomy",
-  "parameters": {
-    "region": "...",
-    "property": "...",
-    "value": "..."
-  }
+"name": "modify_face",
+"description": "Modify persistent facial anatomy",
+"parameters": {
+"region": "...",
+"property": "...",
+"value": "..."
+}
 }
 
 Another:
 
 {
-  "name": "perform_expression",
-  "description": "Apply temporary facial performance",
-  "parameters": {
-    "expression": "...",
-    "intensity": "..."
-  }
+"name": "perform_expression",
+"description": "Apply temporary facial performance",
+"parameters": {
+"expression": "...",
+"intensity": "..."
+}
 }
 
 Another:
 
 {
-  "name": "speak",
-  "parameters": {
-    "text": "...",
-    "emotion": "...",
-    "intensity": "..."
-  }
+"name": "speak",
+"parameters": {
+"text": "...",
+"emotion": "...",
+"intensity": "..."
+}
 }
 
 That makes Daytona naturally compatible with future agents and tool-calling systems.
@@ -4220,9 +4205,9 @@ Then AI coding becomes ridiculously simple
 An AI building a React application could inspect Daytona and generate:
 
 function Assistant() {
-    const human = useDaytonaHuman({
-        quality: "high"
-    });
+const human = useDaytonaHuman({
+quality: "high"
+});
 
     useEffect(() => {
         human.prompt(
@@ -4237,12 +4222,13 @@ function Assistant() {
             height="100%"
         />
     );
+
 }
 
 The application developer doesn't need to understand WGSL, morph buffers, FACS, skinning, corneal refraction or the increasingly absurd number of things required to make a convincing eyeball.
 
 This gives you the two worlds
-                 HUMAN / AI WORLD
+HUMAN / AI WORLD
 
 Natural Language
 AI Agents
@@ -4333,14 +4319,10 @@ Trying to bolt semantic understanding onto 800 undocumented parameters three yea
 
 So your completion sequence becomes:
 
-BUILD HUMAN SYSTEM
-        +
-DEFINE SEMANTICS
-        +
-REGISTER CAPABILITY
-        +
-TEST
-        +
+BUILD HUMAN SYSTEM +
+DEFINE SEMANTICS +
+REGISTER CAPABILITY +
+TEST +
 GPU IMPLEMENTATION
 
 rather than:
@@ -4368,7 +4350,7 @@ AI describes what the human should be or do. Daytona deterministically compiles 
 
 That combination is much closer to the SDK you've been describing from the beginning.
 
- will this also allow uploading a photo to product a 3d realistic person
+will this also allow uploading a photo to product a 3d realistic person
 
 Yes. That can be one of Daytona's major input modes, without violating your no-upload architecture.
 
@@ -4377,29 +4359,29 @@ The important distinction is: a photo should be an optional way to create the Hu
 The pipeline should be:
 
 Photo(s)
-   ↓
+↓
 Photo Analysis
-   ↓
+↓
 Face / Body Observations
-   ↓
+↓
 Landmarks + Proportions
-   ↓
+↓
 Identity Estimator
-   ↓
+↓
 Daytona Shape Coefficients
-   ↓
+↓
 HumanDefinition
-   ↓
+↓
 Anatomical + Identity Constraints
-   ↓
+↓
 Daytona Canonical Human
-   ↓
+↓
 Shape Space + Correctives
-   ↓
+↓
 Skin / Eye / Hair Appearance
-   ↓
+↓
 WebGPU
-   ↓
+↓
 Rigged 3D Person
 
 So if someone uploads a portrait, Daytona does not create some unrelated photogrammetry mesh. It reconstructs that person's appearance using the same canonical Daytona human.
@@ -4428,9 +4410,9 @@ hair color/style
 Then Daytona solves:
 
 observations
-    ↓
+↓
 HumanShapeSpace coefficients
-    ↓
+↓
 identity
 
 Some properties, particularly depth, are ambiguous from one image, so Daytona should expose confidence rather than pretending cameras have suddenly learned clairvoyance.
@@ -4438,46 +4420,42 @@ Some properties, particularly depth, are ambiguous from one image, so Daytona sh
 For example:
 
 {
-  "face.nose.width": {
-    "value": 0.47,
-    "confidence": 0.96
-  },
+"face.nose.width": {
+"value": 0.47,
+"confidence": 0.96
+},
 
-  "face.nose.projection": {
-    "value": 0.58,
-    "confidence": 0.54
-  }
+"face.nose.projection": {
+"value": 0.58,
+"confidence": 0.54
+}
 }
 Multiple photos make it considerably better
 
 You could support:
 
-Front
-+
-Left profile
-+
-Right profile
-+
-3/4 view
-+
+Front +
+Left profile +
+Right profile +
+3/4 view +
 Optional full body
 
 Then:
 
 Multi-view images
-       ↓
+↓
 Landmark correspondence
-       ↓
+↓
 Camera estimation
-       ↓
+↓
 2D → 3D constraints
-       ↓
+↓
 Shape-space optimization
-       ↓
+↓
 Identity fitting
-       ↓
+↓
 Texture/appearance estimation
-       ↓
+↓
 Daytona Human
 
 Now nose projection, forehead depth, jaw shape, skull shape, ears and other depth-dependent anatomy become much easier to estimate.
@@ -4497,7 +4475,7 @@ daniel.speak("Hello.");
 daniel.walkTo([5, 0, 3]);
 
 daniel.modify({
-    "face.jaw.width": 0.64
+"face.jaw.width": 0.64
 });
 
 daniel.prompt("Make my hair shorter.");
@@ -4534,19 +4512,19 @@ You need two reconstruction branches:
 
     GEOMETRY             APPEARANCE
 
-landmarks               pigmentation
-proportions             freckles
-depth                   moles
-shape coefficients      eyebrows
-asymmetry               lip color
-                        iris appearance
-                        skin variation
-         │                   │
-         └─────────┬─────────┘
-                   ▼
-             Identity Model
-                   ↓
-             Daytona Human
+landmarks pigmentation
+proportions freckles
+depth moles
+shape coefficients eyebrows
+asymmetry lip color
+iris appearance
+skin variation
+│ │
+└─────────┬─────────┘
+▼
+Identity Model
+↓
+Daytona Human
 
 That second branch is essential for likeness.
 
@@ -4561,23 +4539,20 @@ const a = await Human.create();
 
 // Semantic creation
 const b = await Human.fromPrompt(
-  "Create a 40-year-old athletic man..."
+"Create a 40-year-old athletic man..."
 );
 
 // Identity reconstruction
 const c = await Human.fromPhotos([
-  frontPhoto,
-  sidePhoto
+frontPhoto,
+sidePhoto
 ]);
 
 All three converge into:
 
-HumanDefinition
-+
-IdentityVector
-+
-ShapeCoefficients
-+
+HumanDefinition +
+IdentityVector +
+ShapeCoefficients +
 AppearanceDefinition
 
 After that, the engine doesn't particularly care where the definition came from.
@@ -4589,19 +4564,14 @@ Video would be an even stronger input later
 Once photos work:
 
 5-10 second face video
-        ↓
-Multiple viewpoints
-+
-Expressions
-+
-Eye movement
-+
+↓
+Multiple viewpoints +
+Expressions +
+Eye movement +
 Mouth movement
-        ↓
-Identity reconstruction
-+
-3D shape estimation
-+
+↓
+Identity reconstruction +
+3D shape estimation +
 Facial calibration
 
 That could potentially estimate not only someone's appearance but how their particular face deforms.
@@ -4622,19 +4592,19 @@ But don't build this yet
 Your current priority should remain:
 
 Daytona Generated Human
-        ↓
+↓
 HD topology
-        ↓
+↓
 Shape Space
-        ↓
+↓
 Realistic skin/eyes
-        ↓
+↓
 Facial deformation
-        ↓
+↓
 Animation
-        ↓
+↓
 Speech
-        ↓
+↓
 CORE V1
 
 Then add:
@@ -4684,12 +4654,12 @@ The SDK should eventually support:
 const human = await Human.create();
 
 const generated = await Human.fromPrompt(
-  "Create a professional woman in her 40s with brown eyes"
+"Create a professional woman in her 40s with brown eyes"
 );
 
 const reconstructed = await Human.fromPhotos([
-  frontPhoto,
-  profilePhoto
+frontPhoto,
+profilePhoto
 ]);
 
 human.modify(...);
@@ -4732,20 +4702,13 @@ CHARACTER != MESH
 
 The Daytona character is:
 
-HumanDefinition
-+
-IdentityVector
-+
-ShapeCoefficients
-+
-AppearanceDefinition
-+
-Constraints
-+
-Timeline
-+
-Performance State
-+
+HumanDefinition +
+IdentityVector +
+ShapeCoefficients +
+AppearanceDefinition +
+Constraints +
+Timeline +
+Performance State +
 Attachments
 
 The mesh is compiled output.
@@ -4755,23 +4718,23 @@ The mesh is compiled output.
 Continue using:
 
 CharacterEvent
-      ↓
+↓
 HumanDefinition
-      ↓
+↓
 IdentitySolver
-      ↓
+↓
 ConstraintSolver
-      ↓
+↓
 DependencyGraph
-      ↓
+↓
 DeltaCompiler
-      ↓
+↓
 HumanShapeSpace
-      ↓
+↓
 CorrectiveShapeSolver
-      ↓
+↓
 SparseMorph
-      ↓
+↓
 WebGPU
 
 Do not introduce competing state systems.
@@ -4857,101 +4820,101 @@ Long-term Daytona should converge on:
 
                  INPUT LAYER
 
- Prompt
- Photos
- Video
- UI
- JavaScript
- AI Agent
- Automation
- API
- Simulation
+Prompt
+Photos
+Video
+UI
+JavaScript
+AI Agent
+Automation
+API
+Simulation
 
                     │
                     ▼
 
               INTENT LAYER
 
- HumanIntent
- CharacterEvent
- Human Capability Graph
+HumanIntent
+CharacterEvent
+Human Capability Graph
 
                     │
                     ▼
 
               SEMANTIC LAYER
 
- HumanDefinition
- IdentityVector
- AppearanceDefinition
- PerformanceDefinition
+HumanDefinition
+IdentityVector
+AppearanceDefinition
+PerformanceDefinition
 
                     │
                     ▼
 
               HUMAN COMPILER
 
- Constraint Solver
- Identity Solver
- Dependency Graph
- Delta Compiler
- Shape Space
- Corrective Solver
- Motion Compiler
- Speech Compiler
+Constraint Solver
+Identity Solver
+Dependency Graph
+Delta Compiler
+Shape Space
+Corrective Solver
+Motion Compiler
+Speech Compiler
 
                     │
                     ▼
 
              HUMAN RUNTIME
 
- Skeleton
- Skinning
- Facial Rig
- IK
- Muscle
- Tissue
- Physics
- Attachments
- Timeline
+Skeleton
+Skinning
+Facial Rig
+IK
+Muscle
+Tissue
+Physics
+Attachments
+Timeline
 
                     │
                     ▼
 
               WEBGPU COMPUTE
 
- Shape
- Morph
- Skinning
- Correctives
- Hair
- Cloth
- Tissue
- Normals
- LOD
+Shape
+Morph
+Skinning
+Correctives
+Hair
+Cloth
+Tissue
+Normals
+LOD
 
                     │
                     ▼
 
               DAYTONA RENDERER
 
- Skin
- Eyes
- Teeth
- Hair
- Clothing
- Lighting
- Shadows
- SSS
- Temporal Reconstruction
+Skin
+Eyes
+Teeth
+Hair
+Clothing
+Lighting
+Shadows
+SSS
+Temporal Reconstruction
 
                     │
                     ▼
 
           PHOTOREAL DIGITAL HUMAN
+
 PART I
-FINISH THE HUMAN FIRST
-6. PHASE 1 — CANONICAL HUMAN V0.2
+FINISH THE HUMAN FIRST 6. PHASE 1 — CANONICAL HUMAN V0.2
 
 Current:
 
@@ -5059,8 +5022,7 @@ speech
 jaw opening
 lip pucker
 lip funnel
-cheek raising
-11. BODY TOPOLOGY
+cheek raising 11. BODY TOPOLOGY
 
 Complete deformation-friendly topology for:
 
@@ -5085,8 +5047,7 @@ calves
 ankles
 
 feet
-toes
-12. SEMANTIC REGIONS
+toes 12. SEMANTIC REGIONS
 
 Upgrade regions from simple labels into robust anatomical regions.
 
@@ -5098,8 +5059,7 @@ surface area
 adjacent regions
 landmarks
 LOD importance
-identity importance
-13. LANDMARK NETWORK
+identity importance 13. LANDMARK NETWORK
 
 Expand toward approximately:
 
@@ -5128,8 +5088,7 @@ knees
 ankles
 feet
 PART II
-HUMAN SHAPE SYSTEM
-14. PHASE 2 — HUMAN SHAPE SPACE V1
+HUMAN SHAPE SYSTEM 14. PHASE 2 — HUMAN SHAPE SPACE V1
 
 The existing shape-space architecture becomes Daytona's central human-variation model.
 
@@ -5143,8 +5102,7 @@ HumanShapeSpace
 ↓
 CorrectiveShapeSolver
 ↓
-SparseMorph
-15. BUILD SHAPE BASIS LIBRARY
+SparseMorph 15. BUILD SHAPE BASIS LIBRARY
 
 Organize bases:
 
@@ -5220,8 +5178,7 @@ shin length
 foot size
 
 body fat
-muscularity
-18. CORRELATED ANATOMY
+muscularity 18. CORRELATED ANATOMY
 
 Never make semantic controls equivalent to raw scale operations.
 
@@ -5236,15 +5193,13 @@ jaw angle
 chin transition
 masseter area
 cheek transition
-neck transition
-19. COMBINATION CORRECTIVES
+neck transition 19. COMBINATION CORRECTIVES
 
 Create correctives for interacting identity dimensions.
 
 Example:
 
-wide jaw
-+
+wide jaw +
 narrow face
 
 needs a transition corrective.
@@ -5252,8 +5207,7 @@ needs a transition corrective.
 Use continuous activation.
 
 PART III
-ANATOMY AND RIG
-20. PHASE 3 — PRODUCTION SKELETON
+ANATOMY AND RIG 20. PHASE 3 — PRODUCTION SKELETON
 
 Expand the current skeleton gradually.
 
@@ -5289,8 +5243,7 @@ shins
 ankles
 
 feet
-toes
-21. PARAMETRIC SKELETON
+toes 21. PARAMETRIC SKELETON
 
 Skeleton placement must derive from anatomy.
 
@@ -5327,8 +5280,7 @@ knees
 ankles
 neck
 jaw
-fingers
-23. DUAL-QUATERNION OPTION
+fingers 23. DUAL-QUATERNION OPTION
 
 Investigate dual-quaternion skinning for areas where linear blend skinning produces volume collapse.
 
@@ -5352,8 +5304,7 @@ ankle bend
 neck rotation
 jaw opening
 PART IV
-MUSCLE AND SOFT TISSUE
-25. PHASE 4 — MUSCLE APPROXIMATION
+MUSCLE AND SOFT TISSUE 25. PHASE 4 — MUSCLE APPROXIMATION
 
 After basic rig quality works, add simplified muscle representation.
 
@@ -5367,8 +5318,7 @@ Muscle deformation
 ↓
 Soft tissue response
 ↓
-Skin
-26. MUSCLE REPRESENTATION
+Skin 26. MUSCLE REPRESENTATION
 
 Start with important visible groups:
 
@@ -5411,8 +5361,7 @@ thighs
 Start with deterministic spring/PBD-style approximations.
 
 PART V
-PHOTOREAL FACE
-28. PHASE 5 — FACIAL ACTION SYSTEM
+PHOTOREAL FACE 28. PHASE 5 — FACIAL ACTION SYSTEM
 
 Expand current facial expressions into a systematic facial rig.
 
@@ -5444,17 +5393,15 @@ funnel
 pucker
 
 upper lip raise
-lower lip depress
-29. IDENTITY + EXPRESSION SEPARATION
+lower lip depress 29. IDENTITY + EXPRESSION SEPARATION
 
 Always:
 
-Neutral Identity
-+
-Expression
-+
+Neutral Identity +
+Expression +
 Expression Corrective
 =
+
 Current Face
 
 Expressions must never rewrite identity.
@@ -5480,8 +5427,7 @@ nasolabial fold
 Use displacement/normal detail rather than excessive base geometry.
 
 PART VI
-EYES
-31. PHASE 6 — OPTICAL EYE SYSTEM
+EYES 31. PHASE 6 — OPTICAL EYE SYSTEM
 
 Continue current eye work.
 
@@ -5509,8 +5455,7 @@ limbal ring
 scleral roughness
 subtle scleral vessels
 wetness
-pupil dilation
-33. TEAR FILM
+pupil dilation 33. TEAR FILM
 
 Add:
 
@@ -5539,38 +5484,36 @@ saccades
 micro-saccades
 blink coupling
 PART VII
-PHOTOREAL SKIN
-35. PHASE 7 — DAYTONA SKIN SYSTEM
+PHOTOREAL SKIN 35. PHASE 7 — DAYTONA SKIN SYSTEM
 
 Separate:
 
 MACRO
 MESO
 MICRO
-OPTICAL
-36. MACRO
+OPTICAL 36. MACRO
 
 Base anatomy and silhouette.
 
 37. MESO
-wrinkles
-folds
-scars
-nasolabial folds
-under-eye folds
+    wrinkles
+    folds
+    scars
+    nasolabial folds
+    under-eye folds
 38. MICRO
-pores
-fine wrinkles
-skin grain
+    pores
+    fine wrinkles
+    skin grain
 39. OPTICAL
-pigmentation
-melanin approximation
-blood coloration
-roughness
-specular
-oiliness
-wetness
-subsurface scattering
+    pigmentation
+    melanin approximation
+    blood coloration
+    roughness
+    specular
+    oiliness
+    wetness
+    subsurface scattering
 40. REGION-AWARE SKIN
 
 Different skin zones behave differently.
@@ -5585,8 +5528,7 @@ cheeks = softer scattering
 
 lips = wetter
 
-ears = thinner/transmissive
-41. PROCEDURAL MICRODETAIL
+ears = thinner/transmissive 41. PROCEDURAL MICRODETAIL
 
 Generate deterministic:
 
@@ -5604,8 +5546,7 @@ age
 skin parameters
 anatomical region
 PART VIII
-HAIR
-42. PHASE 8 — HAIR SYSTEM
+HAIR 42. PHASE 8 — HAIR SYSTEM
 
 Keep existing hair prototype.
 
@@ -5625,8 +5566,7 @@ Hair clusters/strands
 ↓
 Physics
 ↓
-LOD
-43. HAIR DEFINITION
+LOD 43. HAIR DEFINITION
 
 Expose:
 
@@ -5640,8 +5580,7 @@ clumping
 part
 hairline
 color
-gray %
-44. HAIR LOD
+gray % 44. HAIR LOD
 
 Close:
 
@@ -5655,8 +5594,7 @@ Far:
 
 simplified cards/shell
 PART IX
-CLOTHING
-45. PHASE 9 — CLOTHING SYSTEM
+CLOTHING 45. PHASE 9 — CLOTHING SYSTEM
 
 Keep current clothing/cloth prototypes.
 
@@ -5676,8 +5614,7 @@ Skinning
 ↓
 Collision
 ↓
-Cloth simulation
-46. AI-READY GARMENTS
+Cloth simulation 46. AI-READY GARMENTS
 
 Expose:
 
@@ -5690,8 +5627,7 @@ pattern
 sleeves
 length
 PART X
-SPEECH AND LIP SYNC
-47. PHASE 10 — SPEECH PERFORMANCE
+SPEECH AND LIP SYNC 47. PHASE 10 — SPEECH PERFORMANCE
 
 Upgrade existing viseme system.
 
@@ -5713,8 +5649,7 @@ Co-articulation
 ↓
 Jaw/lips/tongue
 ↓
-Facial expression
-48. CO-ARTICULATION
+Facial expression 48. CO-ARTICULATION
 
 A phoneme depends on surrounding phonemes.
 
@@ -5752,8 +5687,7 @@ human.speak("Welcome.");
 Speech must compose with expression.
 
 PART XI
-BODY ANIMATION
-51. PHASE 11 — MOTION SYSTEM
+BODY ANIMATION 51. PHASE 11 — MOTION SYSTEM
 
 Mature MotionCompiler.
 
@@ -5769,8 +5703,7 @@ reach
 point
 wave
 grab
-look
-52. MOTION API
+look 52. MOTION API
 
 Eventually:
 
@@ -5780,8 +5713,7 @@ human.lookAt(target);
 
 human.gesture("wave");
 
-human.sit(chair);
-53. IK
+human.sit(chair); 53. IK
 
 Implement:
 
@@ -5793,8 +5725,7 @@ leg IK
 foot placement
 pelvis adjustment
 PART XII
-AI-NATIVE SDK
-54. PHASE 12 — SELF-DESCRIBING HUMAN SCHEMA
+AI-NATIVE SDK 54. PHASE 12 — SELF-DESCRIBING HUMAN SCHEMA
 
 THIS should be designed while the human systems are being completed.
 
@@ -5805,39 +5736,38 @@ Every property should expose metadata.
 Example:
 
 {
-  id: 1042,
+id: 1042,
 
-  path: "face.nose.tip.projection",
+path: "face.nose.tip.projection",
 
-  type: "number",
+type: "number",
 
-  min: -1,
-  max: 1,
+min: -1,
+max: 1,
 
-  default: 0,
+default: 0,
 
-  description:
-    "Controls forward projection of the nasal tip.",
+description:
+"Controls forward projection of the nasal tip.",
 
-  aliases: [
-    "nose projection",
-    "projected nose",
-    "prominent nose"
-  ],
+aliases: [
+"nose projection",
+"projected nose",
+"prominent nose"
+],
 
-  anatomicalRegion: "nose_tip",
+anatomicalRegion: "nose_tip",
 
-  persistence: "identity",
+persistence: "identity",
 
-  identityImportance: .82,
+identityImportance: .82,
 
-  dependencies: [...],
+dependencies: [...],
 
-  constraints: [...],
+constraints: [...],
 
-  gpuOffset: 81
-}
-55. SEMANTICS FOR EVERYTHING
+gpuOffset: 81
+} 55. SEMANTICS FOR EVERYTHING
 
 Apply this to:
 
@@ -5852,8 +5782,7 @@ speech
 motion
 clothing
 attachments
-rendering
-56. HUMAN CAPABILITY GRAPH
+rendering 56. HUMAN CAPABILITY GRAPH
 
 Add a new system:
 
@@ -5867,8 +5796,7 @@ What changes if X changes?
 
 CapabilityGraph answers:
 
-What can Daytona do?
-57. CAPABILITY GRAPH STRUCTURE
+What can Daytona do? 57. CAPABILITY GRAPH STRUCTURE
 Human
 │
 ├── Identity
@@ -5876,15 +5804,15 @@ Human
 ├── Anatomy
 │
 ├── Appearance
-│   ├── Skin
-│   ├── Eyes
-│   └── Hair
+│ ├── Skin
+│ ├── Eyes
+│ └── Hair
 │
 ├── Performance
-│   ├── Expression
-│   ├── Speech
-│   ├── Gaze
-│   └── Motion
+│ ├── Expression
+│ ├── Speech
+│ ├── Gaze
+│ └── Motion
 │
 ├── Wardrobe
 │
@@ -5892,8 +5820,7 @@ Human
 │
 ├── Time
 │
-└── Rendering
-58. CAPABILITY METADATA
+└── Rendering 58. CAPABILITY METADATA
 
 Each capability exposes:
 
@@ -5906,8 +5833,7 @@ examples
 availability
 quality level
 related properties
-supported operations
-59. AI DISCOVERY API
+supported operations 59. AI DISCOVERY API
 
 Expose:
 
@@ -5918,7 +5844,7 @@ Daytona.schema();
 Daytona.searchProperties("nose");
 
 Daytona.describeProperty(
-  "face.nose.tip.projection"
+"face.nose.tip.projection"
 );
 
 Daytona.expressions();
@@ -5927,8 +5853,7 @@ Daytona.motions();
 
 Daytona.materials();
 
-Daytona.renderCapabilities();
-60. MACHINE-READABLE TOOL DEFINITIONS
+Daytona.renderCapabilities(); 60. MACHINE-READABLE TOOL DEFINITIONS
 
 Generate AI tool schemas automatically.
 
@@ -5969,14 +5894,14 @@ as an AI-facing intermediate representation.
 Example:
 
 {
-  "operation": "modify",
-  "targets": [
-    {
-      "path": "face.nose.width",
-      "intent": "narrower",
-      "confidence": 0.93
-    }
-  ]
+"operation": "modify",
+"targets": [
+{
+"path": "face.nose.width",
+"intent": "narrower",
+"confidence": 0.93
+}
+]
 }
 
 Then compile:
@@ -5988,17 +5913,15 @@ validated CharacterEvent
 AI never bypasses CharacterEvent.
 
 PART XIII
-PROMPT TO HUMAN
-62. PHASE 13 — HUMAN.FROMPROMPT()
+PROMPT TO HUMAN 62. PHASE 13 — HUMAN.FROMPROMPT()
 
 Implement after semantic coverage becomes adequate.
 
 Target:
 
 const human = await Human.fromPrompt(
-  "Create a tall athletic woman with brown eyes and shoulder-length black hair."
-);
-63. PROMPT PIPELINE
+"Create a tall athletic woman with brown eyes and shoulder-length black hair."
+); 63. PROMPT PIPELINE
 Prompt
 ↓
 AI Interpreter
@@ -6015,13 +5938,12 @@ HumanDefinition
 ↓
 Human Compiler
 ↓
-WebGPU
-64. PROMPT MODIFICATION
+WebGPU 64. PROMPT MODIFICATION
 
 Then:
 
 human.prompt(
-  "Make her hair slightly longer and her jaw a little narrower."
+"Make her hair slightly longer and her jaw a little narrower."
 );
 
 AI emits PATCHES.
@@ -6029,8 +5951,7 @@ AI emits PATCHES.
 Never regenerate the human.
 
 PART XIV
-PHOTO TO 3D PERSON
-65. PHASE 14 — PHOTO RECONSTRUCTION
+PHOTO TO 3D PERSON 65. PHASE 14 — PHOTO RECONSTRUCTION
 
 Do this AFTER the human shape space can accurately represent diverse faces.
 
@@ -6041,9 +5962,9 @@ Do not build reconstruction before the target representation is capable enough.
 Target:
 
 const human = await Human.fromPhotos([
-  front,
-  leftProfile,
-  rightProfile
+front,
+leftProfile,
+rightProfile
 ]);
 
 Also support:
@@ -6053,29 +5974,29 @@ Human.fromPhoto(front);
 with reduced reconstruction confidence.
 
 67. PHOTO RECONSTRUCTION PIPELINE
-Photo(s)
-↓
-Image normalization
-↓
-Face detection
-↓
-Landmarks
-↓
-Camera estimation
-↓
-Identity observations
-↓
-ShapeCoefficientSolver
-↓
-HumanShapeSpace
-↓
-Appearance estimation
-↓
-IdentitySolver
-↓
-HumanDefinition
-↓
-Daytona Human
+    Photo(s)
+    ↓
+    Image normalization
+    ↓
+    Face detection
+    ↓
+    Landmarks
+    ↓
+    Camera estimation
+    ↓
+    Identity observations
+    ↓
+    ShapeCoefficientSolver
+    ↓
+    HumanShapeSpace
+    ↓
+    Appearance estimation
+    ↓
+    IdentitySolver
+    ↓
+    HumanDefinition
+    ↓
+    Daytona Human
 68. DO NOT CREATE A RANDOM PHOTO MESH
 
 Do NOT:
@@ -6100,8 +6021,7 @@ expressions
 attachments
 clothing
 LOD
-WebGPU
-69. PHOTO OBSERVATIONS
+WebGPU 69. PHOTO OBSERVATIONS
 
 Extract:
 
@@ -6125,8 +6045,7 @@ ears
 
 skin
 eyebrows
-hairline
-70. MULTI-VIEW RECONSTRUCTION
+hairline 70. MULTI-VIEW RECONSTRUCTION
 
 Use:
 
@@ -6151,17 +6070,16 @@ Every estimated property should return confidence.
 Example:
 
 {
-  "face.nose.width": {
-    "value": .47,
-    "confidence": .95
-  },
+"face.nose.width": {
+"value": .47,
+"confidence": .95
+},
 
-  "face.nose.projection": {
-    "value": .56,
-    "confidence": .61
-  }
+"face.nose.projection": {
+"value": .56,
+"confidence": .61
 }
-72. APPEARANCE RECONSTRUCTION
+} 72. APPEARANCE RECONSTRUCTION
 
 Separate geometry and appearance.
 
@@ -6181,8 +6099,7 @@ iris
 hairline
 hair color
 PART XV
-VIDEO TO DIGITAL DOUBLE
-73. PHASE 15 — VIDEO RECONSTRUCTION
+VIDEO TO DIGITAL DOUBLE 73. PHASE 15 — VIDEO RECONSTRUCTION
 
 Later support:
 
@@ -6193,8 +6110,7 @@ Use multiple frames for:
 identity
 depth
 expression calibration
-facial movement
-74. PERSONALIZED PERFORMANCE
+facial movement 74. PERSONALIZED PERFORMANCE
 
 A short calibration video may eventually estimate personalized:
 
@@ -6207,37 +6123,36 @@ cheek deformation
 These become person-specific corrective coefficients.
 
 PART XVI
-RENDERING
-75. PHASE 16 — DAYTONA PHOTOREAL RENDERER
+RENDERING 75. PHASE 16 — DAYTONA PHOTOREAL RENDERER
 
 The SDK must render its own humans.
 
 Do not merely return geometry.
 
 76. RENDER PIPELINE
-Human GPU State
-↓
-Geometry
-↓
-Materials
-↓
-Lighting
-↓
-Shadows
-↓
-SSS
-↓
-Eyes
-↓
-Hair
-↓
-Clothing
-↓
-Post processing
-↓
-Temporal reconstruction
-↓
-Display
+    Human GPU State
+    ↓
+    Geometry
+    ↓
+    Materials
+    ↓
+    Lighting
+    ↓
+    Shadows
+    ↓
+    SSS
+    ↓
+    Eyes
+    ↓
+    Hair
+    ↓
+    Clothing
+    ↓
+    Post processing
+    ↓
+    Temporal reconstruction
+    ↓
+    Display
 77. PBR
 
 Support:
@@ -6248,8 +6163,7 @@ HDR environment
 soft shadows
 tone mapping
 exposure
-AO
-78. TEMPORAL QUALITY
+AO 78. TEMPORAL QUALITY
 
 Implement:
 
@@ -6274,8 +6188,7 @@ hairline = high
 hands = medium
 feet = low
 PART XVII
-GPU ARCHITECTURE
-80. PHASE 17 — GPU-RESIDENT CHARACTER
+GPU ARCHITECTURE 80. PHASE 17 — GPU-RESIDENT CHARACTER
 
 Keep hot state GPU-resident.
 
@@ -6291,8 +6204,7 @@ working geometry
 morph data
 skinning state
 materials
-simulation
-81. HUMAN PARAMETER BUFFER
+simulation 81. HUMAN PARAMETER BUFFER
 
 Generate GPU layout from schema.
 
@@ -6321,8 +6233,7 @@ estimated cost
 actual cost
 visibility
 perceptual importance
-deadline
-83. DELTA EXECUTION
+deadline 83. DELTA EXECUTION
 
 Main Daytona optimization:
 
@@ -6339,17 +6250,15 @@ Minimal GPU work
 Never silently regress into whole-character recomputation.
 
 PART XVIII
-AUTOMATION AND TIME
-84. PHASE 18 — CHARACTER EVOLUTION
+AUTOMATION AND TIME 84. PHASE 18 — CHARACTER EVOLUTION
 
 Keep timeline/event architecture.
 
 Support:
 
 human.advanceTime({
-  years: 10
-});
-85. PROGRESSIVE STATE
+years: 10
+}); 85. PROGRESSIVE STATE
 
 Eventually model:
 
@@ -6360,8 +6269,7 @@ gray hair
 fitness
 muscle
 body fat
-tan
-86. AUTOMATION
+tan 86. AUTOMATION
 
 External automation should generate CharacterEvents.
 
@@ -6375,8 +6283,7 @@ HumanDefinition changes
 ↓
 Delta compile
 PART XIX
-PERSISTENCE
-87. PHASE 19 — DAYTONA HUMAN FORMAT
+PERSISTENCE 87. PHASE 19 — DAYTONA HUMAN FORMAT
 
 Create:
 
@@ -6399,8 +6306,7 @@ seeds
 attachments
 clothing
 
-timeline
-88. DO NOT STORE MESH AS CHARACTER
+timeline 88. DO NOT STORE MESH AS CHARACTER
 
 Mesh may be cached.
 
@@ -6420,8 +6326,7 @@ compile
 to reproduce the same person.
 
 PART XX
-VALIDATION
-90. PHASE 20 — AUTOMATED HUMAN QA
+VALIDATION 90. PHASE 20 — AUTOMATED HUMAN QA
 
 Create standard cameras:
 
@@ -6434,8 +6339,7 @@ face
 eyes
 mouth
 hands
-feet
-91. VALIDATE
+feet 91. VALIDATE
 
 Detect:
 
@@ -6454,8 +6358,7 @@ skin tearing
 
 attachment drift
 
-identity drift
-92. FUZZ
+identity drift 92. FUZZ
 
 Generate:
 
@@ -6472,8 +6375,7 @@ pose
 speech
 combinations
 PART XXI
-PERFORMANCE
-93. PHASE 21 — BENCHMARK
+PERFORMANCE 93. PHASE 21 — BENCHMARK
 
 Measure:
 
@@ -6488,8 +6390,7 @@ skin
 physics
 render
 
-memory
-94. LOCALITY REPORT
+memory 94. LOCALITY REPORT
 
 Every edit can report:
 
@@ -6499,8 +6400,7 @@ regions
 vertices
 GPU passes
 CPU time
-GPU time
-95. MULTI-HUMAN
+GPU time 95. MULTI-HUMAN
 
 Only after one human is excellent:
 
@@ -6515,8 +6415,7 @@ humans.
 Share immutable data.
 
 PART XXII
-QUALITY LEVELS
-96. PHASE 22 — QUALITY TIERS
+QUALITY LEVELS 96. PHASE 22 — QUALITY TIERS
 
 Define:
 
@@ -6524,8 +6423,7 @@ CINEMATIC
 HIGH
 MEDIUM
 LOW
-COMPATIBILITY
-97. CINEMATIC
+COMPATIBILITY 97. CINEMATIC
 
 Target:
 
@@ -6535,8 +6433,7 @@ SSS
 high skin detail
 strand hair
 dynamic wrinkles
-high shadow quality
-98. COMPATIBILITY
+high shadow quality 98. COMPATIBILITY
 
 Target:
 
@@ -6549,8 +6446,7 @@ basic shadows
 Identity remains the same.
 
 PART XXIII
-SDK DEVELOPER EXPERIENCE
-99. PHASE 23 — SIMPLE API
+SDK DEVELOPER EXPERIENCE 99. PHASE 23 — SIMPLE API
 
 Hide engine complexity.
 
@@ -6572,8 +6468,7 @@ human.setExpression(...);
 
 human.undo();
 
-human.serialize();
-100. FRAMEWORK INTEGRATIONS
+human.serialize(); 100. FRAMEWORK INTEGRATIONS
 
 After core SDK stabilizes:
 
@@ -6599,8 +6494,7 @@ Possible future:
 Do not put core human logic inside React.
 
 PART XXIV
-TESTING GATES
-102. EVERY NEW HUMAN PARAMETER
+TESTING GATES 102. EVERY NEW HUMAN PARAMETER
 
 Must have:
 
@@ -6610,8 +6504,7 @@ dependency test
 shape test
 locality test
 undo test
-serialization test
-103. EVERY NEW GPU KERNEL
+serialization test 103. EVERY NEW GPU KERNEL
 
 Must have:
 
@@ -6619,8 +6512,7 @@ CPU reference
 GPU parity test where possible
 bounds validation
 NaN protection
-benchmark
-104. EVERY NEW VISUAL SYSTEM
+benchmark 104. EVERY NEW VISUAL SYSTEM
 
 Must have:
 
@@ -6741,8 +6633,7 @@ EXPANSION
 
 53 Framework wrappers
 PART XXVI
-MAJOR RELEASE MILESTONES
-105. DAYTONA HUMAN V0.2
+MAJOR RELEASE MILESTONES 105. DAYTONA HUMAN V0.2
 
 Must have:
 
@@ -6754,8 +6645,7 @@ skinning
 expressions
 eyes
 basic realistic skin
-WebGPU
-106. DAYTONA HUMAN V0.5
+WebGPU 106. DAYTONA HUMAN V0.5
 
 Must have:
 
@@ -6766,8 +6656,7 @@ better skin
 better eyes
 speech
 gaze
-basic motion
-107. DAYTONA HUMAN V0.8
+basic motion 107. DAYTONA HUMAN V0.8
 
 Must have:
 
@@ -6780,8 +6669,7 @@ IK
 high-quality skin
 hair
 GPU optimization
-serialization
-108. DAYTONA CORE V1
+serialization 108. DAYTONA CORE V1
 
 Must support:
 
@@ -6842,8 +6730,7 @@ photoreal skin
 photoreal eyes
 high-quality hair
 speech
-animation
-112. META-HUMAN-CLASS QUALITY GATE
+animation 112. META-HUMAN-CLASS QUALITY GATE
 
 Do NOT claim MetaHuman-class quality based on architecture.
 
@@ -6866,10 +6753,8 @@ neutral lighting
 
 The quality target is:
 
-photorealistic still
-+
-photorealistic deformation
-+
+photorealistic still +
+photorealistic deformation +
 photorealistic performance
 
 A beautiful neutral screenshot alone does not pass.
@@ -6909,8 +6794,7 @@ HumanDefinition
 ↓
 Daytona Human Compiler
 ↓
-geometry
-114. DO NOT MAKE PHOTOS THE GEOMETRY ENGINE
+geometry 114. DO NOT MAKE PHOTOS THE GEOMETRY ENGINE
 
 Never:
 
@@ -6928,8 +6812,7 @@ identity parameters
 ↓
 Daytona Shape Space
 ↓
-Daytona canonical human
-115. DO NOT REQUIRE EXTERNAL HUMAN ASSETS
+Daytona canonical human 115. DO NOT REQUIRE EXTERNAL HUMAN ASSETS
 
 The SDK may contain its own:
 
@@ -6950,28 +6833,28 @@ THE FINAL PRODUCT
 A future application should be able to do:
 
 import {
-  Human,
-  DaytonaRenderer
+Human,
+DaytonaRenderer
 } from "@daytona/human";
 
 const person =
-  await Human.fromPhotos([
-    front,
-    profile
-  ]);
+await Human.fromPhotos([
+front,
+profile
+]);
 
 person.prompt(
-  "Give her shoulder-length brown hair."
+"Give her shoulder-length brown hair."
 );
 
 person.setExpression(
-  "friendly"
+"friendly"
 );
 
 person.lookAt(camera);
 
 person.speak(
-  "Welcome to the application."
+"Welcome to the application."
 );
 
 person.walkTo([2, 0, 5]);
@@ -7016,8 +6899,7 @@ rendering
 
 history
 
-serialization
-116. THE TWO WORLDS
+serialization 116. THE TWO WORLDS
 
 The final Daytona SDK combines:
 
@@ -7049,11 +6931,10 @@ APIs
 Connected by:
 
 SEMANTIC INTENT
-        ↓
+↓
 DETERMINISTIC HUMAN COMPILER
-        ↓
-MINIMAL GPU WORK
-117. FINAL ARCHITECTURAL DEFINITION
+↓
+MINIMAL GPU WORK 117. FINAL ARCHITECTURAL DEFINITION
 
 Daytona is:
 
@@ -7145,32 +7026,31 @@ Where you are right now
 
 Based on the latest repository, I'd roughly classify you as follows:
 
-Area	Current state	Destination
-Semantic HumanDefinition	🟢 Strong	Production hardening
-Event architecture	🟢 Strong	Keep
-Dependency/delta compiler	🟢 Strong	Benchmark/locality
-Identity/constraints	🟢 Strong foundation	Expand validation
-Timeline/history	🟢 Strong	Serialization
-Canonical provider architecture	🟢 Strong	Keep
-Daytona-generated HD human	🟡 Active	Production topology
-Shape Space	🟡 Active	Rich anatomical basis
-Skeleton/skinning	🟡 Good foundation	Production rig/correctives
-WebGPU morph/skinning	🟢 Strong foundation	Optimize
-Eyes	🟡 Improving rapidly	Optical realism
-Facial system	🟡 Foundation	FACS/correctives
-Speech	🟡 Foundation	Co-articulation + performance
-Skin	🟠 Prototype	Major fidelity work
-Hair	🟠 Prototype	Production strands/clusters
-Clothing/cloth	🟠 Prototype	Production later
-Motion	🟠 Prototype	IK + motion library
-AI semantics	🟡 Architectural foundation	Capability Graph
-Prompt creation	🟠 Early	Full HumanIntent
-Photo → human	🔴 Not yet	After Shape Space
-Video → digital double	🔴 Future	After photos
-Photorealism	🟠 Early	Major remaining challenge
-MetaHuman-class visual quality	🔴 Not demonstrated	Long-term validation target
+Area Current state Destination
+Semantic HumanDefinition 🟢 Strong Production hardening
+Event architecture 🟢 Strong Keep
+Dependency/delta compiler 🟢 Strong Benchmark/locality
+Identity/constraints 🟢 Strong foundation Expand validation
+Timeline/history 🟢 Strong Serialization
+Canonical provider architecture 🟢 Strong Keep
+Daytona-generated HD human 🟡 Active Production topology
+Shape Space 🟡 Active Rich anatomical basis
+Skeleton/skinning 🟡 Good foundation Production rig/correctives
+WebGPU morph/skinning 🟢 Strong foundation Optimize
+Eyes 🟡 Improving rapidly Optical realism
+Facial system 🟡 Foundation FACS/correctives
+Speech 🟡 Foundation Co-articulation + performance
+Skin 🟠 Prototype Major fidelity work
+Hair 🟠 Prototype Production strands/clusters
+Clothing/cloth 🟠 Prototype Production later
+Motion 🟠 Prototype IK + motion library
+AI semantics 🟡 Architectural foundation Capability Graph
+Prompt creation 🟠 Early Full HumanIntent
+Photo → human 🔴 Not yet After Shape Space
+Video → digital double 🔴 Future After photos
+Photorealism 🟠 Early Major remaining challenge
+MetaHuman-class visual quality 🔴 Not demonstrated Long-term validation target
 
 The newest commit confirms you're already moving into the right fidelity work. It added explicit limbus geometry and made corneas dedicated optical parts rather than treating them as sclera, with corresponding tests. Your current tree also confirms the shape-space architecture is present alongside the much broader runtime.
 
 So I would freeze architectural invention for a while. Keep the future AI/photo/video interfaces in the master plan, but spend the next serious block of development making one Daytona-generated person look, deform, blink, speak and move exceptionally well. Once that representation is strong, AI and photo reconstruction have something powerful to control instead of being very sophisticated interfaces to a mediocre face.
-

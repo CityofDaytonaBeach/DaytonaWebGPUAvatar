@@ -7,7 +7,7 @@ import type { CanonicalTopologyVertex } from './canonical-topology.js';
  * columns fused only by concatenation. This generator computes a single united
  * *implicit* volume (union of skeleton-aligned capsules for torso, shoulders,
  * arms, hands, legs, feet) and extracts ONE watertight isosurface with
- * marching-tetrahedra on a fixed grid.
+ * marching cubes (standard 256-case table) on a fixed grid.
  *
  * Properties:
  *   - A single closed, non-self-overlapping manifold (min-union of capsules â†’ no
@@ -35,30 +35,6 @@ export interface BodyManifold {
     vertices: CanonicalTopologyVertex[];
     indices: Uint32Array;
 }
-interface V3 {
-    x: number;
-    y: number;
-    z: number;
-}
-interface CellVert {
-    pos: V3;
-    bone: string;
-}
-/**
- * Test helper: march an analytic unit-sphere SDF on a grid and return the welded
- * mesh. The sphere must triangulate to a watertight closed surface (Ï‡ = 2, zero
- * boundary edges); this isolates the marching-tetra extractor from the body SDF.
- */
-export declare function marchingCubesProbe(n?: number, tol?: number): {
-    vertices: CellVert[];
-    indices: Uint32Array;
-    chi: number;
-    boundaryEdges: number;
-    rawBoundary: number;
-    rawChi: number;
-    rawV: number;
-};
 /** Build the body: see module doc. */
 export declare function buildHdBodyManifold(opts?: HdBodyManifoldOptions): BodyManifold;
-export {};
 //# sourceMappingURL=hd-body-manifold.d.ts.map

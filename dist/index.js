@@ -22,6 +22,10 @@ export { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
 export { ComputeGraph } from './compiler/compute/compute-graph.js';
 // Anatomy
 export { defaultSkeleton, placeSkeletonFromDefinition } from './anatomy/skeleton/skeleton.js';
+// Phase C — skeleton + rig adaptation to the shape space.
+export { adaptSkeletonToPositions, boneWorldPositions, regionVertexIds, rotateVec3, skeletonAdaptationReportLines, JOINT_ANCHORS, SYMMETRIC_BONE_PAIRS, } from './anatomy/skeleton/skeleton-adaptation.js';
+export { buildBoneSegments, distanceToSegment, solveSkinWeights, applySkinWeights, validateSkinWeights, REGION_BONE_PRIOR, } from './anatomy/skeleton/skin-weight-solver.js';
+export { RigAdapter, deformedPositions, bindPoseError } from './anatomy/skeleton/rig-adaptation.js';
 export { resolveAnatomy, validateAnatomy, anatomySatisfaction, } from './anatomy/parametric/parametric-anatomy.js';
 export { buildBoneMatrices, combinedSkinMatrices, composeMatrix, invertMatrix, } from './anatomy/skeleton/bone-matrix.js';
 export { buildInfluences, skinMeshCPU, skinNormalsCPU, normalizeWeights, MAX_INFLUENCES, } from './gpu/kernels/skin-mesh.js';
@@ -85,5 +89,13 @@ export { START_MD_PHASES, PHASE_STATUSES, phaseReport } from './roadmap/phase-re
 // Capability matrix (single source of truth; shared with the phase report so no
 // two places can disagree about what is actually implemented).
 export { CAPABILITY_STATUSES, CAPABILITY_MATRIX, capabilityReport, capabilityStatus, } from './roadmap/capability-matrix.js';
+// Motion runtime — puts the motion compiler inside the animation frame loop.
+export { MotionRuntime, DEFAULT_MOTION_RUNTIME_CONFIG, blendPoses, withPhase, } from './animation/motion/motion-runtime.js';
+// GPU validation harness — buffer/dispatch bounds plus live error-scope capture.
+export { GpuValidationHarness, DEFAULT_GPU_LIMITS, resolveLimits, validateDispatch, validateBufferBinding, validateComputeResources, validatePackedMorphBounds, } from './gpu/device/gpu-validation-harness.js';
+// Parameter transitions validated through the real GPU morph path.
+export { validateTransitionThroughGpuPath, runTransitionGpuValidationSuite, DEFAULT_TRANSITION_GPU_CASES, } from './gpu/morph/transition-gpu-validation.js';
+// CI-enforced performance budgets on top of the benchmark suite.
+export { evaluateBenchmarkGates, baselineFromSummary, formatGateResult, DEFAULT_BENCHMARK_BUDGETS, DEFAULT_BENCHMARK_GATE_CONFIG, } from './testing/performance/benchmark-gates.js';
 export const VERSION = '1.0.0';
 //# sourceMappingURL=index.js.map

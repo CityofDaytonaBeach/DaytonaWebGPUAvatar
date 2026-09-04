@@ -64,15 +64,15 @@ export function buildHdBodySkin(opts = {}) {
     const S = opts.segments ?? 20;
     // ------------------------------------------------------------------ torso
     const torso = [
-        ring(neckY, 0.115, 0.10, 0, 'chest', { chest: 1 }),
-        ring(1.58, 0.115, 0.10, 0, 'chest', { chest: 1 }),
+        ring(neckY, 0.115, 0.1, 0, 'chest', { chest: 1 }),
+        ring(1.58, 0.115, 0.1, 0, 'chest', { chest: 1 }),
         ring(1.5, 0.112, 0.098, 0, 'chest', { chest: 1 }),
         ring(1.38, 0.11, 0.095, 0, 'chest', { chest: 1 }),
         ring(1.28, 0.108, 0.09, 0, 'abdomen', { spine_02: 1 }),
         ring(1.18, 0.105, 0.088, 0, 'abdomen', { spine_02: 1 }),
         ring(1.08, 0.106, 0.09, 0, 'abdomen', { spine_01: 1 }),
         ring(0.99, 0.112, 0.096, 0, 'pelvis', { pelvis: 1 }),
-        ring(0.932, 0.118, 0.10, 0, 'pelvis', { pelvis: 1 }),
+        ring(0.932, 0.118, 0.1, 0, 'pelvis', { pelvis: 1 }),
     ];
     let torsoCol = column(0, torso, S);
     // Re-tag torso rings into more specific regions and blended weights.
@@ -157,7 +157,10 @@ export function buildHdBodySkin(opts = {}) {
         const c = column(ox, legRings, S);
         // Top thigh ring blends toward pelvis.
         for (let j = 0; j < S; j++) {
-            c.vertices[j] = { ...c.vertices[j], weights: normWeights({ [prefix('thigh')]: 0.85, pelvis: 0.15 }) };
+            c.vertices[j] = {
+                ...c.vertices[j],
+                weights: normWeights({ [prefix('thigh')]: 0.85, pelvis: 0.15 }),
+            };
         }
         return c;
     };
@@ -176,7 +179,10 @@ export function buildHdBodySkin(opts = {}) {
         const c = feetCol(side * 0.075);
         // Blend ankle into foot.
         for (let j = 0; j < S; j++) {
-            c.vertices[j] = { ...c.vertices[j], weights: normWeights({ [prefix('foot')]: 0.85, [prefix('shin')]: 0.15 }) };
+            c.vertices[j] = {
+                ...c.vertices[j],
+                weights: normWeights({ [prefix('foot')]: 0.85, [prefix('shin')]: 0.15 }),
+            };
         }
         return c;
     };

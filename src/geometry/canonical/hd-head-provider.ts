@@ -405,12 +405,7 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
     const startShift: number[] = [];
     const indexShift: number[] = [];
 
-    const appendPart = (
-      name: string,
-      kind: PartKind,
-      region: RegionName,
-      gen: GenGeometry,
-    ) => {
+    const appendPart = (name: string, kind: PartKind, region: RegionName, gen: GenGeometry) => {
       const v0 = vertices.length;
       const i0 = indices.length;
       for (let vi = 0; vi < gen.positions.length; vi++) {

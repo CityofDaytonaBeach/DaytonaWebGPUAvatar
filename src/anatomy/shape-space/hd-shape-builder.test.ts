@@ -55,8 +55,7 @@ describe('HD Body shape bases (HD BODY V0.1)', () => {
     const delta = space.evaluate(new Map([[basis.id, 1.0]]));
     let touched = 0;
     for (let i = 0; i < c.vertexCount; i++) {
-      const d =
-        Math.abs(delta[i * 3]) + Math.abs(delta[i * 3 + 1]) + Math.abs(delta[i * 3 + 2]);
+      const d = Math.abs(delta[i * 3]) + Math.abs(delta[i * 3 + 1]) + Math.abs(delta[i * 3 + 2]);
       if (d > 0) {
         touched++;
         expect(i).toBeGreaterThanOrEqual(torso.start);

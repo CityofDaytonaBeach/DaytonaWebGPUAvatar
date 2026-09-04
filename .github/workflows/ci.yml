@@ -41,5 +41,16 @@ jobs:
       - name: Build SDK
         run: npm run build
 
+      - name: Benchmark gates
+        run: npm run benchmark:ci
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: .benchmarks
+          if-no-files-found: ignore
+
       - name: Build demo
         run: npm run build:demo

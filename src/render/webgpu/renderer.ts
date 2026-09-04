@@ -293,7 +293,8 @@ export class WebGPURenderer {
           buffer: { type: 'uniform' },
         },
       ],
-    });    this.pipeline = this.device.createRenderPipeline({
+    });
+    this.pipeline = this.device.createRenderPipeline({
       layout: this.device.createPipelineLayout({ bindGroupLayouts: [this.bindGroupLayout] }),
       vertex: {
         module,
