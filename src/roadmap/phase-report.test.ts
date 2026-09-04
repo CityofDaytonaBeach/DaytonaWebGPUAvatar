@@ -18,11 +18,11 @@ describe('start.md phase report', () => {
 
     // A phase is only COMPLETE when every required capability is IMPLEMENTED.
     expect(byPhase.get(1)!.status).toBe('PROTOTYPE'); // benchmark capabilities are prototypes
-    expect(byPhase.get(2)!.status).toBe('IN_PROGRESS'); // canonicalHuman is PARTIAL
+    expect(byPhase.get(2)!.status).toBe('COMPLETE'); // canonicalHuman + canonical infra are implemented
     expect(byPhase.get(7)!.status).toBe('PROTOTYPE'); // motionCompiler is a prototype
     expect(byPhase.get(9)!.status).toBe('PROTOTYPE'); // hair/clothing/cloth are prototypes
-    // A required capability that is PARTIAL yields IN_PROGRESS.
-    expect(byPhase.get(2)!.status).toBe('IN_PROGRESS'); // canonicalHuman is PARTIAL
+    // A required capability that is IMPLEMENTED makes the phase COMPLETE.
+    expect(byPhase.get(2)!.status).toBe('COMPLETE'); // canonicalHuman graduated to IMPLEMENTED
     // Speech graduated: its only required capability is now IMPLEMENTED.
     expect(byPhase.get(6)!.status).toBe('COMPLETE');
     // Fully implemented phases stay COMPLETE.

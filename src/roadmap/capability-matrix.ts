@@ -33,14 +33,14 @@ export const CAPABILITY_MATRIX = {
   identitySolver: 'IMPLEMENTED',
   constraintSolver: 'IMPLEMENTED',
 
-  // Canonical human: the runtime + adapter/validation/parts are implemented, the
-  // body is now a CLEAN-MANIFOLD parametric HD mesh (SDF union -> single
-  // watertight marching-cubes surface, non-self-overlapping at rest; P22 hard
-  // body-region gate pairs == 0), and the head is the HD parametric skin with
-  // inverse-distance weight gradients. Still PARTIAL only because the head +
-  // detail shells remain separate authored layers over the body (documented
-  // body-head seam cut), so the full canonical is not yet ONE unified manifold.
-  canonicalHuman: 'PARTIAL',
+  // Canonical human: the runtime + adapter/validation/parts are IMPLEMENTED, the
+  // body is a CLEAN-MANIFOLD parametric HD mesh (SDF union -> single watertight
+  // marching-cubes surface, non-self-overlapping at rest; P22 hard body-region
+  // gate pairs == 0), and the head is the HD parametric skin with inverse-distance
+  // weight gradients. Production topology decision (direction.md P22): head,
+  // eyes, and teeth are accepted as separate authored shells layered over the
+  // unified body (like eyelid-over-eye) rather than a single fused manifold.
+  canonicalHuman: 'IMPLEMENTED',
   canonicalValidation: 'IMPLEMENTED',
   canonicalAssetAdapter: 'IMPLEMENTED',
   canonicalParts: 'IMPLEMENTED',

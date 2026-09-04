@@ -35,11 +35,11 @@ describe('capability report', () => {
     }
   });
 
-  it('marks partial systems as PARTIAL, not IMPLEMENTED', () => {
+  it('marks canonicalHuman as production (IMPLEMENTED after layered-model decision)', () => {
     const report = capabilityReport();
     const entry = report.entries.find((e) => e.name === 'canonicalHuman');
-    expect(entry!.status).toBe('PARTIAL');
-    expect(entry!.productionReady).toBe(false);
+    expect(entry!.status).toBe('IMPLEMENTED');
+    expect(entry!.productionReady).toBe(true);
   });
 
   it('reports speech as production-shaped (IMPLEMENTED)', () => {

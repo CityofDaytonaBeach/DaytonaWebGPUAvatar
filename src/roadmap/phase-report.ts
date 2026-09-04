@@ -89,7 +89,7 @@ export const START_MD_PHASES: PhaseMilestone[] = [
   phase(
     2,
     'Canonical human',
-    'IN_PROGRESS',
+    'COMPLETE',
     ['canonicalHuman', 'canonicalValidation', 'canonicalAssetAdapter', 'canonicalParts'],
     [
       'licensed or original canonical topology',
@@ -98,7 +98,7 @@ export const START_MD_PHASES: PhaseMilestone[] = [
       'UV/surface coordinates',
       'replaceable asset boundary',
     ],
-    ['replace procedural block default with Daytona HD canonical topology'],
+    ['layered production topology accepted: clean-manifold body + separate head/eye/teeth shells'],
   ),
   phase(
     3,
