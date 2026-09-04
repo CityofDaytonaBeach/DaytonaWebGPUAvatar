@@ -18,8 +18,13 @@ import { HumanDefinition } from '../../core/schema/human-definition.js';
 import { BonePose } from '../../animation/skeleton/skeletal-animation.js';
 import { exportSkinMaterial, SkinPreset } from '../../surface/skin/neural-skin.js';
 import { createDefaultRegistry } from '../../core/schema/descriptors.js';
-import { PHOTOREAL_HUMAN_WGSL, ShadingModel } from '../wgsl/photoreal-wgsl.js';
-import { HUMAN_RENDER_WGSL } from './renderer.js';
+import {
+  PHOTOREAL_HUMAN_WGSL,
+  PHOTOREAL_GBUFFER_WGSL,
+  ShadingModel,
+} from '../wgsl/photoreal-wgsl.js';
+import { HUMAN_RENDER_WGSL, CAMERA_TAN_HALF_FOV } from './renderer.js';
+import { SssRenderGraph, SSS_GBUFFER_FORMATS } from './sss-graph.js';
 import { buildPhotorealMaterials } from '../photoreal/photoreal-material.js';
 import type { PhotorealPartMaterial } from '../photoreal/photoreal-material.js';
 import { PHOTOREAL_FLAGS } from '../photoreal/constants.js';
@@ -54,6 +59,14 @@ export interface WebGpuHumanPipelineOptions {
    * to true under `'photoreal'`; set false to skip the one-time bake cost.
    */
   bakeCurvatureThickness?: boolean;
+  /**
+   * Run the live screen-space subsurface-scattering graph: the forward pass
+   * writes radiance + view depth + skin mask, then a separable blur diffuses
+   * light ACROSS skin (red bleed under nostrils, lids and ear rims) before the
+   * display transform. Defaults to true under `'photoreal'`; set false to keep
+   * the single-pass forward path (one render target, no extra full-screen work).
+   */
+  screenSpaceSss?: boolean;
 }
 
 /**
@@ -83,6 +96,8 @@ export class WebGpuHumanPipeline {
   private renderParts: RenderPart[] = [];
   /** Baked [curvature, thickness] vertex buffer, when the bake ran. */
   private curvatureThicknessBuffer?: GPUBuffer;
+  /** Live screen-space SSS graph, when enabled. */
+  private readonly sssGraph?: SssRenderGraph;
   readonly morphNames: string[];
 
   constructor(
@@ -123,11 +138,23 @@ export class WebGpuHumanPipeline {
     );
     const shading: ShadingModel = opts.shading ?? 'photoreal';
     this.shading = shading;
+    const format = opts.format ?? 'bgra8unorm';
+    const useSss = shading === 'photoreal' && (opts.screenSpaceSss ?? true);
+    // With the SSS graph the forward pass renders the G-buffer variant into
+    // three offscreen targets; the graph then composites into the swap chain.
     this.renderer = new WebGPURenderer(
       opts.device,
-      opts.format ?? 'bgra8unorm',
-      shading === 'photoreal' ? PHOTOREAL_HUMAN_WGSL : HUMAN_RENDER_WGSL,
+      format,
+      shading === 'photoreal'
+        ? useSss
+          ? PHOTOREAL_GBUFFER_WGSL
+          : PHOTOREAL_HUMAN_WGSL
+        : HUMAN_RENDER_WGSL,
+      useSss ? SSS_GBUFFER_FORMATS : [],
     );
+    if (useSss) {
+      this.sssGraph = new SssRenderGraph(opts.device, format, CAMERA_TAN_HALF_FOV);
+    }
     const preset = opts.skinPreset ?? SkinPreset.Fair;
     this.skinPreset = preset;
     const definition = opts.definition ?? new HumanDefinition(createDefaultRegistry());
@@ -215,6 +242,19 @@ export class WebGpuHumanPipeline {
   render(encoder: GPUCommandEncoder, view: GPUTextureView, width: number, height: number): void {
     this.deform.dispatch(encoder);
     this.skin.dispatch(encoder);
+    if (this.sssGraph) {
+      this.sssGraph.resize(width, height);
+      this.renderer.drawToAttachments(
+        encoder,
+        this.sssGraph.geometryAttachments(),
+        width,
+        height,
+        this.skin.outputBuffer,
+        this.skin.outputNormalsBuffer,
+      );
+      this.sssGraph.run(encoder, view);
+      return;
+    }
     this.renderer.draw(
       encoder,
       view,
@@ -223,6 +263,16 @@ export class WebGpuHumanPipeline {
       this.skin.outputBuffer,
       this.skin.outputNormalsBuffer,
     );
+  }
+
+  /** True when the live screen-space SSS graph is active. */
+  get screenSpaceSss(): boolean {
+    return this.sssGraph !== undefined;
+  }
+
+  /** Release the SSS graph's offscreen targets. */
+  destroy(): void {
+    this.sssGraph?.destroy();
   }
 
   /** Convenience: upload params/weights, deform, and draw. */

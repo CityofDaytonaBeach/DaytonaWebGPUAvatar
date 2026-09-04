@@ -35,6 +35,8 @@ export interface RenderPart {
  * Build a perspective MVP + normal matrix for the block human (fits in unit
  * space roughly -1..4 on Y). `angleY` rotates around Y, `angleX` tilts around X.
  */
+/** Vertical half-FOV tangent of `buildCameraMatrices` (fov = PI/3). */
+export declare const CAMERA_TAN_HALF_FOV: number;
 export declare function buildCameraMatrices(width: number, height: number, angleY?: number, angleX?: number): CameraMatrices;
 /**
  * WebGPU human renderer. Draws the GPU-resident, GPU-deformed character as a
@@ -50,6 +52,12 @@ export declare class WebGPURenderer {
      * group and vertex layouts are identical, so this is a pure module swap.
      */
     private readonly shaderCode;
+    /**
+     * Fragment color target formats. Defaults to the single swap-chain target;
+     * the screen-space SSS graph passes its G-buffer formats (radiance, view
+     * depth, skin mask) together with the G-buffer shader variant.
+     */
+    private readonly colorFormats;
     private pipeline;
     private bindGroupLayout;
     private cameraBuffer;
@@ -72,7 +80,13 @@ export declare class WebGPURenderer {
      * `PHOTOREAL_HUMAN_WGSL` for the photoreal skin/eye/enamel model. The bind
      * group and vertex layouts are identical, so this is a pure module swap.
      */
-    shaderCode?: string);
+    shaderCode?: string, 
+    /**
+     * Fragment color target formats. Defaults to the single swap-chain target;
+     * the screen-space SSS graph passes its G-buffer formats (radiance, view
+     * depth, skin mask) together with the G-buffer shader variant.
+     */
+    colorFormats?: readonly GPUTextureFormat[]);
     private init;
     /** Attach static per-part geometry; builds a part-color buffer + bind group. */
     setParts(parts: RenderPart[], paramBuffer: GPUBuffer): void;
@@ -98,5 +112,10 @@ export declare class WebGPURenderer {
      * (skinned normals) as vertex attributes 0 and 1.
      */
     draw(encoder: GPUCommandEncoder, view: GPUTextureView, width: number, height: number, deformedBuffer: GPUBuffer, normalsBuffer?: GPUBuffer): void;
+    /**
+     * Same draw, into caller-supplied color attachments. Used by the screen-space
+     * SSS graph, whose forward pass writes radiance + view depth + skin mask.
+     */
+    drawToAttachments(encoder: GPUCommandEncoder, colorAttachments: GPURenderPassColorAttachment[], width: number, height: number, deformedBuffer: GPUBuffer, normalsBuffer?: GPUBuffer): void;
 }
 //# sourceMappingURL=renderer.d.ts.map

@@ -111,7 +111,18 @@ All three documented photoreal scope cuts are closed, without introducing an env
 - **Pipeline / renderer wiring** — `WebGpuHumanPipeline` bakes and uploads curvature/thickness once (`bakeCurvatureThickness` option, default on under `'photoreal'`); `WebGPURenderer` adds the location-4 vertex buffer **only** when the bound shader declares it, so the `'basic'` module's pipeline layout is untouched. A zeroed attribute means "not baked" and the shader falls back to the previous constants, so the buffer is genuinely optional.
 - **Coverage:** 51 new tests (`ibl.test.ts`, `curvature-bake.test.ts`, `sss-blur.test.ts`) — SH basis orthonormality under the quadrature, constant-environment irradiance identity, probe determinism, split-sum bounds and roughness behaviour, ambient direction dependence, flat-quad zero curvature vs sphere-radius ordering, thin-gap thickness recovery, kernel symmetry/energy/tail ordering, world-constant step scaling, silhouette and mask rejection, and WGSL parity gates asserting the shader uses the probe rather than the old ambient line. Suite total **544 tests / 60 files**; typecheck, lint, `format:check` and `build` clean.
 
-**Remaining photoreal work (unchanged in kind):** the screen-space SSS module supplies the generated passes and the tested kernel, but the render graph still draws in a single pass — wiring the extra lit/depth/mask targets is a renderer-graph change, not a shading one. Hair, cloth, clothing geometry, SDF collision, neural skin and photo-to-human remain prototypes/deferred.
+## Just delivered — live screen-space SSS render graph
+
+The generated SSS passes now run for real; the forward path is multi-target.
+
+- **`src/render/wgsl/photoreal-wgsl.ts`** — extracted `PHOTOREAL_DISPLAY_WGSL` (exposure + ACES + sRGB) so a post-process program encodes the image identically to the forward shader, and added `photorealGBufferWgsl()` / `PHOTOREAL_GBUFFER_WGSL`: the same shading body with three targets instead of one — **linear radiance** (no in-shader tonemap, so the blur runs in linear light), **view depth in metres** reconstructed from the interpolated clip `w` (fragment `position.w` is `1/w_clip`, and this projection puts view distance in `w_clip`, so no vertex-format change was needed), and a **skin mask** gated on `FLAG_SKIN` so scattering cannot leak into eyes, teeth or mouth cavity. The transform asserts the base program's entry/return shape and throws if it drifts.
+- **`src/render/photoreal/sss-blur.ts`** — the generated pass became `sssBlurWgsl({ tonemap })`, giving `SSS_BLUR_WGSL` (linear intermediate) and `SSS_COMPOSITE_WGSL` (final pass, display-encoded, including the non-skin early-out so passthrough pixels match). Added `sssParamsData()` for the 16-byte `SssParams` uniform.
+- **`src/render/webgpu/sss-graph.ts`** — `SssRenderGraph`: size-cached `rgba16float` radiance / `r32float` depth / `r8unorm` mask / `rgba16float` intermediate targets, one shared bind-group layout and clamped linear sampler, per-pass uniform buffers, `geometryAttachments()` for the forward pass (depth clears to far so unwritten pixels cannot pull skin toward them), and `run()` encoding horizontal → intermediate then vertical → swap chain.
+- **`src/render/webgpu/renderer.ts`** — optional `colorFormats` for MRT pipelines, `drawToAttachments()` for caller-supplied attachments (`draw()` now delegates to it, so the single-pass API is byte-for-byte unchanged), and exported `CAMERA_TAN_HALF_FOV` so the blur's world-width step matches the active projection.
+- **`src/render/webgpu/pipeline.ts`** — `screenSpaceSss` option, default **on** under photoreal shading: selects the G-buffer shader variant plus G-buffer formats, resizes the graph, draws into it and composites. `screenSpaceSss: false` keeps the original single-pass forward path; `'basic'` shading is untouched.
+- **Coverage:** 17 new tests (`sss-graph.test.ts`) — target order/formats, pass directions, clear-color parity, uniform packing, single-fragment-entry and body-preservation gates on the G-buffer variant, linear-vs-tonemapped pass parity, and shared bind-group layout across both passes.
+
+**Remaining photoreal work:** hair, cloth, clothing geometry, SDF collision, neural skin and photo-to-human remain prototypes/deferred. GPU-side visual confirmation of the graph needs a real adapter (the sandbox has none).
 
 ---
 
@@ -134,7 +145,7 @@ Ordered roughly by priority (highest first). Statuses reflect the capability mat
 
 ### 3. Photoreal increments beyond the delivered shading layer
 
-- Multi-target render graph so the delivered screen-space SSS passes can run (lit + depth + skin-mask attachments). IBL probe irradiance and the per-vertex curvature/thickness bake are now implemented and wired.
+- IBL probe irradiance, the per-vertex curvature/thickness bake and the multi-target screen-space SSS graph are all implemented and wired (see "Just delivered — live screen-space SSS render graph"). What is left needs a GPU CI runner: on-device visual/perf validation of the two extra full-screen passes.
 
 ### 4. Physics / simulation runtime prototypes
 

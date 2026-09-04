@@ -37,6 +37,14 @@ export interface WebGpuHumanPipelineOptions {
      * to true under `'photoreal'`; set false to skip the one-time bake cost.
      */
     bakeCurvatureThickness?: boolean;
+    /**
+     * Run the live screen-space subsurface-scattering graph: the forward pass
+     * writes radiance + view depth + skin mask, then a separable blur diffuses
+     * light ACROSS skin (red bleed under nostrils, lids and ear rims) before the
+     * display transform. Defaults to true under `'photoreal'`; set false to keep
+     * the single-pass forward path (one render target, no extra full-screen work).
+     */
+    screenSpaceSss?: boolean;
 }
 /**
  * Ties the GPU-resident character path together for one Human:
@@ -68,6 +76,8 @@ export declare class WebGpuHumanPipeline {
     private renderParts;
     /** Baked [curvature, thickness] vertex buffer, when the bake ran. */
     private curvatureThicknessBuffer?;
+    /** Live screen-space SSS graph, when enabled. */
+    private readonly sssGraph?;
     readonly morphNames: string[];
     constructor(canonical: CanonicalHuman, morphs: SparseMorphSet, morphDriver: MorphDriver, opts: WebGpuHumanPipelineOptions);
     /**
@@ -92,6 +102,10 @@ export declare class WebGpuHumanPipeline {
      * Call `upload()` first (or call `renderAndUpload`).
      */
     render(encoder: GPUCommandEncoder, view: GPUTextureView, width: number, height: number): void;
+    /** True when the live screen-space SSS graph is active. */
+    get screenSpaceSss(): boolean;
+    /** Release the SSS graph's offscreen targets. */
+    destroy(): void;
     /** Convenience: upload params/weights, deform, and draw. */
     renderAndUpload(encoder: GPUCommandEncoder, view: GPUTextureView, width: number, height: number, definition: HumanDefinition): void;
 }

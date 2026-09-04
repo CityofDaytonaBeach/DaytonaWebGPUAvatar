@@ -149,6 +149,8 @@ fn fs_main(in : VSOut) -> @location(0) vec4f {
  * Build a perspective MVP + normal matrix for the block human (fits in unit
  * space roughly -1..4 on Y). `angleY` rotates around Y, `angleX` tilts around X.
  */
+/** Vertical half-FOV tangent of `buildCameraMatrices` (fov = PI/3). */
+export const CAMERA_TAN_HALF_FOV = Math.tan(Math.PI / 6);
 export function buildCameraMatrices(width, height, angleY = 0.5, angleX = -0.15) {
     const aspect = width / height;
     const fov = Math.PI / 3;
@@ -218,6 +220,7 @@ function multiplyMat4(a, b) {
 export class WebGPURenderer {
     device;
     shaderCode;
+    colorFormats;
     pipeline;
     bindGroupLayout;
     cameraBuffer;
@@ -240,9 +243,16 @@ export class WebGPURenderer {
      * `PHOTOREAL_HUMAN_WGSL` for the photoreal skin/eye/enamel model. The bind
      * group and vertex layouts are identical, so this is a pure module swap.
      */
-    shaderCode = HUMAN_RENDER_WGSL) {
+    shaderCode = HUMAN_RENDER_WGSL, 
+    /**
+     * Fragment color target formats. Defaults to the single swap-chain target;
+     * the screen-space SSS graph passes its G-buffer formats (radiance, view
+     * depth, skin mask) together with the G-buffer shader variant.
+     */
+    colorFormats = []) {
         this.device = device;
         this.shaderCode = shaderCode;
+        this.colorFormats = colorFormats;
         // The photoreal module reads baked curvature/thickness at location 4; the
         // basic module does not, so the extra vertex buffer is added only for it.
         this.usesCurvatureThickness = shaderCode.includes('curvatureThickness');
@@ -305,7 +315,9 @@ export class WebGPURenderer {
             fragment: {
                 module,
                 entryPoint: 'fs_main',
-                targets: [{ format }],
+                targets: (this.colorFormats.length > 0 ? this.colorFormats : [format]).map((f) => ({
+                    format: f,
+                })),
             },
             primitive: { topology: 'triangle-list', cullMode: 'back' },
         });
@@ -405,17 +417,22 @@ export class WebGPURenderer {
      * (skinned normals) as vertex attributes 0 and 1.
      */
     draw(encoder, view, width, height, deformedBuffer, normalsBuffer) {
+        this.drawToAttachments(encoder, [
+            {
+                view,
+                clearValue: { r: 0.07, g: 0.09, b: 0.12, a: 1 },
+                loadOp: 'clear',
+                storeOp: 'store',
+            },
+        ], width, height, deformedBuffer, normalsBuffer);
+    }
+    /**
+     * Same draw, into caller-supplied color attachments. Used by the screen-space
+     * SSS graph, whose forward pass writes radiance + view depth + skin mask.
+     */
+    drawToAttachments(encoder, colorAttachments, width, height, deformedBuffer, normalsBuffer) {
         this.uploadCamera(width, height);
-        const pass = encoder.beginRenderPass({
-            colorAttachments: [
-                {
-                    view,
-                    clearValue: { r: 0.07, g: 0.09, b: 0.12, a: 1 },
-                    loadOp: 'clear',
-                    storeOp: 'store',
-                },
-            ],
-        });
+        const pass = encoder.beginRenderPass({ colorAttachments });
         pass.setPipeline(this.pipeline);
         pass.setVertexBuffer(0, deformedBuffer);
         pass.setVertexBuffer(1, normalsBuffer ?? this.normalBuffer);

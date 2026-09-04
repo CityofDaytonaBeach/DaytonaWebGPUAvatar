@@ -20,6 +20,7 @@
 
 import { PHOTOREAL_CONSTANTS } from './constants.js';
 import type { Vec3 } from './color.js';
+import { PHOTOREAL_DISPLAY_WGSL } from '../wgsl/photoreal-wgsl.js';
 
 const C = PHOTOREAL_CONSTANTS;
 
@@ -134,13 +135,25 @@ const f = (x: number): string => {
   return s.includes('.') || s.includes('e') ? s : `${s}.0`;
 };
 
+/** Options for the generated separable SSS pass. */
+export interface SssBlurWgslOptions {
+  /**
+   * Apply the photoreal display transform (exposure + ACES + sRGB) on output.
+   * The blur runs in linear light, so exactly one pass — the last one, writing
+   * the swap-chain — sets this.
+   */
+  tonemap?: boolean;
+}
+
 /** Generated separable SSS post-pass (run twice: horizontal, then vertical). */
-export const SSS_BLUR_WGSL = ((): string => {
+export function sssBlurWgsl(opts: SssBlurWgslOptions = {}): string {
   const kernel = sssKernel();
   const taps = kernel
     .map((t) => `  vec4f(${f(t.weight[0])}, ${f(t.weight[1])}, ${f(t.weight[2])}, ${f(t.offset)}),`)
     .join('\n');
-  return `
+  const encode = opts.tonemap ? 'toDisplay(out)' : 'out';
+  return `${opts.tonemap ? PHOTOREAL_DISPLAY_WGSL : ''}
+
 // GENERATED from photoreal/sss-blur.ts — separable screen-space SSS.
 // Pass 1: direction = vec2f(1, 0). Pass 2: direction = vec2f(0, 1).
 
@@ -199,7 +212,10 @@ fn fs_main(in : FsIn) -> @location(0) vec4f {
   let center = textureSample(litTex, texSampler, in.uv);
   let centerDepth = textureSample(depthTex, texSampler, in.uv).r;
   let skin = textureSample(maskTex, texSampler, in.uv).r;
-  if (skin <= 0.0) { return center; }
+  if (skin <= 0.0) {
+    let out = center.rgb;
+    return vec4f(${encode}, center.a);
+  }
 
   let step = sssStepUV(centerDepth, sss.tanHalfFov, sss.viewportPixels) * sss.direction;
   var accum = vec3f(0.0);
@@ -214,7 +230,26 @@ fn fs_main(in : FsIn) -> @location(0) vec4f {
     accum = accum + src * k.xyz;
   }
   // Blend by the skin mask so non-skin pixels pass through untouched.
-  return vec4f(mix(center.rgb, accum, skin), center.a);
+  let out = mix(center.rgb, accum, skin);
+  return vec4f(${encode}, center.a);
 }
 `;
-})();
+}
+
+/** Horizontal/vertical blur pass in linear light (intermediate target). */
+export const SSS_BLUR_WGSL = sssBlurWgsl();
+
+/** Final pass: same blur, plus the display transform for the swap chain. */
+export const SSS_COMPOSITE_WGSL = sssBlurWgsl({ tonemap: true });
+
+/**
+ * Pack the `SssParams` uniform: direction (vec2), tanHalfFov, viewportPixels.
+ * 16 bytes, matching the WGSL struct layout.
+ */
+export function sssParamsData(
+  direction: readonly [number, number],
+  tanHalfFov: number,
+  viewportPixels: number,
+): Float32Array {
+  return new Float32Array([direction[0], direction[1], tanHalfFov, viewportPixels]);
+}

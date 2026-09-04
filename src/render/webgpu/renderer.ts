@@ -178,6 +178,9 @@ export interface RenderPart {
  * Build a perspective MVP + normal matrix for the block human (fits in unit
  * space roughly -1..4 on Y). `angleY` rotates around Y, `angleX` tilts around X.
  */
+/** Vertical half-FOV tangent of `buildCameraMatrices` (fov = PI/3). */
+export const CAMERA_TAN_HALF_FOV = Math.tan(Math.PI / 6);
+
 export function buildCameraMatrices(
   width: number,
   height: number,
@@ -284,6 +287,12 @@ export class WebGPURenderer {
      * group and vertex layouts are identical, so this is a pure module swap.
      */
     private readonly shaderCode: string = HUMAN_RENDER_WGSL,
+    /**
+     * Fragment color target formats. Defaults to the single swap-chain target;
+     * the screen-space SSS graph passes its G-buffer formats (radiance, view
+     * depth, skin mask) together with the G-buffer shader variant.
+     */
+    private readonly colorFormats: readonly GPUTextureFormat[] = [],
   ) {
     // The photoreal module reads baked curvature/thickness at location 4; the
     // basic module does not, so the extra vertex buffer is added only for it.
@@ -348,7 +357,9 @@ export class WebGPURenderer {
       fragment: {
         module,
         entryPoint: 'fs_main',
-        targets: [{ format }],
+        targets: (this.colorFormats.length > 0 ? this.colorFormats : [format]).map((f) => ({
+          format: f,
+        })),
       },
       primitive: { topology: 'triangle-list', cullMode: 'back' },
     });
@@ -459,9 +470,9 @@ export class WebGPURenderer {
     deformedBuffer: GPUBuffer,
     normalsBuffer?: GPUBuffer,
   ): void {
-    this.uploadCamera(width, height);
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [
+    this.drawToAttachments(
+      encoder,
+      [
         {
           view,
           clearValue: { r: 0.07, g: 0.09, b: 0.12, a: 1 },
@@ -469,7 +480,27 @@ export class WebGPURenderer {
           storeOp: 'store',
         },
       ],
-    });
+      width,
+      height,
+      deformedBuffer,
+      normalsBuffer,
+    );
+  }
+
+  /**
+   * Same draw, into caller-supplied color attachments. Used by the screen-space
+   * SSS graph, whose forward pass writes radiance + view depth + skin mask.
+   */
+  drawToAttachments(
+    encoder: GPUCommandEncoder,
+    colorAttachments: GPURenderPassColorAttachment[],
+    width: number,
+    height: number,
+    deformedBuffer: GPUBuffer,
+    normalsBuffer?: GPUBuffer,
+  ): void {
+    this.uploadCamera(width, height);
+    const pass = encoder.beginRenderPass({ colorAttachments });
     pass.setPipeline(this.pipeline);
     pass.setVertexBuffer(0, deformedBuffer);
     pass.setVertexBuffer(1, normalsBuffer ?? this.normalBuffer);

@@ -520,3 +520,65 @@ fn fs_main(in : VSOut) -> @location(0) vec4f {
 
 /** Shading model selector for the renderer/pipeline. */
 export type ShadingModel = 'basic' | 'photoreal';
+
+/**
+ * Display transform (exposure + ACES + sRGB), extracted so a post-process
+ * program can encode the final image identically to the forward shader. The
+ * forward program defines these itself; do NOT concatenate both into one module.
+ */
+export const PHOTOREAL_DISPLAY_WGSL = `
+const EXPOSURE : f32 = ${f(C.exposure)};
+
+fn acesFilmic(x : f32) -> f32 {
+  return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+}
+
+fn linearToSrgb(x : f32) -> f32 {
+  let c = clamp(x, 0.0, 1.0);
+  if (c <= 0.0031308) { return c * 12.92; }
+  return 1.055 * pow(c, 1.0 / 2.4) - 0.055;
+}
+
+fn toDisplay(c : vec3f) -> vec3f {
+  let e = c * EXPOSURE;
+  let tm = vec3f(acesFilmic(e.r), acesFilmic(e.g), acesFilmic(e.b));
+  return vec3f(linearToSrgb(tm.r), linearToSrgb(tm.g), linearToSrgb(tm.b));
+}
+`;
+
+const FS_ENTRY_SIGNATURE = 'fn fs_main(in : VSOut) -> @location(0) vec4f {';
+const FS_RETURN = '  return vec4f(toDisplay(color), part.baseColor.a);';
+
+/**
+ * G-buffer variant of the photoreal program, for the screen-space SSS graph.
+ *
+ * Identical shading, three color targets instead of one:
+ *   location 0  linear radiance (NOT display-encoded — the blur runs in linear
+ *               light and the composite pass applies the display transform)
+ *   location 1  view depth in metres, reconstructed from the interpolated
+ *               clip w (fragment `position.w` is 1/w_clip, and this projection
+ *               puts view distance in w_clip)
+ *   location 2  skin mask, so the blur cannot bleed into eyes, teeth or cavity
+ */
+export function photorealGBufferWgsl(base: string = PHOTOREAL_HUMAN_WGSL): string {
+  if (!base.includes(FS_ENTRY_SIGNATURE) || !base.includes(FS_RETURN)) {
+    throw new Error('photorealGBufferWgsl: base program shape changed; update the transform');
+  }
+  const gbufferStruct = `struct GBuffer {
+  @location(0) lit : vec4f,
+  @location(1) viewDepth : vec4f,
+  @location(2) skinMask : vec4f,
+};
+
+fn fs_main(in : VSOut) -> GBuffer {`;
+  const gbufferReturn = `  var g : GBuffer;
+  g.lit = vec4f(color, part.baseColor.a);
+  g.viewDepth = vec4f(1.0 / max(in.clip_position.w, 1e-6), 0.0, 0.0, 1.0);
+  let isSkin = (flags & FLAG_SKIN) != 0u;
+  g.skinMask = vec4f(select(0.0, clamp(sssIntensity, 0.0, 1.0), isSkin), 0.0, 0.0, 1.0);
+  return g;`;
+  return base.replace(FS_ENTRY_SIGNATURE, gbufferStruct).replace(FS_RETURN, gbufferReturn);
+}
+
+/** Generated once so the renderer/pipeline can share a single module string. */
+export const PHOTOREAL_GBUFFER_WGSL = photorealGBufferWgsl();

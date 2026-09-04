@@ -298,6 +298,7 @@ export {
   WebGPURenderer,
   HUMAN_RENDER_WGSL,
   buildCameraMatrices,
+  CAMERA_TAN_HALF_FOV,
 } from './render/webgpu/renderer.js';
 export type { CameraMatrices, RenderPart } from './render/webgpu/renderer.js';
 export { WebGpuHumanPipeline } from './render/webgpu/pipeline.js';
@@ -311,7 +312,19 @@ export type { WebGL2RenderPart } from './render/webgl2/renderer.js';
 export { MORPH_COMPUTE_WGSL } from './render/wgsl/morph-wgsl.js';
 
 // Photoreal shading (CPU reference model + generated WGSL)
-export { PHOTOREAL_HUMAN_WGSL } from './render/wgsl/photoreal-wgsl.js';
+export {
+  PHOTOREAL_HUMAN_WGSL,
+  PHOTOREAL_GBUFFER_WGSL,
+  PHOTOREAL_DISPLAY_WGSL,
+  photorealGBufferWgsl,
+} from './render/wgsl/photoreal-wgsl.js';
+export {
+  SssRenderGraph,
+  SSS_GBUFFER_FORMATS,
+  SSS_INTERMEDIATE_FORMAT,
+  SSS_PASS_DIRECTIONS,
+  SSS_CLEAR_COLOR,
+} from './render/webgpu/sss-graph.js';
 export type { ShadingModel } from './render/wgsl/photoreal-wgsl.js';
 export {
   PHOTOREAL_CONSTANTS,
@@ -393,14 +406,17 @@ export type { CurvatureThicknessBake } from './render/photoreal/curvature-bake.j
 // Screen-space subsurface scattering (separable, depth-aware).
 export {
   SSS_BLUR_WGSL,
+  SSS_COMPOSITE_WGSL,
   SSS_FALLOFF,
+  sssBlurWgsl,
+  sssParamsData,
   depthRejection,
   diffusionProfile,
   sssBlurPass,
   sssKernel,
   sssStepUV,
 } from './render/photoreal/sss-blur.js';
-export type { SssSample, SssTap } from './render/photoreal/sss-blur.js';
+export type { SssSample, SssTap, SssBlurWgslOptions } from './render/photoreal/sss-blur.js';
 
 // Animation
 export {

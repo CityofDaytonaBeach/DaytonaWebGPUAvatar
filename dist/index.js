@@ -57,12 +57,13 @@ export { HumanProfiler, countDirtyVertices } from './gpu/profiler/profiler.js';
 export { GpuScheduler } from './gpu/scheduler/gpu-scheduler.js';
 // Render
 export { placeholderShaders, HUMAN_PARAM_STRUCT, buildShaderModule, } from './render/wgsl/shaders.js';
-export { WebGPURenderer, HUMAN_RENDER_WGSL, buildCameraMatrices, } from './render/webgpu/renderer.js';
+export { WebGPURenderer, HUMAN_RENDER_WGSL, buildCameraMatrices, CAMERA_TAN_HALF_FOV, } from './render/webgpu/renderer.js';
 export { WebGpuHumanPipeline } from './render/webgpu/pipeline.js';
 export { WebGL2HumanRenderer, buildWebGL2RenderParts, webglPartColor, } from './render/webgl2/renderer.js';
 export { MORPH_COMPUTE_WGSL } from './render/wgsl/morph-wgsl.js';
 // Photoreal shading (CPU reference model + generated WGSL)
-export { PHOTOREAL_HUMAN_WGSL } from './render/wgsl/photoreal-wgsl.js';
+export { PHOTOREAL_HUMAN_WGSL, PHOTOREAL_GBUFFER_WGSL, PHOTOREAL_DISPLAY_WGSL, photorealGBufferWgsl, } from './render/wgsl/photoreal-wgsl.js';
+export { SssRenderGraph, SSS_GBUFFER_FORMATS, SSS_INTERMEDIATE_FORMAT, SSS_PASS_DIRECTIONS, SSS_CLEAR_COLOR, } from './render/webgpu/sss-graph.js';
 export { PHOTOREAL_CONSTANTS, PHOTOREAL_FLAGS, PHOTOREAL_LIGHT_RIG, } from './render/photoreal/constants.js';
 export { acesFilmic, acesFilmic3, linearToSrgb, linearToSrgb3, luminance, toDisplay, } from './render/photoreal/color.js';
 export { distributionGGX, dualLobeSpecular, fresnelSchlick, preIntegratedScatter, shadeSkin, shadeSkinLight, shadeSkinLinear, transmission, visibilitySmithCorrelated, } from './render/photoreal/skin-brdf.js';
@@ -74,7 +75,7 @@ export { STUDIO_ENVIRONMENT, STUDIO_IRRADIANCE_SH, environmentBRDF, fibonacciSph
 // Per-vertex curvature + tissue thickness bake (drives SSS and transmission).
 export { bakeCurvature, bakeCurvatureThickness, bakeThickness, buildOneRing, } from './render/photoreal/curvature-bake.js';
 // Screen-space subsurface scattering (separable, depth-aware).
-export { SSS_BLUR_WGSL, SSS_FALLOFF, depthRejection, diffusionProfile, sssBlurPass, sssKernel, sssStepUV, } from './render/photoreal/sss-blur.js';
+export { SSS_BLUR_WGSL, SSS_COMPOSITE_WGSL, SSS_FALLOFF, sssBlurWgsl, sssParamsData, depthRejection, diffusionProfile, sssBlurPass, sssKernel, sssStepUV, } from './render/photoreal/sss-blur.js';
 // Animation
 export { SkeletalAnimation, sampleChannel, quatFromEulerDeg as quatFromEuler, } from './animation/skeleton/skeletal-animation.js';
 export { MotionCompiler, compileMotionCommand, solveIK2Bone, solveLookAt, compileLookAt, compileIKArm, compileIKLeg, compileWalk, blendMotions, transitionTo, retargetPoses, validateMotion, } from './animation/motion/motion-compiler.js';
