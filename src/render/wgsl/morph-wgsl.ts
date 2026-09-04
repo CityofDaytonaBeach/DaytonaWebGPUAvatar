@@ -35,12 +35,12 @@ fn main(@builtin(global_invocation_id) gid : vec3u) {
   var pos = basePos[v];
 
   for (var m = 0u; m < params.morphCount; m = m + 1u) {
-    let meta = morphs[m];
-    let weight = meta.x;
+    let entry = morphs[m];
+    let weight = entry.x;
     if (weight == 0.0) { continue; }
-    let count = u32(meta.y);
+    let count = u32(entry.y);
     if (count == 0u) { continue; }
-    let start = u32(meta.z);
+    let start = u32(entry.z);
 
     // Binary search morph's vertex-sorted delta range for vertex v.
     var lo = 0u;
