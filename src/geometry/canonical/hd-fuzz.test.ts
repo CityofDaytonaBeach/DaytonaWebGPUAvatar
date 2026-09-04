@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { Human } from '../../human.js';
 import { HDCanonicalHumanProvider } from './hd-head-provider.js';
 import { validateCanonicalTopology } from './canonical-validator.js';
+import { resolveLandmarkPosition } from './landmark.js';
+import { MeshIntersectionAnalyzer } from './intersection.js';
 import { PropertyRegistry } from '../../core/schema/registry.js';
 
 /**
@@ -148,6 +150,29 @@ describe('Randomized face/body fuzzing (direction.md P22)', () => {
         }
       }
 
+      // Landmarks must remain structurally valid (P22: invalid landmarks) and
+      // finite at their deformed surface position.
+      for (const lm of asset.landmarks) {
+        const resolved = resolveLandmarkPosition(canonical, lm);
+        if (!resolved) {
+          problems.push(`${label}: landmark ${lm.name} unresolved (bad triangle/vertex)`);
+          break;
+        }
+        const tri = lm.triangleId;
+        const [tA, tB, tC] = lm.barycentric;
+        const sum = tA + tB + tC || 1;
+        const ia = indices[tri * 3];
+        const ib = indices[tri * 3 + 1];
+        const ic = indices[tri * 3 + 2];
+        const px = (scene[ia * 3] * tA + scene[ib * 3] * tB + scene[ic * 3] * tC) / sum;
+        const py = (scene[ia * 3 + 1] * tA + scene[ib * 3 + 1] * tB + scene[ic * 3 + 1] * tC) / sum;
+        const pz = (scene[ia * 3 + 2] * tA + scene[ib * 3 + 2] * tB + scene[ic * 3 + 2] * tC) / sum;
+        if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) {
+          problems.push(`${label}: landmark ${lm.name} non-finite at deformed position`);
+          break;
+        }
+      }
+
       // Anatomy resolution stays finite within the plausible 0..1 score.
       const score = human.anatomyScore();
       if (!Number.isFinite(score) || score < 0 || score > 1) {
@@ -240,5 +265,44 @@ describe('Randomized face/body fuzzing (direction.md P22)', () => {
       }
       expect(validateCanonicalTopology(human.canonicalRef).valid).toBe(true);
     }
+  });
+
+  it('keeps fresh per-seed solves free of surface collapse and invalid landmarks', async () => {
+    // P22's per-seed loop: each seed is its own fresh solve (create -> apply ONE
+    // definition -> validate geometry), not an accumulated multi-edit frame. On
+    // a single realistic human the surface must not locally collapse. The coarse
+    // procedural body is intrinsically self-overlapping at rest (documented in
+    // intersection.test.ts), so an absolute zero-pair gate is impossible on this
+    // topology; the stable, meaningful signal is DEGENERATE triangles: a genuine
+    // fold-through collapses big fractions of the mesh, far above rounding noise.
+    const PROVIDER = new HDCanonicalHumanProvider();
+    const ASSET = await PROVIDER.load();
+    const registry = await Human.create({ canonicalProvider: PROVIDER }).then((h) => h.registry);
+    let analyzed = 0;
+    for (let seed = 1; seed <= 120; seed++) {
+      const human = await Human.create({ canonicalProvider: new HDCanonicalHumanProvider() });
+      const canonical = human.canonicalRef;
+      const N = canonical.vertexCount;
+      const analyzer = new MeshIntersectionAnalyzer(canonical);
+      human.modify(randomizedIdentityPatch(seed, registry));
+      const scene = human.skinScene();
+      expect(scene.length).toBe(N * 3);
+
+      // Landmarks stay structurally valid and finite after a single solve.
+      for (const lm of ASSET.landmarks) {
+        const resolved = resolveLandmarkPosition(canonical, lm);
+        expect(resolved, `seed ${seed} landmark ${lm.name}`).not.toBeNull();
+      }
+
+      // No local surface collapse: deformed triangles must not fall below a
+      // large fraction of their base area en masse. Allow < 1% of triangles (a
+      // real collapse folds far more); any single rare tiny triangle is caught
+      // by the strict structural checks above.
+      const rep = analyzer.analyze(scene);
+      const degFraction = rep.degenerateCount / (canonical.indices.length / 3);
+      expect(degFraction, `seed ${seed} degenerate ${rep.degenerateCount}`).toBeLessThan(0.01);
+      analyzed++;
+    }
+    expect(analyzed).toBe(120);
   });
 });

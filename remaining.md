@@ -3,7 +3,7 @@
 Tracking what stands between this repo and "production" per `direction.md` and `README.md`, plus what was just closed out. Source of truth for per-capability status is `src/roadmap/capability-matrix.ts` (`CAPABILITY_MATRIX` + `capabilityReport()`).
 
 **Current snapshot** (verified clean):
-- `npm test`: **306 tests pass** (42 files), including the new P22 fuzz suite and the speech-solver suite.
+- `npm test`: **312 tests pass** (43 files), including the P22 fuzz suite, the `MeshIntersectionAnalyzer` suite, and the speech-solver suite.
 - `npm run typecheck`: clean.
 - `npm run build` / `npm run build:demo`: succeed.
 - Coverage: ~67% statements, ~81% branches, ~65% functions (from `coverage/index.html`).
@@ -26,7 +26,14 @@ Three seeded, deterministic tests:
 2. **Exact undo** (P20): 500 combined edits then walk the full timeline back (`historyIndex >= 0`) to byte-identical rest geometry (`<1e-6`).
 3. **Creation stability**: 25 freshly built HD humans across seeds with no NaN in base geometry and valid canonical topology.
 
-Not yet covered from P22's checklist (flag for future work, requires a mesh-intersection pass): **self-intersection**, **GPU validation errors**, and a direct **invalid-landmarks** gate (landmark validity is implicitly covered via the finite/valid check, not explicitly asserted).
+Follow-on hardening (this session): added a **mesh self-intersection analyzer** and wired the remaining P22 gates:
+
+- **`src/geometry/canonical/intersection.ts`** — `MeshIntersectionAnalyzer`: topology-aware detector built once from a canonical mesh, then `analyze(positions)` per deformed frame. Two signals: **degenerate triangles** (area collapsing to <5% of the triangle's own base area — a real local fold-through) and **explicit interpenetration** of two *non-adjacent* triangles (vertex-sharing neighbours excluded; uniform-grid pruning + full Möller triangle-triangle test; early-exit capped so it runs every seed). Unit-tested in `intersection.test.ts` (clean manifold → 0/valid; forced degenerate → detected; controlled crossing → detected; HD baseline documented).
+- **Invalid-landmarks gate** now *explicitly* asserted inside the 2000-seed loop (`resolveLandmarkPosition` must resolve for every landmark, and each landmark's deformed surface position must stay finite).
+- **New P22-accurate per-seed test** ("fresh per-seed solves"): each seed is its *own* fresh Human + single solve (matching P22's loop, not the accumulated frame), asserting no surface collapse (degenerate fraction < 1%, catching real fold-throughs) and valid landmarks.
+
+> **Topology finding (important):** an *absolute* self-intersection gate (pairs == 0) is **not achievable on the current coarse procedural body** and would be a constant-failing fake gate. Verified exhaustively: the base HD body is intrinsically self-overlapping **at rest** (≈12,223 intersecting triangle pairs), and even a *single* realistic human morph collapses up to ~6 triangles and swings the pair count ~1.05–1.93×. The degenerate-triangle gate is the stable, meaningful signal on this topology and is what the fuzz asserts. A hard pair-intersection gate must wait for the clean production topology (item 1 below). The base-mesh overlap is itself a production-topology blocker for `canonicalHuman`.
+- Still not covered (needs the GPU validation harness): **GPU validation errors** (buffer/dispatch bounds at the WebGPU boundary).
 
 > Performance note: the 2000-seed loop validates every iteration and runs in ~7s. Do **not** reintroduce a per-vertex `expect()` inside the loops — matcher call overhead (not geometry math) was the cause of an earlier ~670s runtime; failures are aggregated into one message and asserted once per check.
 
@@ -63,8 +70,8 @@ Ordered roughly by priority (highest first). Statuses reflect the capability mat
 - `strandHair`, `clothPhysics`, `sdfCollision`, `neuralSkin`, `internalAnatomyModes`, `perceptualValidation`, `tattooDecals`, `clothingGeometry`: all **PROTOTYPE** — runtimes exist but are not production-rendered/integrated. Per direction.md P23, most of these (organs, advanced cloth, strand hair, neural rendering) are deliberately **deferrable** until HD HEAD V0.1 passes acceptance.
 
 ### 4. Quality gates / validation polish (P22 remainder + general)
-- Mesh **self-intersection** detection under randomized deformation (needs a topology-aware intersection pass).
-- Explicit **invalid-landmarks** assertion in the fuzz suite.
+- **Hard** mesh self-intersection gate (pairs == 0): shipped the analyzer infra (`intersection.ts` + unit tests), but the absolute gate is *blocked on the coarse base body topology* (intrinsically self-overlapping: ≈12k baseline pairs). Must re-enable after **item 1** ships a clean manifold.
+- **GPU validation errors** harness (buffer/dispatch bounds at the WebGPU boundary): P22's last uncovered item, requires the GPU validation layer, not just the CPU morph path.
 - Coverage is ~67% statements / ~81% branches: raise branch/statement coverage on the highest-traffic runtime paths (shape space, timeline, GPU morph) before calling it production.
 
 ---
