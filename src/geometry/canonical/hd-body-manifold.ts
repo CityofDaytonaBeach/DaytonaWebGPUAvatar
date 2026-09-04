@@ -400,11 +400,15 @@ export function marchingCubesProbe(
   };
   void f;
   const raw = marchGrid(n, n, n, 0, fFull, posAt);
+  // Report raw (pre-weld) watertightness to isolate weld vs marching emission.
+  const rawChi = raw.vertices.length - countEdgesProbe(raw.indices) + raw.indices.length / 3;
+  const rawBoundary = countBoundaryProbe(raw.indices);
+  void rawChi; void rawBoundary;
   const welded = weld(raw.vertices, raw.indices, tol);
   const eE = countEdgesProbe(welded.indices);
   const eF = welded.indices.length / 3;
   const eV = welded.vertices.length;
-  return { vertices: welded.vertices, indices: welded.indices, chi: eV - eE + eF, boundaryEdges: countBoundaryProbe(welded.indices) };
+  return { vertices: welded.vertices, indices: welded.indices, chi: eV - eE + eF, boundaryEdges: countBoundaryProbe(welded.indices), rawBoundary: rawBoundary, rawChi: rawChi, rawV: raw.vertices.length };
 }
 
 function countEdgesProbe(indices: Uint32Array): number {
