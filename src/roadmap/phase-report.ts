@@ -161,8 +161,20 @@ export const START_MD_PHASES: PhaseMilestone[] = [
     8,
     'Surface systems',
     'PROTOTYPE',
-    ['tattooDecals', 'neuralSkin', 'attachmentCoordinates'],
-    ['rendered tattoos/scars/makeup', 'procedural pores/wrinkles', 'attachment deformation tests'],
+    [
+      'tattooDecals',
+      'neuralSkin',
+      'attachmentCoordinates',
+      'photorealSkinShading',
+      'photorealEyeShading',
+      'photorealMaterials',
+    ],
+    [
+      'rendered tattoos/scars/makeup',
+      'procedural pores/wrinkles',
+      'photoreal skin/eye shading in the render path',
+      'attachment deformation tests',
+    ],
     ['render decals + procedural skin detail; graduate tattoo/neural-skin from prototype'],
   ),
   phase(

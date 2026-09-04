@@ -160,6 +160,8 @@ export interface RenderPart {
   material?: [number, number, number];
   /** Subsurface scatter color (defaults to a muted skin tone). */
   sssColor?: [number, number, number];
+  /** Extra photoreal flag bits OR-ed into PartParams.flags (PHOTOREAL_FLAGS). */
+  extraFlags?: number;
   /** True if per-vertex tangent-space normal perturbation is supplied. */
   hasNormalMap?: boolean;
   /** True to apply IOR-based corneal refraction (transparent cornea dome). */
@@ -270,13 +272,19 @@ export class WebGPURenderer {
   constructor(
     private device: GPUDevice,
     format: GPUTextureFormat = 'bgra8unorm',
+    /**
+     * Shader program to render with. Defaults to the built-in program; pass
+     * `PHOTOREAL_HUMAN_WGSL` for the photoreal skin/eye/enamel model. The bind
+     * group and vertex layouts are identical, so this is a pure module swap.
+     */
+    private readonly shaderCode: string = HUMAN_RENDER_WGSL,
   ) {
     this.init(format);
   }
 
   private init(format: GPUTextureFormat): void {
     const module = this.device.createShaderModule({
-      code: HUMAN_RENDER_WGSL,
+      code: this.shaderCode,
       label: 'human-render',
     });
     this.bindGroupLayout = this.device.createBindGroupLayout({
@@ -344,6 +352,7 @@ export class WebGPURenderer {
       const sss = p.sssColor ?? [0.9, 0.6, 0.5];
       let flags = p.hasNormalMap ? 1 : 0;
       if (p.refractive) flags |= 2;
+      if (p.extraFlags) flags |= p.extraFlags;
       const ior = p.ior ?? 0;
       const f32 = new Float32Array(buf);
       f32[0] = p.color[0];

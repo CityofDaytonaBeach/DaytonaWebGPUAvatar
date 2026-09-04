@@ -310,6 +310,61 @@ export {
 export type { WebGL2RenderPart } from './render/webgl2/renderer.js';
 export { MORPH_COMPUTE_WGSL } from './render/wgsl/morph-wgsl.js';
 
+// Photoreal shading (CPU reference model + generated WGSL)
+export { PHOTOREAL_HUMAN_WGSL } from './render/wgsl/photoreal-wgsl.js';
+export type { ShadingModel } from './render/wgsl/photoreal-wgsl.js';
+export {
+  PHOTOREAL_CONSTANTS,
+  PHOTOREAL_FLAGS,
+  PHOTOREAL_LIGHT_RIG,
+} from './render/photoreal/constants.js';
+export type { PhotorealConstants, PhotorealFlag } from './render/photoreal/constants.js';
+export {
+  acesFilmic,
+  acesFilmic3,
+  linearToSrgb,
+  linearToSrgb3,
+  luminance,
+  toDisplay,
+} from './render/photoreal/color.js';
+export type { Vec3 as PhotorealVec3 } from './render/photoreal/color.js';
+export {
+  distributionGGX,
+  dualLobeSpecular,
+  fresnelSchlick,
+  preIntegratedScatter,
+  shadeSkin,
+  shadeSkinLight,
+  shadeSkinLinear,
+  transmission,
+  visibilitySmithCorrelated,
+} from './render/photoreal/skin-brdf.js';
+export type { LightSample, SkinSurface } from './render/photoreal/skin-brdf.js';
+export {
+  hash21,
+  microDetail,
+  perturbNormal,
+  valueNoise2D,
+} from './render/photoreal/micro-detail.js';
+export type { MicroDetail, MicroDetailInput } from './render/photoreal/micro-detail.js';
+export {
+  enamelFactor,
+  irisParallaxOffset,
+  limbalRing,
+  pupilRadius,
+  shadeEnamel,
+  shadeIris,
+  shadeSclera,
+} from './render/photoreal/eye-shading.js';
+export type { IrisSample } from './render/photoreal/eye-shading.js';
+export {
+  buildPhotorealMaterials,
+  irisColorPreset,
+  partMaterial,
+  resolveIrisColor,
+} from './render/photoreal/photoreal-material.js';
+export type { PhotorealPartMaterial } from './render/photoreal/photoreal-material.js';
+
 // Animation
 export {
   SkeletalAnimation,

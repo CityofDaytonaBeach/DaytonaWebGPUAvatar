@@ -5,6 +5,8 @@ import { SparseMorphSet } from '../../geometry/morph/sparse-morph.js';
 import { MorphDriver } from '../../geometry/morph/morph-driver.js';
 import { HumanDefinition } from '../../core/schema/human-definition.js';
 import { BonePose } from '../../animation/skeleton/skeletal-animation.js';
+import { SkinPreset } from '../../surface/skin/neural-skin.js';
+import { ShadingModel } from '../wgsl/photoreal-wgsl.js';
 export interface WebGpuHumanPipelineOptions {
     device: GPUDevice;
     format?: GPUTextureFormat;
@@ -12,6 +14,22 @@ export interface WebGpuHumanPipelineOptions {
     paramByteSize: number;
     /** Parametric skeleton (bone order) used for skinning influences/matrices. */
     skeleton?: BoneDef[];
+    /**
+     * Shading model. `'photoreal'` (default) uses the photoreal skin/eye/enamel
+     * program (dual-lobe specular, pre-integrated SSS, micro-detail normals, iris
+     * parallax, enamel translucency, ACES/sRGB display transform). `'basic'`
+     * keeps the original single-lobe program.
+     */
+    shading?: ShadingModel;
+    /** Skin preset driving photoreal material assignment. */
+    skinPreset?: SkinPreset;
+    /**
+     * Definition whose semantic skin parameters seed the photoreal materials and
+     * the tangent-perturbation buffer. Defaults to a registry-default definition;
+     * pass the runtime definition so materials match the actual human, and call
+     * `refreshMaterials()` after skin parameters change.
+     */
+    definition?: HumanDefinition;
 }
 /**
  * Ties the GPU-resident character path together for one Human:
@@ -36,9 +54,19 @@ export declare class WebGpuHumanPipeline {
     private readonly packed;
     private readonly skeleton;
     private skinMaterial;
+    /** Active shading model. */
+    readonly shading: ShadingModel;
     private tangentBuffer;
+    private readonly skinPreset;
+    private renderParts;
     readonly morphNames: string[];
     constructor(canonical: CanonicalHuman, morphs: SparseMorphSet, morphDriver: MorphDriver, opts: WebGpuHumanPipelineOptions);
+    /**
+     * Re-derive photoreal per-part materials from `definition` and re-bind them.
+     * Index buffers are reused, so this is cheap; call it when skin/eye parameters
+     * change (not every frame). No-op under `'basic'` shading.
+     */
+    refreshMaterials(definition: HumanDefinition): void;
     /**
      * Upload current definition params + morph weights into GPU-resident state.
      * Cheap; call each frame.

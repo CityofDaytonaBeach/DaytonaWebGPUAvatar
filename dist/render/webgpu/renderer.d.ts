@@ -18,6 +18,8 @@ export interface RenderPart {
     material?: [number, number, number];
     /** Subsurface scatter color (defaults to a muted skin tone). */
     sssColor?: [number, number, number];
+    /** Extra photoreal flag bits OR-ed into PartParams.flags (PHOTOREAL_FLAGS). */
+    extraFlags?: number;
     /** True if per-vertex tangent-space normal perturbation is supplied. */
     hasNormalMap?: boolean;
     /** True to apply IOR-based corneal refraction (transparent cornea dome). */
@@ -42,6 +44,12 @@ export declare function buildCameraMatrices(width: number, height: number, angle
  */
 export declare class WebGPURenderer {
     private device;
+    /**
+     * Shader program to render with. Defaults to the built-in program; pass
+     * `PHOTOREAL_HUMAN_WGSL` for the photoreal skin/eye/enamel model. The bind
+     * group and vertex layouts are identical, so this is a pure module swap.
+     */
+    private readonly shaderCode;
     private pipeline;
     private bindGroupLayout;
     private cameraBuffer;
@@ -52,7 +60,13 @@ export declare class WebGPURenderer {
     /** Per-part bind groups (params + camera + part color). */
     private partBindGroups;
     partNames: string[];
-    constructor(device: GPUDevice, format?: GPUTextureFormat);
+    constructor(device: GPUDevice, format?: GPUTextureFormat, 
+    /**
+     * Shader program to render with. Defaults to the built-in program; pass
+     * `PHOTOREAL_HUMAN_WGSL` for the photoreal skin/eye/enamel model. The bind
+     * group and vertex layouts are identical, so this is a pure module swap.
+     */
+    shaderCode?: string);
     private init;
     /** Attach static per-part geometry; builds a part-color buffer + bind group. */
     setParts(parts: RenderPart[], paramBuffer: GPUBuffer): void;

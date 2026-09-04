@@ -8,6 +8,10 @@ import { packSparseMorphs, setMorphWeights, } from '../../gpu/morph/gpu-morph-bu
 import { HumanDefinition } from '../../core/schema/human-definition.js';
 import { exportSkinMaterial, SkinPreset } from '../../surface/skin/neural-skin.js';
 import { createDefaultRegistry } from '../../core/schema/descriptors.js';
+import { PHOTOREAL_HUMAN_WGSL } from '../wgsl/photoreal-wgsl.js';
+import { HUMAN_RENDER_WGSL } from './renderer.js';
+import { buildPhotorealMaterials } from '../photoreal/photoreal-material.js';
+import { PHOTOREAL_FLAGS } from '../photoreal/constants.js';
 /**
  * Ties the GPU-resident character path together for one Human:
  *
@@ -31,7 +35,11 @@ export class WebGpuHumanPipeline {
     packed;
     skeleton;
     skinMaterial;
+    /** Active shading model. */
+    shading;
     tangentBuffer;
+    skinPreset;
+    renderParts = [];
     morphNames;
     constructor(canonical, morphs, morphDriver, opts) {
         this.canonical = canonical;
@@ -46,13 +54,21 @@ export class WebGpuHumanPipeline {
         this.skeleton = skeleton;
         const influences = buildInfluences(canonical, skeleton);
         this.skin = new SkinningKernel(opts.device, canonical.vertexCount, this.deform.outputBuffer, influences, combinedSkinMatrices(skeleton), skeleton.length, this.state.normalBuffer);
-        this.renderer = new WebGPURenderer(opts.device, opts.format ?? 'bgra8unorm');
-        const renderParts = buildRenderParts(opts.device, canonical);
+        const shading = opts.shading ?? 'photoreal';
+        this.shading = shading;
+        this.renderer = new WebGPURenderer(opts.device, opts.format ?? 'bgra8unorm', shading === 'photoreal' ? PHOTOREAL_HUMAN_WGSL : HUMAN_RENDER_WGSL);
+        const preset = opts.skinPreset ?? SkinPreset.Fair;
+        this.skinPreset = preset;
+        const definition = opts.definition ?? new HumanDefinition(createDefaultRegistry());
+        const renderParts = shading === 'photoreal'
+            ? buildPhotorealRenderParts(opts.device, canonical, preset, definition)
+            : buildRenderParts(opts.device, canonical);
+        this.renderParts = renderParts;
         this.renderer.setParts(renderParts, this.state.paramBuffer);
         this.renderer.setSharedNormalsAndUvs(this.state.normalBuffer, this.state.uvBuffer);
         // Per-vertex tangent perturbation (normal map proxy) from the skin material.
         // Zero for non-skin parts via the shared buffer; the body part reads it.
-        this.skinMaterial = exportSkinMaterial(new HumanDefinition(createDefaultRegistry()), canonical, SkinPreset.Fair);
+        this.skinMaterial = exportSkinMaterial(definition, canonical, preset);
         this.tangentBuffer = opts.device.createBuffer({
             size: canonical.vertexCount * 2 * 4,
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
@@ -64,6 +80,18 @@ export class WebGpuHumanPipeline {
         }
         opts.device.queue.writeBuffer(this.tangentBuffer, 0, tangentData);
         this.renderer.setSharedTangentPerturb(this.tangentBuffer);
+    }
+    /**
+     * Re-derive photoreal per-part materials from `definition` and re-bind them.
+     * Index buffers are reused, so this is cheap; call it when skin/eye parameters
+     * change (not every frame). No-op under `'basic'` shading.
+     */
+    refreshMaterials(definition) {
+        if (this.shading !== 'photoreal')
+            return;
+        const materials = buildPhotorealMaterials(definition, this.canonical, this.skinPreset);
+        this.renderParts = this.renderParts.map((part, i) => materials[i] ? applyPhotorealMaterial(part, materials[i]) : part);
+        this.renderer.setParts(this.renderParts, this.state.paramBuffer);
     }
     /**
      * Upload current definition params + morph weights into GPU-resident state.
@@ -165,6 +193,29 @@ function buildRenderParts(device, canonical) {
         });
     }
     return parts;
+}
+/**
+ * Photoreal per-part index buffers + materials. Same draw order as
+ * `buildRenderParts`, but materials/flags come from `buildPhotorealMaterials`
+ * so the shader gets real skin/sclera/iris/cornea/enamel parameters.
+ */
+function buildPhotorealRenderParts(device, canonical, preset, definition) {
+    const materials = buildPhotorealMaterials(definition, canonical, preset);
+    const base = buildRenderParts(device, canonical);
+    return base.map((part, i) => (materials[i] ? applyPhotorealMaterial(part, materials[i]) : part));
+}
+/** Overlay one photoreal material onto an existing render part. */
+function applyPhotorealMaterial(part, m) {
+    return {
+        ...part,
+        color: m.color,
+        material: m.material,
+        sssColor: m.sssColor,
+        ior: m.ior || undefined,
+        refractive: (m.flags & PHOTOREAL_FLAGS.refractive) !== 0,
+        extraFlags: m.flags,
+        opaque: m.opaque,
+    };
 }
 function partColor(name, kind) {
     if (kind === 'sclera')

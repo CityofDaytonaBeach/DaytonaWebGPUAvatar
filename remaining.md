@@ -4,7 +4,7 @@ Tracking what stands between this repo and "production" per `direction.md` and `
 
 **Current snapshot** (verified clean):
 
-- `npm test`: **450 tests pass** (55 files), including the P22 fuzz suite, the `MeshIntersectionAnalyzer` suite, the speech-solver suite, and the new motion-runtime / GPU-validation / benchmark-gate / transition-GPU suites.
+- `npm test`: **493 tests pass** (57 files), including the P22 fuzz suite, the `MeshIntersectionAnalyzer` suite, the speech-solver suite, and the new motion-runtime / GPU-validation / benchmark-gate / transition-GPU suites.
 - `npm run typecheck`: clean.
 - `npm run build` / `npm run build:demo`: succeed.
 - `npm run lint` and `npm run format:check`: clean (the six long-standing `no-unused-vars` errors and the repo-wide Prettier drift are fixed, so every CI gate is green).
@@ -77,6 +77,32 @@ The body is the **leading canonical segment** followed by the unchanged HD head 
 
 ---
 
+## Just delivered — Photoreal head & skin shading (renderer path)
+
+`photorealSkinShading`, `photorealEyeShading`, `photorealMaterials` are all **IMPLEMENTED**, and `'photoreal'` is now the **default shading model** of `WebGpuHumanPipeline` (pass `shading: 'basic'` for the previous single-lobe program).
+
+Why this was next: the geometry, morph, skinning and motion stack was production-shaped, but the render path was still a single-lobe Lambert/Cook-Torrance placeholder — the head could deform correctly and still read as plastic. Photoreal head/skin was the top remaining objective in the status matrix.
+
+What landed (all deterministic, all headlessly testable, no GPU required):
+
+- **`src/render/photoreal/constants.ts`** — the single shared constant table (lobe mix, roughness floor, SSS wrap/distortion, curvature scale, transmission strength, exposure/ambient, pore/micro frequencies, limbus start, cornea depth, enamel translucency, sclera vascularity) plus the part-flag bit field and the fixed three-point light rig.
+- **`src/render/photoreal/skin-brdf.ts`** — the authoritative skin model: **dual-lobe GGX** specular (sharp sebum lobe + broad epidermal lobe — the single-lobe look was the main "CG plastic" tell), height-correlated Smith visibility, Schlick Fresnel, **energy-conserving** diffuse (`kD = 1 - F`), **pre-integrated curvature SSS** (per-channel wrapped diffusion; red transports furthest, so the terminator goes soft and red instead of grey), and **thin-tissue transmission** for ear rims / nostrils / lids.
+- **`src/render/photoreal/micro-detail.ts`** — procedural pore + micro-texture height field, differentiated into a real tangent-space **micro-normal** (finite-difference gradient, so it is integrable rather than arbitrary noise), plus **cavity** and **specular-occlusion** terms. Sebum flattens it, age deepens it.
+- **`src/render/photoreal/eye-shading.ts`** — **iris parallax by refracting the view ray through the corneal dome** (the flat-iris-disc problem), luminance-driven **pupil dilation**, **limbal ring**, radial fibre variation, **vascular sclera** tint toward the corners, and translucent **enamel** (cool thin edges, occluded molars).
+- **`src/render/photoreal/color.ts`** — exposure → **ACES filmic** → sRGB display transform (monotonic, black-preserving, never clips).
+- **`src/render/photoreal/photoreal-material.ts`** — per-part material assignment from the semantic parameter layer for skin / sclera / limbus / cornea / iris / pupil / teeth / tongue / cavity, including the wet-skin response (wetness lowers roughness and raises specular) and iris colour resolution. Sclera is deliberately never pure white.
+- **`src/render/wgsl/photoreal-wgsl.ts`** — `PHOTOREAL_HUMAN_WGSL`, **generated** from the same constants and mirroring every CPU function one-for-one. It is a **drop-in module swap**: identical bind group layout (params/camera/part) and vertex layout (position/normal/uv/tangentPerturb), so no pipeline change was needed. `WebGPURenderer` takes the shader code as a constructor argument and OR-s per-part `extraFlags` into `PartParams.flags`.
+
+The pipeline now also takes the **runtime `HumanDefinition`** (`definition` option) instead of a registry default, so materials and the tangent-perturbation buffer reflect the actual human, and `refreshMaterials(definition)` re-derives per-part materials without rebuilding index buffers when skin/eye parameters change.
+
+**Parity is structural, not asserted by eyeball:** the shader interpolates the shared constant table, and the test suite asserts every constant value, every flag bit, and every function name appears in the emitted WGSL — a constant cannot drift between CPU and GPU because there is only one copy.
+
+Coverage: 43 new tests (`photoreal-shading.test.ts`, `photoreal-material.test.ts`) — energy conservation over swept roughness/specular/normals, Fresnel/GGX/Smith limits, scatter reducing exactly to Lambert at zero intensity, curvature narrowing the scatter, transmission falling off with thickness, micro-detail slope bounds and age/oil statistics, iris parallax zero head-on and non-zero when turned, monotonic limbal ring, pupil response direction, enamel edge/arch behaviour, and the WGSL parity gates. Suite total **493 tests / 57 files**, typecheck / lint / `format:check` / `build` / `build:demo` all clean.
+
+**Deliberate scope cuts (documented):** the ambient term is a constant irradiance stand-in, not an IBL probe (no environment texture pipeline yet); skin curvature/thickness are fixed per material class in the shader rather than baked per-vertex; and screen-space separable SSS blur is not implemented — the pre-integrated approach was chosen precisely because it needs no extra render target. Those three are the next photoreal increments, not gaps in this one.
+
+---
+
 ## What remains to reach production
 
 Ordered roughly by priority (highest first). Statuses reflect the capability matrix.
@@ -94,11 +120,15 @@ Ordered roughly by priority (highest first). Statuses reflect the capability mat
 - `parameterTransitions` → **IMPLEMENTED**: GPU-validated frame-by-frame (`transitionGpuValidation`), plus deterministic long replay (10 simulated minutes at 120Hz, two byte-identical passes, exact settle on target) and order-independent timeline scrubbing (`verifyLongReplay`, `scrubTransition`, `scrubTimeline`). Phase 13 is COMPLETE.
 - `motionCompiler`: capability stays **PROTOTYPE** because phase 7's IK / look-at / retargeting deliverables are still open, but it is no longer standalone — `motionRuntime` (**IMPLEMENTED**) runs it inside the character's animation loop.
 
-### 3. Physics / simulation runtime prototypes
+### 3. Photoreal increments beyond the delivered shading layer
+
+- IBL / environment probe irradiance (replacing the constant ambient), per-vertex baked curvature + thickness maps, and optional screen-space separable SSS. Not blockers — the delivered pre-integrated path is production-shaped and needs no extra render targets.
+
+### 4. Physics / simulation runtime prototypes
 
 - `strandHair`, `clothPhysics`, `sdfCollision`, `neuralSkin`, `internalAnatomyModes`, `perceptualValidation`, `tattooDecals`, `clothingGeometry`: all **PROTOTYPE** — runtimes exist but are not production-rendered/integrated. Per direction.md P23, most of these (organs, advanced cloth, strand hair, neural rendering) are deliberately **deferrable** until HD HEAD V0.1 passes acceptance.
 
-### 4. Quality gates / validation polish (P22 remainder + general)
+### 5. Quality gates / validation polish (P22 remainder + general)
 
 - **Hard** mesh self-intersection gate (pairs == 0): **RE-ENABLED** on the clean body — the per-seed fuzz asserts body-region pairs == 0 at rest (all 120 seeds). Scoped to the body segment; whole-mesh overlay from head/detail shells is a documented-accepted separate-part layering, not a body-topology defect.
 - **GPU validation errors** harness (buffer/dispatch bounds at the WebGPU boundary): **DELIVERED** — `gpuValidationHarness` (IMPLEMENTED). Headless bounds validation (dispatch coverage/limits, buffer binding ranges, packed-morph ranges and vertex indices) runs in CI with no GPU; live `pushErrorScope('validation')` capture engages when a device is present.

@@ -63,6 +63,9 @@ export declare const CAPABILITY_MATRIX: {
     readonly perceptualValidation: "PROTOTYPE";
     readonly gpuRenderer: "IMPLEMENTED";
     readonly webglFallback: "IMPLEMENTED";
+    readonly photorealSkinShading: "IMPLEMENTED";
+    readonly photorealEyeShading: "IMPLEMENTED";
+    readonly photorealMaterials: "IMPLEMENTED";
     readonly strandHair: "PROTOTYPE";
     readonly clothPhysics: "PROTOTYPE";
     readonly sdfCollision: "PROTOTYPE";

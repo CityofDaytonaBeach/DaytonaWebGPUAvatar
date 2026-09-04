@@ -217,6 +217,7 @@ function multiplyMat4(a, b) {
  */
 export class WebGPURenderer {
     device;
+    shaderCode;
     pipeline;
     bindGroupLayout;
     cameraBuffer;
@@ -227,13 +228,20 @@ export class WebGPURenderer {
     /** Per-part bind groups (params + camera + part color). */
     partBindGroups = [];
     partNames = [];
-    constructor(device, format = 'bgra8unorm') {
+    constructor(device, format = 'bgra8unorm', 
+    /**
+     * Shader program to render with. Defaults to the built-in program; pass
+     * `PHOTOREAL_HUMAN_WGSL` for the photoreal skin/eye/enamel model. The bind
+     * group and vertex layouts are identical, so this is a pure module swap.
+     */
+    shaderCode = HUMAN_RENDER_WGSL) {
         this.device = device;
+        this.shaderCode = shaderCode;
         this.init(format);
     }
     init(format) {
         const module = this.device.createShaderModule({
-            code: HUMAN_RENDER_WGSL,
+            code: this.shaderCode,
             label: 'human-render',
         });
         this.bindGroupLayout = this.device.createBindGroupLayout({
@@ -301,6 +309,8 @@ export class WebGPURenderer {
             let flags = p.hasNormalMap ? 1 : 0;
             if (p.refractive)
                 flags |= 2;
+            if (p.extraFlags)
+                flags |= p.extraFlags;
             const ior = p.ior ?? 0;
             const f32 = new Float32Array(buf);
             f32[0] = p.color[0];

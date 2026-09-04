@@ -100,6 +100,18 @@ export const CAPABILITY_MATRIX = {
   // Renderer.
   gpuRenderer: 'IMPLEMENTED',
   webglFallback: 'IMPLEMENTED',
+  // Photoreal head/skin shading: dual-lobe GGX specular, energy-conserving
+  // diffuse, pre-integrated curvature SSS, thin-tissue transmission, procedural
+  // micro-detail normals + cavity, and an ACES/sRGB display transform. The CPU
+  // reference model and the generated WGSL share one constant table, so parity
+  // is structural and validated headlessly.
+  photorealSkinShading: 'IMPLEMENTED',
+  // Photoreal eye + enamel: corneal-refraction iris parallax, luminance-driven
+  // pupil, limbal ring, vascular sclera, translucent enamel.
+  photorealEyeShading: 'IMPLEMENTED',
+  // Per-part photoreal material assignment from the semantic parameter layer,
+  // wired into the WebGPU pipeline (default shading model).
+  photorealMaterials: 'IMPLEMENTED',
 
   // Physics / simulation runtime prototypes.
   strandHair: 'PROTOTYPE',

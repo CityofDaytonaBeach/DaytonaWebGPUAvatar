@@ -17,6 +17,11 @@ import { HumanDefinition } from '../../core/schema/human-definition.js';
 import { BonePose } from '../../animation/skeleton/skeletal-animation.js';
 import { exportSkinMaterial, SkinPreset } from '../../surface/skin/neural-skin.js';
 import { createDefaultRegistry } from '../../core/schema/descriptors.js';
+import { PHOTOREAL_HUMAN_WGSL, ShadingModel } from '../wgsl/photoreal-wgsl.js';
+import { HUMAN_RENDER_WGSL } from './renderer.js';
+import { buildPhotorealMaterials } from '../photoreal/photoreal-material.js';
+import type { PhotorealPartMaterial } from '../photoreal/photoreal-material.js';
+import { PHOTOREAL_FLAGS } from '../photoreal/constants.js';
 
 export interface WebGpuHumanPipelineOptions {
   device: GPUDevice;
@@ -25,6 +30,22 @@ export interface WebGpuHumanPipelineOptions {
   paramByteSize: number;
   /** Parametric skeleton (bone order) used for skinning influences/matrices. */
   skeleton?: BoneDef[];
+  /**
+   * Shading model. `'photoreal'` (default) uses the photoreal skin/eye/enamel
+   * program (dual-lobe specular, pre-integrated SSS, micro-detail normals, iris
+   * parallax, enamel translucency, ACES/sRGB display transform). `'basic'`
+   * keeps the original single-lobe program.
+   */
+  shading?: ShadingModel;
+  /** Skin preset driving photoreal material assignment. */
+  skinPreset?: SkinPreset;
+  /**
+   * Definition whose semantic skin parameters seed the photoreal materials and
+   * the tangent-perturbation buffer. Defaults to a registry-default definition;
+   * pass the runtime definition so materials match the actual human, and call
+   * `refreshMaterials()` after skin parameters change.
+   */
+  definition?: HumanDefinition;
 }
 
 /**
@@ -47,7 +68,11 @@ export class WebGpuHumanPipeline {
   private readonly packed: PackedMorphBuffers;
   private readonly skeleton: BoneDef[];
   private skinMaterial!: ReturnType<typeof exportSkinMaterial>;
+  /** Active shading model. */
+  readonly shading: ShadingModel;
   private tangentBuffer!: GPUBuffer;
+  private readonly skinPreset: SkinPreset;
+  private renderParts: RenderPart[] = [];
   readonly morphNames: string[];
 
   constructor(
@@ -86,18 +111,27 @@ export class WebGpuHumanPipeline {
       skeleton.length,
       this.state.normalBuffer,
     );
-    this.renderer = new WebGPURenderer(opts.device, opts.format ?? 'bgra8unorm');
-    const renderParts = buildRenderParts(opts.device, canonical);
+    const shading: ShadingModel = opts.shading ?? 'photoreal';
+    this.shading = shading;
+    this.renderer = new WebGPURenderer(
+      opts.device,
+      opts.format ?? 'bgra8unorm',
+      shading === 'photoreal' ? PHOTOREAL_HUMAN_WGSL : HUMAN_RENDER_WGSL,
+    );
+    const preset = opts.skinPreset ?? SkinPreset.Fair;
+    this.skinPreset = preset;
+    const definition = opts.definition ?? new HumanDefinition(createDefaultRegistry());
+    const renderParts =
+      shading === 'photoreal'
+        ? buildPhotorealRenderParts(opts.device, canonical, preset, definition)
+        : buildRenderParts(opts.device, canonical);
+    this.renderParts = renderParts;
     this.renderer.setParts(renderParts, this.state.paramBuffer);
     this.renderer.setSharedNormalsAndUvs(this.state.normalBuffer, this.state.uvBuffer);
 
     // Per-vertex tangent perturbation (normal map proxy) from the skin material.
     // Zero for non-skin parts via the shared buffer; the body part reads it.
-    this.skinMaterial = exportSkinMaterial(
-      new HumanDefinition(createDefaultRegistry()),
-      canonical,
-      SkinPreset.Fair,
-    );
+    this.skinMaterial = exportSkinMaterial(definition, canonical, preset);
     this.tangentBuffer = opts.device.createBuffer({
       size: canonical.vertexCount * 2 * 4,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
@@ -109,6 +143,20 @@ export class WebGpuHumanPipeline {
     }
     opts.device.queue.writeBuffer(this.tangentBuffer, 0, tangentData as unknown as ArrayBuffer);
     this.renderer.setSharedTangentPerturb(this.tangentBuffer);
+  }
+
+  /**
+   * Re-derive photoreal per-part materials from `definition` and re-bind them.
+   * Index buffers are reused, so this is cheap; call it when skin/eye parameters
+   * change (not every frame). No-op under `'basic'` shading.
+   */
+  refreshMaterials(definition: HumanDefinition): void {
+    if (this.shading !== 'photoreal') return;
+    const materials = buildPhotorealMaterials(definition, this.canonical, this.skinPreset);
+    this.renderParts = this.renderParts.map((part, i) =>
+      materials[i] ? applyPhotorealMaterial(part, materials[i]) : part,
+    );
+    this.renderer.setParts(this.renderParts, this.state.paramBuffer);
   }
 
   /**
@@ -240,6 +288,36 @@ function buildRenderParts(device: GPUDevice, canonical: CanonicalHuman): RenderP
     });
   }
   return parts;
+}
+
+/**
+ * Photoreal per-part index buffers + materials. Same draw order as
+ * `buildRenderParts`, but materials/flags come from `buildPhotorealMaterials`
+ * so the shader gets real skin/sclera/iris/cornea/enamel parameters.
+ */
+function buildPhotorealRenderParts(
+  device: GPUDevice,
+  canonical: CanonicalHuman,
+  preset: SkinPreset,
+  definition: HumanDefinition,
+): RenderPart[] {
+  const materials = buildPhotorealMaterials(definition, canonical, preset);
+  const base = buildRenderParts(device, canonical);
+  return base.map((part, i) => (materials[i] ? applyPhotorealMaterial(part, materials[i]) : part));
+}
+
+/** Overlay one photoreal material onto an existing render part. */
+function applyPhotorealMaterial(part: RenderPart, m: PhotorealPartMaterial): RenderPart {
+  return {
+    ...part,
+    color: m.color,
+    material: m.material,
+    sssColor: m.sssColor,
+    ior: m.ior || undefined,
+    refractive: (m.flags & PHOTOREAL_FLAGS.refractive) !== 0,
+    extraFlags: m.flags,
+    opaque: m.opaque,
+  };
 }
 
 function partColor(name: string, kind: string): { rgb: [number, number, number]; opaque: boolean } {
