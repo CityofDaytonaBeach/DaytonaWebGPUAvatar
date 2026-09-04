@@ -75,6 +75,26 @@ npm run build      # compile the SDK library (dist/)
 npm run build:demo # build the demo app (dist-demo/)
 ```
 
+## CDN (jsDelivr)
+
+Include the SDK directly in the browser via [jsDelivr](https://www.jsdelivr.com/):
+
+```html
+<script type="module">
+  import { Human } from 'https://cdn.jsdelivr.net/gh/CityofDaytonaBeach/DaytonaWebGPUAvatar@main/dist/index.js';
+
+  const human = await Human.create();
+</script>
+```
+
+Or pin a specific version tag once published:
+
+```html
+<script type="module">
+  import { Human } from 'https://cdn.jsdelivr.net/gh/CityofDaytonaBeach/DaytonaWebGPUAvatar@v1.0.0/dist/index.js';
+</script>
+```
+
 ## The character API
 
 ```ts

@@ -1,6 +1,6 @@
 {
   "name": "daytona-webgpu-avatar",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Browser-native, GPU-resident, persistent digital-human runtime engine powered by WebGPU",
   "type": "module",
   "main": "dist/index.js",
