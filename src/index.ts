@@ -840,4 +840,53 @@ export type {
   GateViolationKind,
 } from './testing/performance/benchmark-gates.js';
 
+// Kiosk behaviour layer: blink quality, gaze behaviour, idle/listening motion,
+// interruption handling, long-running soak validation and device recovery.
+export { BlinkController, DEFAULT_BLINK_CONFIG } from './kiosk/blink-controller.js';
+export type {
+  BlinkConfig,
+  BlinkFrame,
+  BlinkPhase,
+  BlinkApplyTarget,
+  KioskAttentionState,
+} from './kiosk/blink-controller.js';
+export { GazeController, DEFAULT_GAZE_CONFIG } from './kiosk/gaze-controller.js';
+export type { GazeConfig, GazeFrame, GazeMode } from './kiosk/gaze-controller.js';
+export { IdleMotion, DEFAULT_IDLE_MOTION_CONFIG } from './kiosk/idle-motion.js';
+export type { IdleMotionConfig, IdleMotionFrame } from './kiosk/idle-motion.js';
+export { KioskBehavior, DEFAULT_KIOSK_BEHAVIOR_CONFIG } from './kiosk/kiosk-behavior.js';
+export type {
+  KioskBehaviorConfig,
+  KioskBehaviorFrame,
+  KioskBehaviorStatus,
+  KioskDefinitionTarget,
+  KioskMotionTarget,
+} from './kiosk/kiosk-behavior.js';
+export {
+  WebGpuDeviceRecovery,
+  deviceBackoffSchedule,
+  DEFAULT_DEVICE_RECOVERY_CONFIG,
+} from './kiosk/device-recovery.js';
+export type {
+  RecoverableDevice,
+  DeviceLostLike,
+  DeviceRecoveryConfig,
+  DeviceRecoveryHooks,
+  DeviceRecoveryState,
+  DeviceRecoveryStatus,
+} from './kiosk/device-recovery.js';
+export {
+  runKioskSoak,
+  buildKioskSoakScript,
+  DEFAULT_KIOSK_SOAK_OPTIONS,
+} from './kiosk/kiosk-soak.js';
+export type { KioskSoakOptions, KioskSoakReport } from './kiosk/kiosk-soak.js';
+export {
+  kioskReadinessReport,
+  KIOSK_REQUIRED_CAPABILITIES,
+  KIOSK_DEFERRED,
+} from './kiosk/kiosk-ready.js';
+export type { KioskReadinessReport, KioskReadinessEntry } from './kiosk/kiosk-ready.js';
+export { KioskRandom } from './kiosk/kiosk-random.js';
+
 export const VERSION = '1.0.0';

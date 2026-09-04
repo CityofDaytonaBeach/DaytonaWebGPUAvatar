@@ -23,6 +23,7 @@ import { ClothMesh, ClothStepOptions } from './physics/cloth/cloth-sim.js';
 import { SkinResidualField, SkinResidualOptions } from './surface/skin/neural-skin.js';
 import { MotionPlan } from './animation/motion/motion-compiler.js';
 import { MotionRuntime, type MotionRuntimeConfig, type MotionRuntimeFrame } from './animation/motion/motion-runtime.js';
+import { KioskBehavior, type KioskBehaviorConfig, type KioskBehaviorFrame } from './kiosk/kiosk-behavior.js';
 import { PerceptualValidationReport } from './validation/perceptual-validator.js';
 import { TattooDecal } from './surface/tattoo/tattoo-decal.js';
 import { GarmentMesh } from './surface/clothing/garment.js';
@@ -65,6 +66,7 @@ export declare class Human {
     private canonical;
     private morphs;
     private motionRuntime?;
+    private kiosk?;
     private morphDriver;
     private morphKernel;
     private shapeSpace;
@@ -182,6 +184,25 @@ export declare class Human {
     get motionRuntimeRef(): MotionRuntime | null;
     /** Advance the motion runtime by `dt` and apply the resulting pose. */
     tickMotion(dt: number): MotionRuntimeFrame | null;
+    /**
+     * Turn on the kiosk behaviour layer: natural blinking, gaze behaviour with
+     * micro-saccades and eye-contact rhythm, idle/listening/thinking/speaking
+     * posture with breathing and small gestures, and interruption handling.
+     *
+     * The behaviour layer is additive — it writes only `expression.*` performance
+     * controls and the motion runtime's gaze/gesture inputs, so identity, clips
+     * and `perform()` keep working unchanged.
+     */
+    startKioskBehavior(config?: Partial<KioskBehaviorConfig>): KioskBehavior;
+    /** Behaviour handle for events/status; null until startKioskBehavior(). */
+    get kioskBehaviorRef(): KioskBehavior | null;
+    stopKioskBehavior(): void;
+    /**
+     * Advance the kiosk behaviour by `dt` and apply it: expression controls onto
+     * the definition, gaze onto the motion runtime's persistent look-at, and any
+     * scheduled small gesture as a motion command.
+     */
+    tickKiosk(dt: number): KioskBehaviorFrame | null;
     /**
      * CPU skinning reference: transform the canonical base positions by the
      * current pose's bone matrices. At rest this equals the base geometry, so

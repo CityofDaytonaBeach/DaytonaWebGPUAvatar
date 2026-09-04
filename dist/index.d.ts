@@ -64,6 +64,9 @@ export { DebugBlockHumanProvider, CanonicalHumanProviderRegistry, topologyFromHu
 export type { CanonicalHumanProvider, CanonicalHumanAsset, CanonicalValidationResult, } from './geometry/canonical/canonical-provider.js';
 export { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
 export type { HdHeadOptions } from './geometry/canonical/hd-head-provider.js';
+export { buildHdBodyManifold } from './geometry/canonical/hd-body-manifold.js';
+export type { HdBodyManifoldOptions } from './geometry/canonical/hd-body-manifold.js';
+export { HEAD_TOP_Y, HEAD_NECK_Y, HEAD_CENTER_Z, HEAD_ELLIPSOID, JAW_DRIVEN_REGIONS, headRegionFor, headSkinWeights, ensureHeadRegions, } from './geometry/canonical/hd-head-regions.js';
 export { HD_HEAD_REGIONS, HD_HEAD_PART_REGIONS, HD_BODY_REGIONS, EYELID_REGIONS, REQUIRED_HD_HEAD_REGIONS, } from './geometry/canonical/regions.js';
 export { resolveLandmarkPosition, findTriangleInRegion } from './geometry/canonical/landmark.js';
 export type { HumanLandmark, ResolvedLandmark } from './geometry/canonical/landmark.js';
@@ -162,5 +165,20 @@ export { validateTransitionThroughGpuPath, runTransitionGpuValidationSuite, DEFA
 export type { TransitionGpuFrame, TransitionGpuValidationReport, TransitionGpuValidationOptions, TransitionGpuSuiteReport, } from './gpu/morph/transition-gpu-validation.js';
 export { evaluateBenchmarkGates, baselineFromSummary, formatGateResult, DEFAULT_BENCHMARK_BUDGETS, DEFAULT_BENCHMARK_GATE_CONFIG, } from './testing/performance/benchmark-gates.js';
 export type { BenchmarkBudget, BenchmarkGateConfig, BenchmarkGateResult, GateViolation, GateViolationKind, } from './testing/performance/benchmark-gates.js';
+export { BlinkController, DEFAULT_BLINK_CONFIG } from './kiosk/blink-controller.js';
+export type { BlinkConfig, BlinkFrame, BlinkPhase, BlinkApplyTarget, KioskAttentionState, } from './kiosk/blink-controller.js';
+export { GazeController, DEFAULT_GAZE_CONFIG } from './kiosk/gaze-controller.js';
+export type { GazeConfig, GazeFrame, GazeMode } from './kiosk/gaze-controller.js';
+export { IdleMotion, DEFAULT_IDLE_MOTION_CONFIG } from './kiosk/idle-motion.js';
+export type { IdleMotionConfig, IdleMotionFrame } from './kiosk/idle-motion.js';
+export { KioskBehavior, DEFAULT_KIOSK_BEHAVIOR_CONFIG } from './kiosk/kiosk-behavior.js';
+export type { KioskBehaviorConfig, KioskBehaviorFrame, KioskBehaviorStatus, KioskDefinitionTarget, KioskMotionTarget, } from './kiosk/kiosk-behavior.js';
+export { WebGpuDeviceRecovery, deviceBackoffSchedule, DEFAULT_DEVICE_RECOVERY_CONFIG, } from './kiosk/device-recovery.js';
+export type { RecoverableDevice, DeviceLostLike, DeviceRecoveryConfig, DeviceRecoveryHooks, DeviceRecoveryState, DeviceRecoveryStatus, } from './kiosk/device-recovery.js';
+export { runKioskSoak, buildKioskSoakScript, DEFAULT_KIOSK_SOAK_OPTIONS, } from './kiosk/kiosk-soak.js';
+export type { KioskSoakOptions, KioskSoakReport } from './kiosk/kiosk-soak.js';
+export { kioskReadinessReport, KIOSK_REQUIRED_CAPABILITIES, KIOSK_DEFERRED, } from './kiosk/kiosk-ready.js';
+export type { KioskReadinessReport, KioskReadinessEntry } from './kiosk/kiosk-ready.js';
+export { KioskRandom } from './kiosk/kiosk-random.js';
 export declare const VERSION = "1.0.0";
 //# sourceMappingURL=index.d.ts.map

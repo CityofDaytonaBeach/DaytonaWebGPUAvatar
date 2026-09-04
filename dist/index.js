@@ -43,6 +43,8 @@ export { REQUIRED_CANONICAL_PARTS, REQUIRED_CANONICAL_REGIONS, validateCanonical
 export { adaptCanonicalTopologyAsset, CanonicalTopologyAdapter, } from './geometry/canonical/canonical-adapter.js';
 export { DebugBlockHumanProvider, CanonicalHumanProviderRegistry, topologyFromHuman, DEFAULT_PROVIDER_BONE_NAMES, } from './geometry/canonical/canonical-provider.js';
 export { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
+export { buildHdBodyManifold } from './geometry/canonical/hd-body-manifold.js';
+export { HEAD_TOP_Y, HEAD_NECK_Y, HEAD_CENTER_Z, HEAD_ELLIPSOID, JAW_DRIVEN_REGIONS, headRegionFor, headSkinWeights, ensureHeadRegions, } from './geometry/canonical/hd-head-regions.js';
 export { HD_HEAD_REGIONS, HD_HEAD_PART_REGIONS, HD_BODY_REGIONS, EYELID_REGIONS, REQUIRED_HD_HEAD_REGIONS, } from './geometry/canonical/regions.js';
 export { resolveLandmarkPosition, findTriangleInRegion } from './geometry/canonical/landmark.js';
 export { SparseMorphSet } from './geometry/morph/sparse-morph.js';
@@ -117,5 +119,15 @@ export { GpuValidationHarness, DEFAULT_GPU_LIMITS, resolveLimits, validateDispat
 export { validateTransitionThroughGpuPath, runTransitionGpuValidationSuite, DEFAULT_TRANSITION_GPU_CASES, } from './gpu/morph/transition-gpu-validation.js';
 // CI-enforced performance budgets on top of the benchmark suite.
 export { evaluateBenchmarkGates, baselineFromSummary, formatGateResult, DEFAULT_BENCHMARK_BUDGETS, DEFAULT_BENCHMARK_GATE_CONFIG, } from './testing/performance/benchmark-gates.js';
+// Kiosk behaviour layer: blink quality, gaze behaviour, idle/listening motion,
+// interruption handling, long-running soak validation and device recovery.
+export { BlinkController, DEFAULT_BLINK_CONFIG } from './kiosk/blink-controller.js';
+export { GazeController, DEFAULT_GAZE_CONFIG } from './kiosk/gaze-controller.js';
+export { IdleMotion, DEFAULT_IDLE_MOTION_CONFIG } from './kiosk/idle-motion.js';
+export { KioskBehavior, DEFAULT_KIOSK_BEHAVIOR_CONFIG } from './kiosk/kiosk-behavior.js';
+export { WebGpuDeviceRecovery, deviceBackoffSchedule, DEFAULT_DEVICE_RECOVERY_CONFIG, } from './kiosk/device-recovery.js';
+export { runKioskSoak, buildKioskSoakScript, DEFAULT_KIOSK_SOAK_OPTIONS, } from './kiosk/kiosk-soak.js';
+export { kioskReadinessReport, KIOSK_REQUIRED_CAPABILITIES, KIOSK_DEFERRED, } from './kiosk/kiosk-ready.js';
+export { KioskRandom } from './kiosk/kiosk-random.js';
 export const VERSION = '1.0.0';
 //# sourceMappingURL=index.js.map

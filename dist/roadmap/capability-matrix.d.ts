@@ -73,6 +73,12 @@ export declare const CAPABILITY_MATRIX: {
     readonly clothPhysics: "PROTOTYPE";
     readonly sdfCollision: "PROTOTYPE";
     readonly neuralSkin: "PROTOTYPE";
+    readonly kioskBlinkQuality: "IMPLEMENTED";
+    readonly kioskGazeBehavior: "IMPLEMENTED";
+    readonly kioskIdleMotion: "IMPLEMENTED";
+    readonly kioskInterruption: "IMPLEMENTED";
+    readonly kioskSoakValidation: "IMPLEMENTED";
+    readonly webgpuDeviceRecovery: "IMPLEMENTED";
     readonly phaseTracking: "IMPLEMENTED";
 };
 export type Capability = keyof typeof CAPABILITY_MATRIX;

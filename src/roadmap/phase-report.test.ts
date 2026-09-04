@@ -6,9 +6,9 @@ describe('start.md phase report', () => {
   it('tracks every start.md development phase in order', () => {
     const report = phaseReport();
 
-    expect(report.total).toBe(15);
+    expect(report.total).toBe(16);
     expect(report.phases.map((phase) => phase.phase)).toEqual([
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
     ]);
   });
 

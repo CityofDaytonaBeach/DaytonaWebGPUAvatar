@@ -1,5 +1,28 @@
 # remaining.md — Production Gap List
 
+## Just delivered — Daytona Kiosk Ready behaviour layer
+
+`src/kiosk/` closes the near-term talking-kiosk gate on top of the existing motion/speech/expression runtime. Everything here is deterministic (seeded xorshift32, no `Math.random`, no wall clock) so behaviour replays bit-exactly.
+
+- `kiosk-random.ts` — seeded PRNG + `smoothstep`/`clamp01` helpers.
+- `blink-controller.ts` — asymmetric lid curve, state-dependent cadence, double blinks, suppression while speaking, requested blinks.
+- `gaze-controller.ts` — visitor/default anchors, smoothed pursuit, micro-saccades, eye-contact breaks, thinking aversion, reacquisition.
+- `idle-motion.ts` — breathing, composite head drift, hip sway, posture per attention state, speech accents, scheduled small gestures.
+- `kiosk-behavior.ts` — orchestrates idle/listening/thinking/speaking, visitor timeout, interruption as a first-class transition, and emits expression + gaze + gesture frames.
+- `device-recovery.ts` — WebGPU device-loss watch, exponential backoff re-acquire, resource re-initialisation hooks, repeated-loss handling.
+- `kiosk-soak.ts` — compressed multi-hour scripted-visitor soak gating blink cadence, gaze bounds, attention-state coverage/starvation, and bit-exact replay fingerprints.
+- `kiosk-ready.ts` — the Kiosk Ready capability gate plus the explicitly deferred next-generation scope.
+
+Wired into the runtime: `Human.startKioskBehavior()` / `tickKiosk()` / `stopKioskBehavior()`, ticked from `Human.update(dt)` before motion so the gaze target for the frame is the one the look-at solver consumes. It only writes `expression.*` performance controls and the motion runtime's persistent look-at/gesture inputs, so identity, clips and `perform()` are untouched (asserted by a test).
+
+Capability matrix gained `kioskBlinkQuality`, `kioskGazeBehavior`, `kioskIdleMotion`, `kioskInterruption`, `kioskSoakValidation`, `webgpuDeviceRecovery` (all IMPLEMENTED) and phase 14 is now "Kiosk readiness"; Advanced R&D moved to phase 15.
+
+**Snapshot after this work:** `npm test` 623 tests / 69 files pass; typecheck, lint, `format:check`, `build`, `build:demo` clean.
+
+**Still remaining:** real-GPU visual/perf validation (no adapter in CI here), production strand hair / cloth / clothing geometry / SDF collision / neural skin / internal anatomy / tattoo decals / perceptual validation, hot-path coverage lift, and the deliberately deferred photo-to-human, advanced aging, crowd rendering, Gaussian splatting, WebNN and new AI-agent architecture.
+
+---
+
 Tracking what stands between this repo and "production" per `direction.md` and `README.md`, plus what was just closed out. Source of truth for per-capability status is `src/roadmap/capability-matrix.ts` (`CAPABILITY_MATRIX` + `capabilityReport()`).
 
 **Current snapshot** (verified clean):

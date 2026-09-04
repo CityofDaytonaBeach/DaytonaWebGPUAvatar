@@ -229,6 +229,28 @@ export const START_MD_PHASES: PhaseMilestone[] = [
   ),
   phase(
     14,
+    'Kiosk readiness (talking-kiosk gate)',
+    'COMPLETE',
+    [
+      'kioskBlinkQuality',
+      'kioskGazeBehavior',
+      'kioskIdleMotion',
+      'kioskInterruption',
+      'kioskSoakValidation',
+      'webgpuDeviceRecovery',
+    ],
+    [
+      'natural blink cadence + suppression while speaking',
+      'gaze with micro-saccades and eye-contact rhythm',
+      'idle/listening/thinking/speaking motion with small gestures',
+      'interruption as a first-class transition',
+      'multi-hour soak with bit-exact replay',
+      'WebGPU device-loss recovery',
+    ],
+    [],
+  ),
+  phase(
+    15,
     'Advanced R&D',
     'PROTOTYPE',
     ['neuralSkin'],

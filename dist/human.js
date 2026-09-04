@@ -32,6 +32,7 @@ import { createTorsoCloth, simulateCloth, } from './physics/cloth/cloth-sim.js';
 import { generateSkinResiduals, } from './surface/skin/neural-skin.js';
 import { MotionCompiler } from './animation/motion/motion-compiler.js';
 import { MotionRuntime, } from './animation/motion/motion-runtime.js';
+import { KioskBehavior, } from './kiosk/kiosk-behavior.js';
 import { validatePerceptualHuman, } from './validation/perceptual-validator.js';
 import { projectTattooDecals } from './surface/tattoo/tattoo-decal.js';
 import { generateGarments } from './surface/clothing/garment.js';
@@ -78,6 +79,7 @@ export class Human {
     canonical;
     morphs;
     motionRuntime;
+    kiosk;
     morphDriver;
     morphKernel;
     shapeSpace;
@@ -398,6 +400,52 @@ export class Human {
             this.setPose(frame.poses);
         return frame;
     }
+    // ------------------------------------------------------------------ kiosk
+    /**
+     * Turn on the kiosk behaviour layer: natural blinking, gaze behaviour with
+     * micro-saccades and eye-contact rhythm, idle/listening/thinking/speaking
+     * posture with breathing and small gestures, and interruption handling.
+     *
+     * The behaviour layer is additive — it writes only `expression.*` performance
+     * controls and the motion runtime's gaze/gesture inputs, so identity, clips
+     * and `perform()` keep working unchanged.
+     */
+    startKioskBehavior(config = {}) {
+        this.kiosk = new KioskBehavior(config);
+        if (!this.motionRuntime) {
+            this.motionRuntime = new MotionRuntime(this.parametricSkeleton());
+        }
+        return this.kiosk;
+    }
+    /** Behaviour handle for events/status; null until startKioskBehavior(). */
+    get kioskBehaviorRef() {
+        return this.kiosk ?? null;
+    }
+    stopKioskBehavior() {
+        this.kiosk?.reset();
+        this.kiosk = undefined;
+        this.motionRuntime?.clearLookAtTarget();
+    }
+    /**
+     * Advance the kiosk behaviour by `dt` and apply it: expression controls onto
+     * the definition, gaze onto the motion runtime's persistent look-at, and any
+     * scheduled small gesture as a motion command.
+     */
+    tickKiosk(dt) {
+        if (!this.kiosk)
+            return null;
+        const frame = this.kiosk.tick(dt);
+        for (const [path, value] of Object.entries(frame.expression)) {
+            this.definition.set(path, value);
+        }
+        const motion = this.motionRuntime;
+        if (motion) {
+            motion.setLookAtTarget(frame.lookAtTarget, { intensity: frame.lookAtIntensity });
+            if (frame.gesture)
+                motion.push(frame.gesture);
+        }
+        return frame;
+    }
     /**
      * CPU skinning reference: transform the canonical base positions by the
      * current pose's bone matrices. At rest this equals the base geometry, so
@@ -643,6 +691,9 @@ export class Human {
     /** Advance speech/simulation time. */
     update(dt) {
         this.advanceTime(dt, 'simulation');
+        // Kiosk behaviour (blink/gaze/idle) writes its controls before motion ticks
+        // so the gaze target for this frame is the one the solver consumes.
+        this.tickKiosk(dt);
         // Continuous motion, when active, advances on the same clock as speech.
         this.tickMotion(dt);
         // Extract current speech track from timeline if a speak event exists.

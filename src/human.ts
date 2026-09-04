@@ -78,6 +78,11 @@ import {
   type MotionRuntimeFrame,
 } from './animation/motion/motion-runtime.js';
 import {
+  KioskBehavior,
+  type KioskBehaviorConfig,
+  type KioskBehaviorFrame,
+} from './kiosk/kiosk-behavior.js';
+import {
   PerceptualValidationReport,
   validatePerceptualHuman,
 } from './validation/perceptual-validator.js';
@@ -160,6 +165,7 @@ export class Human {
   private canonical: CanonicalHuman;
   private morphs: SparseMorphSet;
   private motionRuntime?: MotionRuntime;
+  private kiosk?: KioskBehavior;
   private morphDriver: MorphDriver;
   private morphKernel: MorphKernel;
   private shapeSpace: HumanShapeSpace;
@@ -521,6 +527,55 @@ export class Human {
     return frame;
   }
 
+  // ------------------------------------------------------------------ kiosk
+
+  /**
+   * Turn on the kiosk behaviour layer: natural blinking, gaze behaviour with
+   * micro-saccades and eye-contact rhythm, idle/listening/thinking/speaking
+   * posture with breathing and small gestures, and interruption handling.
+   *
+   * The behaviour layer is additive — it writes only `expression.*` performance
+   * controls and the motion runtime's gaze/gesture inputs, so identity, clips
+   * and `perform()` keep working unchanged.
+   */
+  startKioskBehavior(config: Partial<KioskBehaviorConfig> = {}): KioskBehavior {
+    this.kiosk = new KioskBehavior(config);
+    if (!this.motionRuntime) {
+      this.motionRuntime = new MotionRuntime(this.parametricSkeleton());
+    }
+    return this.kiosk;
+  }
+
+  /** Behaviour handle for events/status; null until startKioskBehavior(). */
+  get kioskBehaviorRef(): KioskBehavior | null {
+    return this.kiosk ?? null;
+  }
+
+  stopKioskBehavior(): void {
+    this.kiosk?.reset();
+    this.kiosk = undefined;
+    this.motionRuntime?.clearLookAtTarget();
+  }
+
+  /**
+   * Advance the kiosk behaviour by `dt` and apply it: expression controls onto
+   * the definition, gaze onto the motion runtime's persistent look-at, and any
+   * scheduled small gesture as a motion command.
+   */
+  tickKiosk(dt: number): KioskBehaviorFrame | null {
+    if (!this.kiosk) return null;
+    const frame = this.kiosk.tick(dt);
+    for (const [path, value] of Object.entries(frame.expression)) {
+      this.definition.set(path, value);
+    }
+    const motion = this.motionRuntime;
+    if (motion) {
+      motion.setLookAtTarget(frame.lookAtTarget, { intensity: frame.lookAtIntensity });
+      if (frame.gesture) motion.push(frame.gesture);
+    }
+    return frame;
+  }
+
   /**
    * CPU skinning reference: transform the canonical base positions by the
    * current pose's bone matrices. At rest this equals the base geometry, so
@@ -818,6 +873,9 @@ export class Human {
   /** Advance speech/simulation time. */
   update(dt: number): void {
     this.advanceTime(dt, 'simulation');
+    // Kiosk behaviour (blink/gaze/idle) writes its controls before motion ticks
+    // so the gaze target for this frame is the one the solver consumes.
+    this.tickKiosk(dt);
     // Continuous motion, when active, advances on the same clock as speech.
     this.tickMotion(dt);
     // Extract current speech track from timeline if a speak event exists.

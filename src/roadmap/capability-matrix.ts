@@ -131,6 +131,22 @@ export const CAPABILITY_MATRIX = {
   sdfCollision: 'PROTOTYPE',
   neuralSkin: 'PROTOTYPE',
 
+  // Kiosk behaviour layer: deterministic blink quality (asymmetric lid curve,
+  // state-dependent cadence, suppression), gaze behaviour (micro-saccades,
+  // eye-contact rhythm, thinking aversion, smoothed pursuit), idle/listening/
+  // thinking/speaking posture + breathing + small gestures, and interruption as
+  // a first-class transition. All covered by deterministic tests.
+  kioskBlinkQuality: 'IMPLEMENTED',
+  kioskGazeBehavior: 'IMPLEMENTED',
+  kioskIdleMotion: 'IMPLEMENTED',
+  kioskInterruption: 'IMPLEMENTED',
+  // Multi-hour compressed soak run over scripted visitor traffic, gating blink
+  // cadence, gaze bounds, state coverage/starvation and bit-exact replay.
+  kioskSoakValidation: 'IMPLEMENTED',
+  // GPU device-loss watch + backoff re-acquire + resource re-initialisation,
+  // validated headlessly including repeated losses over a long session.
+  webgpuDeviceRecovery: 'IMPLEMENTED',
+
   phaseTracking: 'IMPLEMENTED',
 } as const satisfies Record<string, CapabilityStatus>;
 
