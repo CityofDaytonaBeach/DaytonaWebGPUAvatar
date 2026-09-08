@@ -1,4 +1,5 @@
 import { DEFAULT_CAMERA_FRAMING } from './render/webgpu/renderer.js';
+import { WebGL2HumanRenderer } from './render/webgl2/renderer.js';
 import { createDefaultRegistry } from './core/schema/descriptors.js';
 import { HumanDefinition } from './core/schema/human-definition.js';
 import { createEvent, applyEventToDefinition, } from './core/events/character-event.js';
@@ -586,15 +587,19 @@ export class Human {
      * current value for anything not given. No-op without a GPU pipeline.
      */
     setCamera(framing) {
+        // Framing is kept on the Human, not only on the WebGPU renderer, so that a
+        // caller can frame the shot before a pipeline exists and so the WebGL2
+        // fallback inherits the same framing.
+        this.framing = { ...this.framing, ...framing };
         const renderer = this.gpu?.renderer;
-        if (!renderer)
-            return;
-        renderer.camera = { ...renderer.camera, ...framing };
+        if (renderer)
+            renderer.camera = { ...this.framing };
     }
-    /** Current camera framing, or the default when there is no GPU pipeline. */
+    /** Current camera framing (shared by the WebGPU and WebGL2 render paths). */
     get cameraFraming() {
-        return this.gpu?.renderer?.camera ?? { ...DEFAULT_CAMERA_FRAMING };
+        return this.gpu?.renderer?.camera ?? { ...this.framing };
     }
+    framing = { ...DEFAULT_CAMERA_FRAMING };
     encodeFrame(view, width, height) {
         if (!this.gpu || !this.device)
             return null;
@@ -608,6 +613,35 @@ export class Human {
      * queue, drawing into the current texture of a WebGPU canvas context.
      * Returns false when no GPU pipeline exists.
      */
+    gl2 = null;
+    gl2Canvas = null;
+    /**
+     * WebGL2 fallback frame. WebGPU is the primary path, but a kiosk display with
+     * no WebGPU — or one whose GPU device was lost and cannot be replaced — must
+     * still show the human rather than an empty canvas. This draws the same
+     * canonical mesh through CPU skinning + WebGL2, using the same camera framing.
+     * Returns false when even WebGL2 is unavailable.
+     */
+    renderToCanvasWebGL2(canvas) {
+        try {
+            if (!this.gl2 || this.gl2Canvas !== canvas) {
+                this.gl2 = new WebGL2HumanRenderer(canvas, this.canonical);
+                this.gl2Canvas = canvas;
+            }
+            this.gl2.camera = this.cameraFraming;
+            this.gl2.render(this.skinScene(), this.skinNormals());
+            return true;
+        }
+        catch {
+            this.gl2 = null;
+            this.gl2Canvas = null;
+            return false;
+        }
+    }
+    /** True when this Human has a live WebGPU pipeline (vs the WebGL2 fallback). */
+    get hasGpuPipeline() {
+        return !!this.gpu && !!this.device;
+    }
     renderToContext(ctx) {
         if (!this.gpu || !this.device)
             return false;

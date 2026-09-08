@@ -63,6 +63,10 @@ export type { CanonicalAdapterResult, CanonicalAssetAdapter, } from './geometry/
 export { DebugBlockHumanProvider, CanonicalHumanProviderRegistry, topologyFromHuman, DEFAULT_PROVIDER_BONE_NAMES, } from './geometry/canonical/canonical-provider.js';
 export type { CanonicalHumanProvider, CanonicalHumanAsset, CanonicalValidationResult, } from './geometry/canonical/canonical-provider.js';
 export { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
+export { BaseHeadProvider, BaseHeadLicenseError, inspectBaseHeadAsset, measureAsset, computeAssetNormals, assetLicenseClass, isShippableLicense, SHIPPABLE_LICENSES, RESEARCH_ONLY_LICENSES, } from './geometry/canonical/base-head-asset.js';
+export type { BaseHeadAsset, BaseHeadBlendshape, BaseHeadLandmark, BaseHeadInspection, BaseHeadProviderOptions, BaseHeadValidationIssue, LicenseClass, } from './geometry/canonical/base-head-asset.js';
+export { ADULT_MALE_FACE_MM, ADULT_FEMALE_FACE_MM, ADULT_NEUTRAL_FACE_MM, FACE_CANONS, REQUIRED_MEASUREMENT_LANDMARKS, faceMeansFor, resolveFaceMeasurements, evaluateFaceProportions, measureFromLandmarks, gateLandmarkProportions, } from './geometry/reference/anthropometry.js';
+export type { BiologicalSex, FaceMeasurements, FaceCanon, CanonEvaluation, ProportionReport, LandmarkPositions, MeasurementLandmarkName, } from './geometry/reference/anthropometry.js';
 export { regionGroup, regionMatches, regionsMatching } from './geometry/canonical/region-groups.js';
 export type { RegionGroup } from './geometry/canonical/region-groups.js';
 export type { HdHeadOptions } from './geometry/canonical/hd-head-provider.js';

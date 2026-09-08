@@ -1,4 +1,4 @@
-import { buildCameraMatrices } from '../webgpu/renderer.js';
+import { buildCameraMatrices, DEFAULT_CAMERA_FRAMING, } from '../webgpu/renderer.js';
 const VS = `#version 300 es
 precision highp float;
 layout(location = 0) in vec3 position;
@@ -74,6 +74,12 @@ export class WebGL2HumanRenderer {
         gl.enable(gl.DEPTH_TEST);
         gl.enable(gl.CULL_FACE);
     }
+    /**
+     * Framing shared with the WebGPU path so the fallback frames the human the
+     * same way (a kiosk head-and-shoulders shot must not become a full-body wide
+     * shot just because the device fell back to WebGL2).
+     */
+    camera = { ...DEFAULT_CAMERA_FRAMING };
     render(positions, normals) {
         const gl = this.gl;
         const canvas = gl.canvas;
@@ -81,7 +87,7 @@ export class WebGL2HumanRenderer {
         gl.clearColor(0.07, 0.09, 0.12, 1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.useProgram(this.program);
-        const camera = buildCameraMatrices(canvas.width, canvas.height);
+        const camera = buildCameraMatrices(canvas.width, canvas.height, this.camera.angleY, this.camera.angleX, this.camera.targetY, this.camera.distance);
         gl.uniformMatrix4fv(this.mvpLoc, false, camera.mvp);
         gl.uniformMatrix3fv(this.normalLoc, false, camera.normalMat);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);

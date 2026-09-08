@@ -275,14 +275,27 @@ export declare class Human {
      * current value for anything not given. No-op without a GPU pipeline.
      */
     setCamera(framing: Partial<CameraFraming>): void;
-    /** Current camera framing, or the default when there is no GPU pipeline. */
+    /** Current camera framing (shared by the WebGPU and WebGL2 render paths). */
     get cameraFraming(): CameraFraming;
+    private framing;
     encodeFrame(view: GPUTextureView, width: number, height: number): GPUCommandBuffer | null;
     /**
      * Convenience for canvas hosts: encode + submit one frame to the device
      * queue, drawing into the current texture of a WebGPU canvas context.
      * Returns false when no GPU pipeline exists.
      */
+    private gl2;
+    private gl2Canvas;
+    /**
+     * WebGL2 fallback frame. WebGPU is the primary path, but a kiosk display with
+     * no WebGPU — or one whose GPU device was lost and cannot be replaced — must
+     * still show the human rather than an empty canvas. This draws the same
+     * canonical mesh through CPU skinning + WebGL2, using the same camera framing.
+     * Returns false when even WebGL2 is unavailable.
+     */
+    renderToCanvasWebGL2(canvas: HTMLCanvasElement): boolean;
+    /** True when this Human has a live WebGPU pipeline (vs the WebGL2 fallback). */
+    get hasGpuPipeline(): boolean;
     renderToContext(ctx: GPUCanvasContext): boolean;
     private device;
     /**

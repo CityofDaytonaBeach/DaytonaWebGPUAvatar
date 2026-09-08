@@ -1,5 +1,9 @@
 ﻿import { CanonicalHuman } from '../../geometry/canonical/canonical-human.js';
-import { buildCameraMatrices } from '../webgpu/renderer.js';
+import {
+  buildCameraMatrices,
+  DEFAULT_CAMERA_FRAMING,
+  type CameraFraming,
+} from '../webgpu/renderer.js';
 
 export interface WebGL2RenderPart {
   name: string;
@@ -88,6 +92,13 @@ export class WebGL2HumanRenderer {
     gl.enable(gl.CULL_FACE);
   }
 
+  /**
+   * Framing shared with the WebGPU path so the fallback frames the human the
+   * same way (a kiosk head-and-shoulders shot must not become a full-body wide
+   * shot just because the device fell back to WebGL2).
+   */
+  camera: CameraFraming = { ...DEFAULT_CAMERA_FRAMING };
+
   render(positions: Float32Array, normals?: Float32Array): void {
     const gl = this.gl;
     const canvas = gl.canvas as HTMLCanvasElement;
@@ -96,7 +107,14 @@ export class WebGL2HumanRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);
 
-    const camera = buildCameraMatrices(canvas.width, canvas.height);
+    const camera = buildCameraMatrices(
+      canvas.width,
+      canvas.height,
+      this.camera.angleY,
+      this.camera.angleX,
+      this.camera.targetY,
+      this.camera.distance,
+    );
     gl.uniformMatrix4fv(this.mvpLoc, false, camera.mvp);
     gl.uniformMatrix3fv(this.normalLoc, false, camera.normalMat);
 

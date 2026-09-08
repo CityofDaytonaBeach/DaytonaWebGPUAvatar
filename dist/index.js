@@ -43,6 +43,10 @@ export { REQUIRED_CANONICAL_PARTS, REQUIRED_CANONICAL_REGIONS, validateCanonical
 export { adaptCanonicalTopologyAsset, CanonicalTopologyAdapter, } from './geometry/canonical/canonical-adapter.js';
 export { DebugBlockHumanProvider, CanonicalHumanProviderRegistry, topologyFromHuman, DEFAULT_PROVIDER_BONE_NAMES, } from './geometry/canonical/canonical-provider.js';
 export { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
+// Scan-derived base head ingestion (real facial topology through the provider seam).
+export { BaseHeadProvider, BaseHeadLicenseError, inspectBaseHeadAsset, measureAsset, computeAssetNormals, assetLicenseClass, isShippableLicense, SHIPPABLE_LICENSES, RESEARCH_ONLY_LICENSES, } from './geometry/canonical/base-head-asset.js';
+// Published facial anthropometry: the measurement reference the face is built against.
+export { ADULT_MALE_FACE_MM, ADULT_FEMALE_FACE_MM, ADULT_NEUTRAL_FACE_MM, FACE_CANONS, REQUIRED_MEASUREMENT_LANDMARKS, faceMeansFor, resolveFaceMeasurements, evaluateFaceProportions, measureFromLandmarks, gateLandmarkProportions, } from './geometry/reference/anthropometry.js';
 export { regionGroup, regionMatches, regionsMatching } from './geometry/canonical/region-groups.js';
 export { buildHdBodyManifold } from './geometry/canonical/hd-body-manifold.js';
 export { HEAD_TOP_Y, HEAD_NECK_Y, HEAD_CENTER_Z, HEAD_ELLIPSOID, JAW_DRIVEN_REGIONS, headRegionFor, headSkinWeights, ensureHeadRegions, } from './geometry/canonical/hd-head-regions.js';

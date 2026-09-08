@@ -1,4 +1,5 @@
 import { CanonicalHuman } from '../../geometry/canonical/canonical-human.js';
+import { type CameraFraming } from '../webgpu/renderer.js';
 export interface WebGL2RenderPart {
     name: string;
     color: [number, number, number];
@@ -23,6 +24,12 @@ export declare class WebGL2HumanRenderer {
     private readonly normalLoc;
     private readonly colorLoc;
     constructor(canvas: HTMLCanvasElement, canonical: CanonicalHuman);
+    /**
+     * Framing shared with the WebGPU path so the fallback frames the human the
+     * same way (a kiosk head-and-shoulders shot must not become a full-body wide
+     * shot just because the device fell back to WebGL2).
+     */
+    camera: CameraFraming;
     render(positions: Float32Array, normals?: Float32Array): void;
 }
 export declare function buildWebGL2RenderParts(canonical: CanonicalHuman): WebGL2RenderPart[];
