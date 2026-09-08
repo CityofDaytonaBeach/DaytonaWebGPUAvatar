@@ -1,3 +1,4 @@
+import { regionMatches } from '../geometry/canonical/region-groups.js';
 import { validateAnatomy, } from '../anatomy/parametric/parametric-anatomy.js';
 import { createEvent } from '../core/events/character-event.js';
 const DEFAULT_CONFIG = {
@@ -195,7 +196,7 @@ export class PerceptualValidator {
         if (this.cache.isValid('eye.alignment'))
             return;
         const eyeSpacing = definition.get('face.eyeSpacing');
-        const eyeVertices = canonical.vertices.filter((v) => v.region === 'eyes');
+        const eyeVertices = canonical.vertices.filter((v) => regionMatches(v.region, 'eyes'));
         const left = eyeVertices.filter((v) => v.position.x < 0);
         const right = eyeVertices.filter((v) => v.position.x > 0);
         if (left.length === 0 || right.length === 0) {

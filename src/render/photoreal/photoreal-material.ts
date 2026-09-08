@@ -227,7 +227,7 @@ export function partMaterial(name: string, kind: string, irisColor: Vec3): Photo
         material: [0.4, 0.4, 0.35],
         sssColor: [0.9, 0.58, 0.48],
         ior: 0,
-        flags: PHOTOREAL_FLAGS.skin,
+        flags: PHOTOREAL_FLAGS.skin | PHOTOREAL_FLAGS.normalPerturb,
         opaque: true,
       };
   }

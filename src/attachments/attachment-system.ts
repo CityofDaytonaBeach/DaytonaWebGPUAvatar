@@ -1,4 +1,5 @@
-﻿import { buildBoneMatrices, combinedSkinMatrices } from '../anatomy/skeleton/bone-matrix.js';
+﻿import { regionMatches } from '../geometry/canonical/region-groups.js';
+import { buildBoneMatrices, combinedSkinMatrices } from '../anatomy/skeleton/bone-matrix.js';
 import { BoneDef } from '../anatomy/skeleton/skeleton.js';
 import { BonePose } from '../animation/skeleton/skeletal-animation.js';
 import { CharacterEvent } from '../core/events/character-event.js';
@@ -111,7 +112,7 @@ function regionCentroid(
     z = 0,
     count = 0;
   for (const v of canonical.vertices) {
-    if (v.region !== region) continue;
+    if (!regionMatches(v.region, region)) continue;
     const i = v.id * 3;
     x += v.position.x + (morphDelta?.[i] ?? 0);
     y += v.position.y + (morphDelta?.[i + 1] ?? 0);
@@ -151,7 +152,7 @@ function transformByDominantRegionBone(
 function dominantRegionBone(canonical: CanonicalHuman, region: RegionName): string | null {
   const totals = new Map<string, number>();
   for (const v of canonical.vertices) {
-    if (v.region !== region) continue;
+    if (!regionMatches(v.region, region)) continue;
     for (const [bone, weight] of Object.entries(v.weights)) {
       totals.set(bone, (totals.get(bone) ?? 0) + weight);
     }

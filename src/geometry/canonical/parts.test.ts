@@ -1,3 +1,4 @@
+import { regionGroup } from './region-groups.js';
 import { describe, it, expect } from 'vitest';
 import { CanonicalHuman } from './canonical-human';
 import { validateCanonicalHuman } from './canonical-validator';
@@ -146,9 +147,10 @@ describe('part-localized morphs', () => {
       const mag = Math.abs(delta[v * 3]) + Math.abs(delta[v * 3 + 1]) + Math.abs(delta[v * 3 + 2]);
       if (mag > 1e-6) affected.add(v);
     }
-    const allowedRegions = new Set(['eyes', 'eye_sclera', 'eye_iris']);
+    // Region names differ per topology (eyes vs eye_left/eyelids), so match on
+    // the coarse group: only eye anatomy may move.
     for (const v of affected) {
-      expect(allowedRegions.has(canonical.vertices[v].region)).toBe(true);
+      expect(regionGroup(canonical.vertices[v].region)).toBe('eyes');
     }
     // Torso must be untouched.
     const torsoRange = canonical.regionRanges.get('torso')!;

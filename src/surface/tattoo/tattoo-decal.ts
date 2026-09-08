@@ -1,4 +1,5 @@
-﻿import { HumanAttachment } from '../../attachments/attachment-system.js';
+﻿import { regionMatches } from '../../geometry/canonical/region-groups.js';
+import { HumanAttachment } from '../../attachments/attachment-system.js';
 import { Vec3, vec3 } from '../../core/math/vec.js';
 import {
   CanonicalHuman,
@@ -140,7 +141,9 @@ export function projectTattooDecal(
   if (attachment.kind !== 'tattoo') return null;
   const region = attachment.anchor.region;
   if (!region) throw new Error('Tattoo decals require a semantic region anchor');
-  const vertices = canonical.vertices.filter((v) => v.region === region);
+  // A coarse anchor such as `nose` must still resolve on the HD mesh, whose
+  // regions are granular (`nose_tip`, `nose_bridge`, ...).
+  const vertices = canonical.vertices.filter((v) => regionMatches(v.region, region));
   if (vertices.length === 0) throw new Error(`Unknown tattoo region: ${region}`);
 
   const center = attachment.anchor.localPosition
@@ -186,7 +189,9 @@ export function projectUVDecal(
   if (attachment.kind !== 'tattoo') return null;
   const region = attachment.anchor.region;
   if (!region) throw new Error('Tattoo decals require a semantic region anchor');
-  const vertices = canonical.vertices.filter((v) => v.region === region);
+  // A coarse anchor such as `nose` must still resolve on the HD mesh, whose
+  // regions are granular (`nose_tip`, `nose_bridge`, ...).
+  const vertices = canonical.vertices.filter((v) => regionMatches(v.region, region));
   if (vertices.length === 0) throw new Error(`Unknown tattoo region: ${region}`);
 
   const color = colorData(attachment.data?.color, options.defaultColor ?? [0.04, 0.035, 0.03]);
@@ -248,7 +253,9 @@ export function projectTattooDecalExtended(
   if (attachment.kind !== 'tattoo') return null;
   const region = attachment.anchor.region;
   if (!region) throw new Error('Tattoo decals require a semantic region anchor');
-  const vertices = canonical.vertices.filter((v) => v.region === region);
+  // A coarse anchor such as `nose` must still resolve on the HD mesh, whose
+  // regions are granular (`nose_tip`, `nose_bridge`, ...).
+  const vertices = canonical.vertices.filter((v) => regionMatches(v.region, region));
   if (vertices.length === 0) throw new Error(`Unknown tattoo region: ${region}`);
 
   const center = attachment.anchor.localPosition

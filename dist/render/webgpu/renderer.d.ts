@@ -37,7 +37,24 @@ export interface RenderPart {
  */
 /** Vertical half-FOV tangent of `buildCameraMatrices` (fov = PI/3). */
 export declare const CAMERA_TAN_HALF_FOV: number;
-export declare function buildCameraMatrices(width: number, height: number, angleY?: number, angleX?: number): CameraMatrices;
+/** Depth attachment format of the human render pass. */
+export declare const DEPTH_FORMAT: GPUTextureFormat;
+/** Framing of the default camera: head-and-shoulders, kiosk style. */
+export declare const CAMERA_TARGET_Y = 1.9;
+export declare const CAMERA_DISTANCE = 0.85;
+/** Adjustable camera framing. */
+export interface CameraFraming {
+    /** Yaw around the vertical axis, radians. */
+    angleY: number;
+    /** Pitch, radians. */
+    angleX: number;
+    /** Height the camera orbits and looks at, metres. */
+    targetY: number;
+    /** Distance from the framing target, metres. */
+    distance: number;
+}
+export declare const DEFAULT_CAMERA_FRAMING: CameraFraming;
+export declare function buildCameraMatrices(width: number, height: number, angleY?: number, angleX?: number, targetY?: number, distance?: number): CameraMatrices;
 /**
  * WebGPU human renderer. Draws the GPU-resident, GPU-deformed character as a
  * set of parts (skin + eyes + teeth + tongue + cavity), each with its own
@@ -106,6 +123,15 @@ export declare class WebGPURenderer {
     setSharedCurvatureThickness(buffer: GPUBuffer): void;
     /** Lazily created zero buffer used when no bake has been attached. */
     private curvatureThicknessOrFallback;
+    /** Depth attachment, recreated when the target size changes. */
+    private depthTexture?;
+    private depthSize;
+    private depthView;
+    /**
+     * Framing of the camera. Hosts (the kiosk, the demo) adjust this to move
+     * between a head-and-shoulders portrait and a full-body view.
+     */
+    camera: CameraFraming;
     uploadCamera(width: number, height: number): void;
     /**
      * Draw all parts using `deformedBuffer` (positions) and `normalsBuffer`

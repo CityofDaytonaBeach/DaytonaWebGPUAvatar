@@ -23,7 +23,7 @@ export declare const PHOTOREAL_CONSTANTS: {
     /** Back-face transmission strength for thin tissue (ears, nostrils, lids). */
     readonly transmissionStrength: 0.45;
     /** Scene exposure applied before tone mapping. */
-    readonly exposure: 1.15;
+    readonly exposure: 0.42;
     /**
      * Legacy constant ambient. Retained as the fallback for the `'basic'` shading
      * model and for surfaces with no probe; the photoreal path uses the SH
@@ -31,9 +31,9 @@ export declare const PHOTOREAL_CONSTANTS: {
      */
     readonly ambient: 0.22;
     /** Diffuse gain applied to the SH probe irradiance. */
-    readonly iblDiffuseScale: 0.85;
+    readonly iblDiffuseScale: 0.35;
     /** Specular gain applied to the split-sum probe term. */
-    readonly iblSpecularScale: 0.7;
+    readonly iblSpecularScale: 0.35;
     /** Deterministic sphere samples used to bake the probe's 9 SH coefficients. */
     readonly iblProjectionSamples: 2048;
     /** Baked curvature clamp (1/m): flattest surface the shader will trust. */
@@ -51,11 +51,11 @@ export declare const PHOTOREAL_CONSTANTS: {
     /** Depth-difference falloff for the SSS blur, 1/metres (stops bleeding across silhouettes). */
     readonly sssDepthFalloff: 260;
     /** Pore layer frequency in UV space. */
-    readonly poreFrequency: 220;
+    readonly poreFrequency: 60;
     /** Micro-texture (sub-pore) frequency in UV space. */
-    readonly microFrequency: 900;
+    readonly microFrequency: 140;
     /** Maximum tangent-space slope contributed by micro detail. */
-    readonly microSlopeMax: 0.45;
+    readonly microSlopeMax: 0.2;
     /** Iris radius where the limbal ring begins (fraction of iris radius). */
     readonly limbusStart: 0.78;
     /** Corneal dome depth used for iris parallax refraction, in metres. */

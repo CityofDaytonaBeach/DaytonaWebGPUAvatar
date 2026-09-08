@@ -32,7 +32,8 @@ struct VSOut {
   @location(0) world_normal : vec3f,
   @location(1) uv : vec2f,
   @location(2) tangent_perturb : vec2f,
-  @location(3) part_flags : u32,
+  // Integral vertex outputs must be flat-interpolated (WGSL requirement).
+  @location(3) @interpolate(flat) part_flags : u32,
 };
 
 @group(0) @binding(0) var<uniform> params : HumanParams;
@@ -151,7 +152,18 @@ fn fs_main(in : VSOut) -> @location(0) vec4f {
  */
 /** Vertical half-FOV tangent of `buildCameraMatrices` (fov = PI/3). */
 export const CAMERA_TAN_HALF_FOV = Math.tan(Math.PI / 6);
-export function buildCameraMatrices(width, height, angleY = 0.5, angleX = -0.15) {
+/** Depth attachment format of the human render pass. */
+export const DEPTH_FORMAT = 'depth24plus';
+/** Framing of the default camera: head-and-shoulders, kiosk style. */
+export const CAMERA_TARGET_Y = 1.9;
+export const CAMERA_DISTANCE = 0.85;
+export const DEFAULT_CAMERA_FRAMING = {
+    angleY: 0.35,
+    angleX: -0.05,
+    targetY: CAMERA_TARGET_Y,
+    distance: CAMERA_DISTANCE,
+};
+export function buildCameraMatrices(width, height, angleY = 0.35, angleX = -0.05, targetY = CAMERA_TARGET_Y, distance = CAMERA_DISTANCE) {
     const aspect = width / height;
     const fov = Math.PI / 3;
     const near = 0.1;
@@ -171,12 +183,26 @@ export function buildCameraMatrices(width, height, angleY = 0.5, angleX = -0.15)
     view[5] = 1;
     view[8] = sy;
     view[10] = cy;
+    // Homogeneous row must be 1; without it the composed matrix pushes every
+    // vertex out of the clip volume and nothing is drawn.
+    view[15] = 1;
     const translate = new Float32Array(16);
     translate[0] = 1;
     translate[5] = 1;
     translate[10] = 1;
-    translate[14] = -4.2;
-    const vt = multiplyMat4(view, translate);
+    translate[14] = -distance;
+    translate[15] = 1;
+    // Camera transform is translate-after-rotate (T * R): rotating the already
+    // translated point would swing the human sideways out of frame.
+    // Orbit around the framing target instead of the floor, so the head fills
+    // the frame rather than the feet.
+    const recenter = new Float32Array(16);
+    recenter[0] = 1;
+    recenter[5] = 1;
+    recenter[10] = 1;
+    recenter[13] = -targetY;
+    recenter[15] = 1;
+    const vt = multiplyMat4(multiplyMat4(translate, view), recenter);
     const tilt = new Float32Array(16);
     tilt[0] = 1;
     tilt[10] = cx;
@@ -320,6 +346,13 @@ export class WebGPURenderer {
                 })),
             },
             primitive: { topology: 'triangle-list', cullMode: 'back' },
+            // Without a depth buffer the parts (and the far side of the body) paint
+            // over each other in index order, which reads as a flat silhouette.
+            depthStencil: {
+                format: DEPTH_FORMAT,
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+            },
         });
         this.cameraBuffer = this.device.createBuffer({
             size: 112, // mat4 (64) + mat3 (48)
@@ -405,8 +438,28 @@ export class WebGPURenderer {
         }
         return this.curvatureThicknessFallback;
     }
+    /** Depth attachment, recreated when the target size changes. */
+    depthTexture;
+    depthSize = { width: 0, height: 0 };
+    depthView(width, height) {
+        if (!this.depthTexture || this.depthSize.width !== width || this.depthSize.height !== height) {
+            this.depthTexture?.destroy();
+            this.depthTexture = this.device.createTexture({
+                size: { width, height },
+                format: DEPTH_FORMAT,
+                usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            });
+            this.depthSize = { width, height };
+        }
+        return this.depthTexture.createView();
+    }
+    /**
+     * Framing of the camera. Hosts (the kiosk, the demo) adjust this to move
+     * between a head-and-shoulders portrait and a full-body view.
+     */
+    camera = { ...DEFAULT_CAMERA_FRAMING };
     uploadCamera(width, height) {
-        const { mvp, normalMat } = buildCameraMatrices(width, height);
+        const { mvp, normalMat } = buildCameraMatrices(width, height, this.camera.angleY, this.camera.angleX, this.camera.targetY, this.camera.distance);
         const data = new Float32Array(28);
         data.set(mvp, 0);
         data.set(normalMat, 16);
@@ -432,7 +485,15 @@ export class WebGPURenderer {
      */
     drawToAttachments(encoder, colorAttachments, width, height, deformedBuffer, normalsBuffer) {
         this.uploadCamera(width, height);
-        const pass = encoder.beginRenderPass({ colorAttachments });
+        const pass = encoder.beginRenderPass({
+            colorAttachments,
+            depthStencilAttachment: {
+                view: this.depthView(width, height),
+                depthClearValue: 1,
+                depthLoadOp: 'clear',
+                depthStoreOp: 'store',
+            },
+        });
         pass.setPipeline(this.pipeline);
         pass.setVertexBuffer(0, deformedBuffer);
         pass.setVertexBuffer(1, normalsBuffer ?? this.normalBuffer);

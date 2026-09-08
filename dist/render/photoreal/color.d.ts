@@ -26,5 +26,5 @@ export declare function acesFilmic3(c: Vec3): Vec3;
 export declare function linearToSrgb(x: number): number;
 export declare function linearToSrgb3(c: Vec3): Vec3;
 /** Full display transform: exposure -> ACES -> sRGB. */
-export declare function toDisplay(linear: Vec3, exposure?: 1.15): Vec3;
+export declare function toDisplay(linear: Vec3, exposure?: 0.42): Vec3;
 //# sourceMappingURL=color.d.ts.map

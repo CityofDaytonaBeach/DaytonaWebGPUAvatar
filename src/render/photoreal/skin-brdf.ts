@@ -173,9 +173,12 @@ export function shadeSkinLight(surface: SkinSurface, light: LightSample): Vec3 {
   );
   // Energy conservation: whatever reflects specularly cannot also diffuse.
   const kD: Vec3 = [1 - F[0], 1 - F[1], 1 - F[2]];
-  const diffuse = vmul(vmul(surface.albedo, diffuseResponse), kD);
+  // Lambert normalization: diffuse (and the transmitted lobe, which is also a
+  // diffuse response) must be divided by PI, otherwise the surface is ~PI times
+  // too bright and every skin tone tone-maps to white.
+  const diffuse = vscale(vmul(vmul(surface.albedo, diffuseResponse), kD), 1 / PI);
 
-  const trans = transmission(n, l, v, surface.thickness, surface.scatterColor);
+  const trans = vscale(transmission(n, l, v, surface.thickness, surface.scatterColor), 1 / PI);
 
   const radiance = vscale(light.color, light.intensity);
   return vmul(vadd(vadd(diffuse, spec), trans), radiance);

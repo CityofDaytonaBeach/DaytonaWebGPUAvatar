@@ -1,3 +1,4 @@
+import { DEFAULT_CAMERA_FRAMING } from './render/webgpu/renderer.js';
 import { createDefaultRegistry } from './core/schema/descriptors.js';
 import { HumanDefinition } from './core/schema/human-definition.js';
 import { createEvent, applyEventToDefinition, } from './core/events/character-event.js';
@@ -9,6 +10,7 @@ import { affectedSystemsForChange, } from './compiler/dependency/affected-system
 import { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
 import { IdentitySolver } from './identity/solver/identity-solver.js';
 import { CanonicalHuman } from './geometry/canonical/canonical-human.js';
+import { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { MorphDriver } from './geometry/morph/morph-driver.js';
 import { MorphKernel } from './gpu/kernels/morph-kernel.js';
@@ -130,6 +132,13 @@ export class Human {
                 format: opts.format,
                 paramByteSize: this.registry.sizeBytes,
                 skeleton,
+                definition: this.definition,
+                ...(opts.shading ? { shading: opts.shading } : {}),
+                ...(opts.skinPreset !== undefined ? { skinPreset: opts.skinPreset } : {}),
+                ...(opts.screenSpaceSss !== undefined ? { screenSpaceSss: opts.screenSpaceSss } : {}),
+                ...(opts.bakeCurvatureThickness !== undefined
+                    ? { bakeCurvatureThickness: opts.bakeCurvatureThickness }
+                    : {}),
             });
         }
     }
@@ -214,8 +223,13 @@ export class Human {
     /** Create a human asynchronously (GPU device optional). */
     static async create(opts = {}) {
         let canonical = opts.canonical;
-        if (!canonical && opts.canonicalProvider) {
-            const asset = await opts.canonicalProvider.load();
+        // Default to the procedural HD full-body human: the block human is a debug
+        // topology and renders as a crude placeholder, which is never what a
+        // caller asking for a human wants. Pass `canonicalProvider:
+        // new DebugBlockHumanProvider()` (or `canonical`) to opt out.
+        const provider = opts.canonicalProvider ?? new HDCanonicalHumanProvider();
+        if (!canonical) {
+            const asset = await provider.load();
             canonical = CanonicalHuman.fromTopology(asset.topology, DEFAULT_BONE_NAMES);
         }
         return new Human({ ...opts, canonical });
@@ -560,6 +574,20 @@ export class Human {
      * deformed mesh. Returns the finished command buffer (submit it). Returns
      * null when this Human has no GPU pipeline.
      */
+    /**
+     * Adjust camera framing (yaw/pitch/height/distance). Partial updates keep the
+     * current value for anything not given. No-op without a GPU pipeline.
+     */
+    setCamera(framing) {
+        const renderer = this.gpu?.renderer;
+        if (!renderer)
+            return;
+        renderer.camera = { ...renderer.camera, ...framing };
+    }
+    /** Current camera framing, or the default when there is no GPU pipeline. */
+    get cameraFraming() {
+        return this.gpu?.renderer?.camera ?? { ...DEFAULT_CAMERA_FRAMING };
+    }
     encodeFrame(view, width, height) {
         if (!this.gpu || !this.device)
             return null;

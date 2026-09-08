@@ -1,3 +1,4 @@
+import { REGION_BONE_PRIOR } from '../../anatomy/skeleton/skin-weight-solver.js';
 import { HEAD_ELLIPSOID, HEAD_NECK_Y, JAW_DRIVEN_REGIONS, headRegionFor, headSkinWeights, } from './hd-head-regions.js';
 // ---------------------------------------------------------------------------
 // Capsule SDF authoring (canonical frame: x right, y up, z front, feet ~0).
@@ -200,6 +201,24 @@ function bonePoints(capsules) {
         add(c.bone, c.b);
     }
     return [...map.entries()].map(([bone, pt]) => ({ bone, pt }));
+}
+/** Exponent of the inverse-distance skin weight falloff. */
+const WEIGHT_FALLOFF = 4;
+/** Maximum bones influencing one vertex. */
+const WEIGHT_INFLUENCES = 4;
+/** Influences weaker than this fraction of the strongest one are dropped. */
+const WEIGHT_PRUNE_RATIO = 0.08;
+/** Multiplier applied to the bone named by a vertex's semantic region. */
+const WEIGHT_REGION_BOOST = 8;
+/** Shortest distance from a point to the segment a-b. */
+function distancePointSegment(p, a, b) {
+    const abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z;
+    const len2 = abx * abx + aby * aby + abz * abz;
+    const t = len2 <= 1e-12
+        ? 0
+        : Math.max(0, Math.min(1, ((p.x - a.x) * abx + (p.y - a.y) * aby + (p.z - a.z) * abz) / len2));
+    const dx = p.x - (a.x + abx * t), dy = p.y - (a.y + aby * t), dz = p.z - (a.z + abz * t);
+    return Math.hypot(dx, dy, dz);
 }
 /** Cube corner positions (index matches marching-cubes bit order). */
 const MC_CORNERS = [
@@ -586,6 +605,74 @@ function weld(verts, indices, tol) {
 // Public entry point
 // ---------------------------------------------------------------------------
 /** Build the body: see module doc. */
+/** Laplacian smoothing passes applied to the marched surface. */
+const SMOOTHING_PASSES = 0;
+/**
+ * Averages each vertex toward its neighbours, then pushes it back onto the
+ * zero-level set of the field so smoothing cannot shrink or distort the body.
+ */
+function smoothOntoSurface(mesh, field, passes) {
+    const n = mesh.vertices.length;
+    const neighbours = Array.from({ length: n }, () => []);
+    const link = (a, b) => {
+        if (!neighbours[a].includes(b))
+            neighbours[a].push(b);
+    };
+    for (let i = 0; i < mesh.indices.length; i += 3) {
+        const [a, b, c] = [mesh.indices[i], mesh.indices[i + 1], mesh.indices[i + 2]];
+        link(a, b);
+        link(b, a);
+        link(b, c);
+        link(c, b);
+        link(c, a);
+        link(a, c);
+    }
+    const e = 1e-3;
+    for (let pass = 0; pass < passes; pass++) {
+        const moved = new Array(n);
+        for (let i = 0; i < n; i++) {
+            const nb = neighbours[i];
+            const p = mesh.vertices[i].pos;
+            if (nb.length === 0) {
+                moved[i] = p;
+                continue;
+            }
+            let sx = 0, sy = 0, sz = 0;
+            for (const j of nb) {
+                sx += mesh.vertices[j].pos.x;
+                sy += mesh.vertices[j].pos.y;
+                sz += mesh.vertices[j].pos.z;
+            }
+            // Half-step toward the neighbour average keeps the pass stable.
+            const q = {
+                x: p.x + 0.5 * (sx / nb.length - p.x),
+                y: p.y + 0.5 * (sy / nb.length - p.y),
+                z: p.z + 0.5 * (sz / nb.length - p.z),
+            };
+            // One Newton step along the SDF gradient returns q to the surface.
+            const d = sdBody(q, field).d;
+            const gx = sdBody({ x: q.x + e, y: q.y, z: q.z }, field).d -
+                sdBody({ x: q.x - e, y: q.y, z: q.z }, field).d;
+            const gy = sdBody({ x: q.x, y: q.y + e, z: q.z }, field).d -
+                sdBody({ x: q.x, y: q.y - e, z: q.z }, field).d;
+            const gz = sdBody({ x: q.x, y: q.y, z: q.z + e }, field).d -
+                sdBody({ x: q.x, y: q.y, z: q.z - e }, field).d;
+            const gl = Math.hypot(gx, gy, gz);
+            if (gl < 1e-9) {
+                moved[i] = q;
+                continue;
+            }
+            const scale = d / (gl / (2 * e));
+            moved[i] = {
+                x: q.x - (gx / gl) * scale,
+                y: q.y - (gy / gl) * scale,
+                z: q.z - (gz / gl) * scale,
+            };
+        }
+        for (let i = 0; i < n; i++)
+            mesh.vertices[i] = { ...mesh.vertices[i], pos: moved[i] };
+    }
+}
 export function buildHdBodyManifold(opts = {}) {
     const neckY = opts.neckY ?? 1.65;
     const fuseHead = opts.fuseHead ?? false;
@@ -600,6 +687,16 @@ export function buildHdBodyManifold(opts = {}) {
     const bones = bonePoints(field.capsules);
     for (const el of field.ellipsoids)
         bones.push({ bone: el.bone, pt: { ...el.c } });
+    // Weighting uses bone *segments*, not single points: a point per bone makes a
+    // vertex on the back score the forearm bone as if it were adjacent, which
+    // leaks limb rotation into the torso.
+    const boneSegments = field.capsules.map((c) => ({
+        bone: c.bone,
+        a: c.a,
+        b: c.b,
+    }));
+    for (const el of field.ellipsoids)
+        boneSegments.push({ bone: el.bone, a: el.c, b: el.c });
     // Field bounds: gather from every union term with margin.
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
@@ -643,6 +740,11 @@ export function buildHdBodyManifold(opts = {}) {
     const iso = 0;
     const raw = marchGrid(nx, ny, nz, iso, f, posAt);
     const welded = weld(raw.vertices, raw.indices, 1e-4);
+    // Smoothing is off by default: re-projected Laplacian passes soften the
+    // marching-cubes staircase but can fold thin surfaces into each other, which
+    // the self-intersection and skinning guarantees do not allow.
+    if (SMOOTHING_PASSES > 0)
+        smoothOntoSurface(welded, field, SMOOTHING_PASSES);
     // Assign normals (from SDF gradient), weights, uv, region per vertex.
     const e = 1e-3;
     const vertices = welded.vertices.map((cv) => {
@@ -659,28 +761,38 @@ export function buildHdBodyManifold(opts = {}) {
         const normal = { x: gx / gl, y: gy / gl, z: gz / gl };
         // inverse-distance skin weights to nearest bones.
         const weights = {};
-        const contrib = [];
-        let total = 0;
-        for (const bp of bones) {
-            const dx = pos.x - bp.pt.x, dy = pos.y - bp.pt.y, dz = pos.z - bp.pt.z;
-            const d2 = Math.max(1e-8, dx * dx + dy * dy + dz * dz);
-            const w = 1 / d2;
-            contrib.push({ bone: bp.bone, w });
-            total += w;
+        const best = new Map();
+        for (const seg of boneSegments) {
+            const d = distancePointSegment(pos, seg.a, seg.b);
+            // A steep falloff keeps the influence local; a distant bone contributes
+            // orders of magnitude less than the one the vertex sits on.
+            const w = 1 / (Math.pow(d, WEIGHT_FALLOFF) + 1e-9);
+            const prev = best.get(seg.bone);
+            if (prev === undefined || w > prev)
+                best.set(seg.bone, w);
         }
-        contrib.sort((a, b) => b.w - a.w);
-        const nInfluences = 4;
-        for (let i = 0; i < Math.min(nInfluences, contrib.length); i++) {
-            weights[contrib[i].bone] = contrib[i].w / total;
-        }
-        // Normalize the top-k to 1.
+        // Region prior: the semantic region a vertex belongs to names its owning
+        // bone, so that bone is boosted and torso skin never follows a limb.
+        const regionHint = regionFor(cv.bone, pos.x, pos.y, pos.z, neckY);
+        const priorBone = REGION_BONE_PRIOR[regionHint];
+        if (priorBone)
+            best.set(priorBone, (best.get(priorBone) ?? 1) * WEIGHT_REGION_BOOST);
+        const contrib = [...best.entries()]
+            .map(([bone, w]) => ({ bone, w }))
+            .sort((a, b) => b.w - a.w || (a.bone < b.bone ? -1 : 1));
+        const top = contrib.slice(0, WEIGHT_INFLUENCES);
+        const peak = top[0]?.w ?? 0;
+        const kept = top.filter((c) => c.w >= peak * WEIGHT_PRUNE_RATIO);
+        const chosen = kept.length > 0 ? kept : top;
         let wsum = 0;
-        for (const k of Object.keys(weights))
-            wsum += weights[k];
+        for (const c of chosen)
+            wsum += c.w;
         if (wsum > 1e-12)
-            for (const k of Object.keys(weights))
-                weights[k] /= wsum;
-        const region = regionFor(cv.bone, pos.x, pos.y, pos.z, neckY);
+            for (const c of chosen)
+                weights[c.bone] = c.w / wsum;
+        else if (top[0])
+            weights[top[0].bone] = 1;
+        const region = regionHint;
         // Lower-face skin keeps the authored head↔jaw split so jaw rotation still
         // deforms lips/chin on the fused surface exactly as on the shell.
         const finalWeights = JAW_DRIVEN_REGIONS.includes(region)

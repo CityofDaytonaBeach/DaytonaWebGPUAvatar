@@ -1,4 +1,6 @@
 ﻿import { PropertyRegistry } from './core/schema/registry.js';
+import type { CameraFraming } from './render/webgpu/renderer.js';
+import { DEFAULT_CAMERA_FRAMING } from './render/webgpu/renderer.js';
 import { createDefaultRegistry } from './core/schema/descriptors.js';
 import { HumanDefinition } from './core/schema/human-definition.js';
 import {
@@ -19,6 +21,7 @@ import { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
 import { IdentitySolver } from './identity/solver/identity-solver.js';
 import { CanonicalHuman } from './geometry/canonical/canonical-human.js';
 import type { CanonicalHumanProvider } from './geometry/canonical/canonical-provider.js';
+import { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { MorphDriver } from './geometry/morph/morph-driver.js';
 import type { MorphCorrectiveWeight } from './geometry/morph/morph-driver.js';
@@ -35,6 +38,7 @@ import { SpeechSolver, simpleTTS } from './animation/speech/speech-solver.js';
 import { SemanticLOD, PerceptualLOD } from './lod/index.js';
 import { DeterministicPromptInterpreter, Intent, intentToEvent } from './ai/prompt/interpreter.js';
 import { WebGpuHumanPipeline } from './render/webgpu/pipeline.js';
+import type { WebGpuHumanPipelineOptions } from './render/webgpu/pipeline.js';
 import {
   resolveAnatomy,
   AnatomyDimensions,
@@ -113,6 +117,14 @@ export interface HumanCreateOptions {
   canonicalProvider?: CanonicalHumanProvider;
   /** Internal: the resolved canonical mesh (built from the provider). */
   canonical?: CanonicalHuman;
+  /** Shading model of the GPU pipeline: 'photoreal' (default) or 'basic'. */
+  shading?: WebGpuHumanPipelineOptions['shading'];
+  /** Skin preset driving photoreal materials. */
+  skinPreset?: WebGpuHumanPipelineOptions['skinPreset'];
+  /** Run the live screen-space subsurface-scattering graph (photoreal only). */
+  screenSpaceSss?: boolean;
+  /** Bake per-vertex curvature/thickness for photoreal skin (default true). */
+  bakeCurvatureThickness?: boolean;
 }
 
 export interface HumanModifyResult {
@@ -223,6 +235,13 @@ export class Human {
         format: opts.format,
         paramByteSize: this.registry.sizeBytes,
         skeleton,
+        definition: this.definition,
+        ...(opts.shading ? { shading: opts.shading } : {}),
+        ...(opts.skinPreset !== undefined ? { skinPreset: opts.skinPreset } : {}),
+        ...(opts.screenSpaceSss !== undefined ? { screenSpaceSss: opts.screenSpaceSss } : {}),
+        ...(opts.bakeCurvatureThickness !== undefined
+          ? { bakeCurvatureThickness: opts.bakeCurvatureThickness }
+          : {}),
       });
     }
   }
@@ -314,8 +333,13 @@ export class Human {
   /** Create a human asynchronously (GPU device optional). */
   static async create(opts: HumanCreateOptions = {}): Promise<Human> {
     let canonical: CanonicalHuman | undefined = opts.canonical;
-    if (!canonical && opts.canonicalProvider) {
-      const asset = await opts.canonicalProvider.load();
+    // Default to the procedural HD full-body human: the block human is a debug
+    // topology and renders as a crude placeholder, which is never what a
+    // caller asking for a human wants. Pass `canonicalProvider:
+    // new DebugBlockHumanProvider()` (or `canonical`) to opt out.
+    const provider = opts.canonicalProvider ?? new HDCanonicalHumanProvider();
+    if (!canonical) {
+      const asset = await provider.load();
       canonical = CanonicalHuman.fromTopology(asset.topology, DEFAULT_BONE_NAMES);
     }
     return new Human({ ...opts, canonical });
@@ -720,6 +744,21 @@ export class Human {
    * deformed mesh. Returns the finished command buffer (submit it). Returns
    * null when this Human has no GPU pipeline.
    */
+  /**
+   * Adjust camera framing (yaw/pitch/height/distance). Partial updates keep the
+   * current value for anything not given. No-op without a GPU pipeline.
+   */
+  setCamera(framing: Partial<CameraFraming>): void {
+    const renderer = this.gpu?.renderer;
+    if (!renderer) return;
+    renderer.camera = { ...renderer.camera, ...framing };
+  }
+
+  /** Current camera framing, or the default when there is no GPU pipeline. */
+  get cameraFraming(): CameraFraming {
+    return this.gpu?.renderer?.camera ?? { ...DEFAULT_CAMERA_FRAMING };
+  }
+
   encodeFrame(view: GPUTextureView, width: number, height: number): GPUCommandBuffer | null {
     if (!this.gpu || !this.device) return null;
     this.gpu.upload(this.definition);

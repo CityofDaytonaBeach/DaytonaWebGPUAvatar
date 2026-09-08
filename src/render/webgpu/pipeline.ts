@@ -85,7 +85,8 @@ export class WebGpuHumanPipeline {
   readonly state: CharacterGpuState;
   private readonly deform: GpuMorphDeform;
   private readonly skin: SkinningKernel;
-  private readonly renderer: WebGPURenderer;
+  /** Renderer, exposed so hosts can adjust camera framing. */
+  readonly renderer: WebGPURenderer;
   private readonly packed: PackedMorphBuffers;
   private readonly skeleton: BoneDef[];
   private skinMaterial!: ReturnType<typeof exportSkinMaterial>;

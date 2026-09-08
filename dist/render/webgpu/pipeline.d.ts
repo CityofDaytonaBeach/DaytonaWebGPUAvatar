@@ -1,3 +1,4 @@
+import { WebGPURenderer } from './renderer.js';
 import { CharacterGpuState } from '../../gpu/buffers/character-gpu-state.js';
 import { BoneDef } from '../../anatomy/skeleton/skeleton.js';
 import { CanonicalHuman } from '../../geometry/canonical/canonical-human.js';
@@ -65,7 +66,8 @@ export declare class WebGpuHumanPipeline {
     readonly state: CharacterGpuState;
     private readonly deform;
     private readonly skin;
-    private readonly renderer;
+    /** Renderer, exposed so hosts can adjust camera framing. */
+    readonly renderer: WebGPURenderer;
     private readonly packed;
     private readonly skeleton;
     private skinMaterial;

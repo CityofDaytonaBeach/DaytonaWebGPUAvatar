@@ -1,3 +1,4 @@
+import { regionMatches } from '../geometry/canonical/region-groups.js';
 import { buildBoneMatrices, combinedSkinMatrices } from '../anatomy/skeleton/bone-matrix.js';
 import { vec3 } from '../core/math/vec.js';
 export class AttachmentSystem {
@@ -68,7 +69,7 @@ function cloneAttachment(attachment) {
 function regionCentroid(canonical, region, morphDelta) {
     let x = 0, y = 0, z = 0, count = 0;
     for (const v of canonical.vertices) {
-        if (v.region !== region)
+        if (!regionMatches(v.region, region))
             continue;
         const i = v.id * 3;
         x += v.position.x + (morphDelta?.[i] ?? 0);
@@ -98,7 +99,7 @@ function transformByDominantRegionBone(p, canonical, region, skeleton, poses) {
 function dominantRegionBone(canonical, region) {
     const totals = new Map();
     for (const v of canonical.vertices) {
-        if (v.region !== region)
+        if (!regionMatches(v.region, region))
             continue;
         for (const [bone, weight] of Object.entries(v.weights)) {
             totals.set(bone, (totals.get(bone) ?? 0) + weight);

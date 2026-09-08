@@ -63,6 +63,8 @@ export type { CanonicalAdapterResult, CanonicalAssetAdapter, } from './geometry/
 export { DebugBlockHumanProvider, CanonicalHumanProviderRegistry, topologyFromHuman, DEFAULT_PROVIDER_BONE_NAMES, } from './geometry/canonical/canonical-provider.js';
 export type { CanonicalHumanProvider, CanonicalHumanAsset, CanonicalValidationResult, } from './geometry/canonical/canonical-provider.js';
 export { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
+export { regionGroup, regionMatches, regionsMatching } from './geometry/canonical/region-groups.js';
+export type { RegionGroup } from './geometry/canonical/region-groups.js';
 export type { HdHeadOptions } from './geometry/canonical/hd-head-provider.js';
 export { buildHdBodyManifold } from './geometry/canonical/hd-body-manifold.js';
 export type { HdBodyManifoldOptions } from './geometry/canonical/hd-body-manifold.js';

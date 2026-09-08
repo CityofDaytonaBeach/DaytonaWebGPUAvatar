@@ -115,9 +115,13 @@ describe('Provider-driven canonical ingestion (P2/P3 arch seam)', () => {
     expect(human.canonicalRef.vertexCount).toBe(asset.topology.vertices.length);
   });
 
-  it('Human without a provider still uses the default block human', async () => {
+  it('Human without a provider uses the HD canonical human, not the debug block', async () => {
     const human = await Human.create();
-    const asset = await new DebugBlockHumanProvider().load();
-    expect(human.canonicalRef.vertexCount).toBe(asset.topology.vertices.length);
+    const block = await new DebugBlockHumanProvider().load();
+    // The default is the real HD human (a renderable body); the block human
+    // stays available explicitly for tests and debugging.
+    expect(human.canonicalRef.vertexCount).toBeGreaterThan(block.topology.vertices.length);
+    const debug = await Human.create({ canonicalProvider: new DebugBlockHumanProvider() });
+    expect(debug.canonicalRef.vertexCount).toBe(block.topology.vertices.length);
   });
 });

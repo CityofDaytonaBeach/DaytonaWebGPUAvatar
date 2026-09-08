@@ -133,8 +133,7 @@ function wgslSources(): Array<[string, string]> {
 /** Declared names in a WGSL source: let/var/const/fn/struct/parameters. */
 function declaredNames(source: string): string[] {
   const names: string[] = [];
-  const decl =
-    /\b(?:let|var|const|fn|struct|alias)\b(?:<[^>]*>)?\s+([A-Za-z_][A-Za-z0-9_]*)/g;
+  const decl = /\b(?:let|var|const|fn|struct|alias)\b(?:<[^>]*>)?\s+([A-Za-z_][A-Za-z0-9_]*)/g;
   for (const m of source.matchAll(decl)) names.push(m[1]!);
   // Function parameters and struct members: `name : type`.
   for (const m of source.matchAll(/([A-Za-z_][A-Za-z0-9_]*)\s*:\s*[A-Za-z_]/g)) {

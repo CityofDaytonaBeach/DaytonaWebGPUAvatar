@@ -1,4 +1,5 @@
 import { PropertyRegistry } from './core/schema/registry.js';
+import type { CameraFraming } from './render/webgpu/renderer.js';
 import { HumanDefinition } from './core/schema/human-definition.js';
 import { CharacterEvent, EventSource } from './core/events/character-event.js';
 import { Snapshot } from './core/timeline/character-timeline.js';
@@ -13,6 +14,7 @@ import { SemanticExpression } from './animation/facial/facial-expression.js';
 import { SemanticLOD } from './lod/index.js';
 import { Intent } from './ai/prompt/interpreter.js';
 import { WebGpuHumanPipeline } from './render/webgpu/pipeline.js';
+import type { WebGpuHumanPipelineOptions } from './render/webgpu/pipeline.js';
 import { AnatomyDimensions } from './anatomy/parametric/parametric-anatomy.js';
 import { BoneDef } from './anatomy/skeleton/skeleton.js';
 import { AnimationChannel, BonePose } from './animation/skeleton/skeletal-animation.js';
@@ -41,6 +43,14 @@ export interface HumanCreateOptions {
     canonicalProvider?: CanonicalHumanProvider;
     /** Internal: the resolved canonical mesh (built from the provider). */
     canonical?: CanonicalHuman;
+    /** Shading model of the GPU pipeline: 'photoreal' (default) or 'basic'. */
+    shading?: WebGpuHumanPipelineOptions['shading'];
+    /** Skin preset driving photoreal materials. */
+    skinPreset?: WebGpuHumanPipelineOptions['skinPreset'];
+    /** Run the live screen-space subsurface-scattering graph (photoreal only). */
+    screenSpaceSss?: boolean;
+    /** Bake per-vertex curvature/thickness for photoreal skin (default true). */
+    bakeCurvatureThickness?: boolean;
 }
 export interface HumanModifyResult {
     cancelled: boolean;
@@ -251,6 +261,13 @@ export declare class Human {
      * deformed mesh. Returns the finished command buffer (submit it). Returns
      * null when this Human has no GPU pipeline.
      */
+    /**
+     * Adjust camera framing (yaw/pitch/height/distance). Partial updates keep the
+     * current value for anything not given. No-op without a GPU pipeline.
+     */
+    setCamera(framing: Partial<CameraFraming>): void;
+    /** Current camera framing, or the default when there is no GPU pipeline. */
+    get cameraFraming(): CameraFraming;
     encodeFrame(view: GPUTextureView, width: number, height: number): GPUCommandBuffer | null;
     /**
      * Convenience for canvas hosts: encode + submit one frame to the device

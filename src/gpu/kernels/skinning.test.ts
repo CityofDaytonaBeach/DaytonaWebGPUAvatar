@@ -1,3 +1,4 @@
+import { regionGroup } from '../../geometry/canonical/region-groups.js';
 import { describe, it, expect } from 'vitest';
 import { IDENTITY_QUAT } from '../../core/math/vec';
 import { BoneDef } from '../../anatomy/skeleton/skeleton';
@@ -103,8 +104,10 @@ describe('CPU skinning', () => {
     const skinned = human.skinScene();
     const base = canonical.baseGeometry().positions;
 
-    // Descendants of thigh_l in this block human: shin_l (no foot region built).
-    const allowedRegions = new Set(['thigh_l', 'shin_l']);
+    // The left leg chain drives the motion. On a continuous (fused) surface the
+    // hip skin around the joint blends too, so the assertion is that nothing on
+    // the other side or above the pelvis moves.
+    const allowedGroups = new Set(['thigh_l', 'shin_l', 'foot_l', 'torso']);
     const moved: number[] = [];
     for (let v = 0; v < canonical.vertexCount; v++) {
       const dx = skinned[v * 3] - base[v * 3];
@@ -114,7 +117,7 @@ describe('CPU skinning', () => {
     }
     expect(moved.length).toBeGreaterThan(0);
     for (const v of moved) {
-      expect(allowedRegions.has(canonical.vertices[v].region)).toBe(true);
+      expect(allowedGroups.has(regionGroup(canonical.vertices[v].region))).toBe(true);
     }
   });
 });

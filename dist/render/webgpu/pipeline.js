@@ -33,6 +33,7 @@ export class WebGpuHumanPipeline {
     state;
     deform;
     skin;
+    /** Renderer, exposed so hosts can adjust camera framing. */
     renderer;
     packed;
     skeleton;

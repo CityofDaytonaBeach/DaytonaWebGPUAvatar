@@ -191,6 +191,23 @@ fn depthRejection(centerDepth : f32, sampleDepth : f32) -> f32 {
   return exp(-abs(sampleDepth - centerDepth) * SSS_DEPTH_FALLOFF);
 }
 
+// The depth target is r32float and the mask r8unorm — neither is filterable
+// with a filtering sampler, so both are read as exact texels instead. Point
+// reads are also what depth rejection and the skin mask want.
+fn loadDepth(uv : vec2f) -> f32 {
+  let dims = vec2f(textureDimensions(depthTex));
+  let c = vec2i(clamp(uv * dims, vec2f(0.0), dims - vec2f(1.0)));
+  return textureLoad(depthTex, c, 0).r;
+}
+
+fn loadMask(uv : vec2f) -> f32 {
+  let dims = vec2f(textureDimensions(maskTex));
+  let c = vec2i(clamp(uv * dims, vec2f(0.0), dims - vec2f(1.0)));
+  return textureLoad(maskTex, c, 0).r;
+}
+
+
+
 struct FsIn {
   @builtin(position) clip_position : vec4f,
   @location(0) uv : vec2f,
@@ -209,9 +226,9 @@ fn vs_main(@builtin(vertex_index) vi : u32) -> FsIn {
 
 @fragment
 fn fs_main(in : FsIn) -> @location(0) vec4f {
-  let center = textureSample(litTex, texSampler, in.uv);
-  let centerDepth = textureSample(depthTex, texSampler, in.uv).r;
-  let skin = textureSample(maskTex, texSampler, in.uv).r;
+  let center = textureSampleLevel(litTex, texSampler, in.uv, 0.0);
+  let centerDepth = loadDepth(in.uv);
+  let skin = loadMask(in.uv);
   if (skin <= 0.0) {
     let out = center.rgb;
     return vec4f(${encode}, center.a);
@@ -222,9 +239,9 @@ fn fs_main(in : FsIn) -> @location(0) vec4f {
   for (var i : u32 = 0u; i < SSS_TAPS; i = i + 1u) {
     let k = SSS_KERNEL[i];
     let uv = in.uv + step * k.w;
-    let sampleColor = textureSample(litTex, texSampler, uv).rgb;
-    let sampleDepth = textureSample(depthTex, texSampler, uv).r;
-    let sampleMask = textureSample(maskTex, texSampler, uv).r;
+    let sampleColor = textureSampleLevel(litTex, texSampler, uv, 0.0).rgb;
+    let sampleDepth = loadDepth(uv);
+    let sampleMask = loadMask(uv);
     let w = depthRejection(centerDepth, sampleDepth) * clamp(sampleMask, 0.0, 1.0);
     let src = mix(center.rgb, sampleColor, w);
     accum = accum + src * k.xyz;

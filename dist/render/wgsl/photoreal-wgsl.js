@@ -38,6 +38,7 @@ ${HUMAN_PARAM_STRUCT}
 
 // ─── Generated photoreal constants (source: photoreal/constants.ts) ───────────
 const SPEC_LOBE_MIX        : f32 = ${f(C.specLobeMix)};
+const INV_PI               : f32 = 0.31830989;
 const LOBE_ROUGHNESS_SCALE : f32 = ${f(C.lobeRoughnessScale)};
 const MIN_ROUGHNESS        : f32 = ${f(C.minRoughness)};
 const SSS_WRAP             : f32 = ${f(C.sssWrap)};
@@ -132,7 +133,8 @@ struct VSOut {
   @location(0) world_normal : vec3f,
   @location(1) uv : vec2f,
   @location(2) tangent_perturb : vec2f,
-  @location(3) part_flags : u32,
+  // Integral vertex outputs must be flat-interpolated (WGSL requirement).
+  @location(3) @interpolate(flat) part_flags : u32,
   @location(4) curvature_thickness : vec2f,
 };
 
@@ -186,20 +188,21 @@ struct MicroDetail {
   specularOcclusion : f32,
 };
 
-fn microDetail(uv : vec2f, poreScale : f32, age : f32, oiliness : f32) -> MicroDetail {
+fn microDetail(uv : vec2f, poreScale : f32, age : f32, oiliness : f32, fade : f32) -> MicroDetail {
   let scale = max(poreScale, 0.05);
   let eps = 1e-3;
   let h0 = microHeight(uv.x, uv.y, scale, age);
   let hx = microHeight(uv.x + eps, uv.y, scale, age);
   let hy = microHeight(uv.x, uv.y + eps, scale, age);
-  let amplitude = MICRO_SLOPE_MAX * (1.0 - 0.6 * oiliness) * (0.7 + 0.5 * age);
+  let amplitude = MICRO_SLOPE_MAX * (1.0 - 0.6 * oiliness) * (0.7 + 0.5 * age)
+                * clamp(fade, 0.0, 1.0);
   let gx = (hx - h0) / eps;
   let gy = (hy - h0) / eps;
   let norm = 1.0 / (1.0 + abs(gx) + abs(gy));
   var out : MicroDetail;
   out.slope = clamp(vec2f(-gx * norm * amplitude, -gy * norm * amplitude),
                     vec2f(-MICRO_SLOPE_MAX), vec2f(MICRO_SLOPE_MAX));
-  let depth = clamp(0.55 - h0, 0.0, 1.0) * (0.6 + 0.8 * age);
+  let depth = clamp(0.55 - h0, 0.0, 1.0) * (0.6 + 0.8 * age) * clamp(fade, 0.0, 1.0);
   out.cavity = clamp(1.0 - depth, 0.0, 1.0);
   out.specularOcclusion = clamp(1.0 - depth * 0.8, 0.0, 1.0);
   return out;
@@ -284,8 +287,9 @@ fn shadeLight(n : vec3f, v : vec3f, albedo : vec3f, roughness : f32, specular : 
 
   let response = preIntegratedScatter(ndl, curvature, scatterColor, scatterIntensity);
   let kD = vec3f(1.0) - fr;
-  let diffuse = albedo * response * kD;
-  let trans = transmissionTerm(n, l, v, thickness, scatterColor);
+  // Lambert normalization (see skin-brdf.ts): both diffuse lobes carry 1/PI.
+  let diffuse = albedo * response * kD * INV_PI;
+  let trans = transmissionTerm(n, l, v, thickness, scatterColor) * INV_PI;
   return (diffuse + spec + trans) * (lightColor * lightIntensity);
 }
 
@@ -430,11 +434,21 @@ fn fs_main(in : VSOut) -> @location(0) vec4f {
   var curvature = select(SKIN_CURVATURE, clamp(baked.x, CURVATURE_MIN, CURVATURE_MAX), baked.x > 0.0);
   var thickness = select(SKIN_THICKNESS, clamp(baked.y, THICKNESS_MIN, THICKNESS_MAX), baked.y > 0.0);
 
+  // Nyquist fade for the pore field. Screen-space derivatives must be taken in
+  // uniform control flow, so this is computed before the per-part branches: on
+  // stretched or low-density UVs a pore field at PORE_FREQUENCY aliases into
+  // visible streaks, and the detail is faded out where a pixel covers a
+  // quarter-period or more.
+  let duv = max(abs(dpdx(in.uv)), abs(dpdy(in.uv)));
+  // The highest-frequency band (MICRO_FREQUENCY) sets the aliasing limit.
+  let microPeriod = max(max(duv.x, duv.y) * MICRO_FREQUENCY, 1e-6);
+  let detailFade = clamp(1.0 - (microPeriod - 0.25) / 0.5, 0.0, 1.0);
+
   // Skin: micro-detail normal + cavity/specular occlusion, aged by params.
   if ((flags & FLAG_SKIN) != 0u) {
     let age = clamp(params.skin_age / 100.0, 0.0, 1.0);
     let oiliness = clamp(params.skin_wetness, 0.0, 1.0);
-    let md = microDetail(in.uv, 1.0, age, oiliness);
+    let md = microDetail(in.uv, 1.0, age, oiliness, detailFade);
     var slope = md.slope;
     if ((flags & FLAG_NORMAL_PERTURB) != 0u) {
       slope = clamp(slope + in.tangent_perturb, vec2f(-MICRO_SLOPE_MAX), vec2f(MICRO_SLOPE_MAX));
@@ -532,7 +546,10 @@ fn toDisplay(c : vec3f) -> vec3f {
   return vec3f(linearToSrgb(tm.r), linearToSrgb(tm.g), linearToSrgb(tm.b));
 }
 `;
-const FS_ENTRY_SIGNATURE = 'fn fs_main(in : VSOut) -> @location(0) vec4f {';
+// The entry attribute must travel with the signature: replacing only the
+// `fn fs_main(...)` line would leave `@fragment` sitting in front of the
+// injected `struct GBuffer`, which Dawn rejects ("unexpected attributes").
+const FS_ENTRY_SIGNATURE = '@fragment\nfn fs_main(in : VSOut) -> @location(0) vec4f {';
 const FS_RETURN = '  return vec4f(toDisplay(color), part.baseColor.a);';
 /**
  * G-buffer variant of the photoreal program, for the screen-space SSS graph.
@@ -555,6 +572,7 @@ export function photorealGBufferWgsl(base = PHOTOREAL_HUMAN_WGSL) {
   @location(2) skinMask : vec4f,
 };
 
+@fragment
 fn fs_main(in : VSOut) -> GBuffer {`;
     const gbufferReturn = `  var g : GBuffer;
   g.lit = vec4f(color, part.baseColor.a);

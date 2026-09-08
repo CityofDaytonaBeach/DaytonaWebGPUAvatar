@@ -42,6 +42,5 @@ export interface BodyManifold {
     vertices: CanonicalTopologyVertex[];
     indices: Uint32Array;
 }
-/** Build the body: see module doc. */
 export declare function buildHdBodyManifold(opts?: HdBodyManifoldOptions): BodyManifold;
 //# sourceMappingURL=hd-body-manifold.d.ts.map

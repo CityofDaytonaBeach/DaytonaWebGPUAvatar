@@ -115,8 +115,11 @@ export function shadeSkinLight(surface, light) {
     const diffuseResponse = preIntegratedScatter(ndl, surface.curvature, surface.scatterColor, surface.scatterIntensity);
     // Energy conservation: whatever reflects specularly cannot also diffuse.
     const kD = [1 - F[0], 1 - F[1], 1 - F[2]];
-    const diffuse = vmul(vmul(surface.albedo, diffuseResponse), kD);
-    const trans = transmission(n, l, v, surface.thickness, surface.scatterColor);
+    // Lambert normalization: diffuse (and the transmitted lobe, which is also a
+    // diffuse response) must be divided by PI, otherwise the surface is ~PI times
+    // too bright and every skin tone tone-maps to white.
+    const diffuse = vscale(vmul(vmul(surface.albedo, diffuseResponse), kD), 1 / PI);
+    const trans = vscale(transmission(n, l, v, surface.thickness, surface.scatterColor), 1 / PI);
     const radiance = vscale(light.color, light.intensity);
     return vmul(vadd(vadd(diffuse, spec), trans), radiance);
 }
