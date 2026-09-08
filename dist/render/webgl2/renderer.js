@@ -72,7 +72,10 @@ export class WebGL2HumanRenderer {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, canonical.indices, gl.STATIC_DRAW);
         gl.enable(gl.DEPTH_TEST);
-        gl.enable(gl.CULL_FACE);
+        // No face culling: the canonical marching-cubes winding matches the WebGPU
+        // pipeline's cull settings, not WebGL2's default back-face cull, and culling
+        // with the wrong winding drops the whole human (a blank canvas).
+        gl.disable(gl.CULL_FACE);
     }
     /**
      * Framing shared with the WebGPU path so the fallback frames the human the
