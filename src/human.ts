@@ -21,7 +21,11 @@ import { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
 import { IdentitySolver } from './identity/solver/identity-solver.js';
 import { CanonicalHuman } from './geometry/canonical/canonical-human.js';
 import type { CanonicalHumanProvider } from './geometry/canonical/canonical-provider.js';
-import { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
+import {
+  HDCanonicalHumanProvider,
+  type GeometryQuality,
+} from './geometry/canonical/hd-head-provider.js';
+import { DEFAULT_GARMENT, type GarmentSpec } from './apparel/garments.js';
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { MorphDriver } from './geometry/morph/morph-driver.js';
 import type { MorphCorrectiveWeight } from './geometry/morph/morph-driver.js';
@@ -125,6 +129,13 @@ export interface HumanCreateOptions {
   screenSpaceSss?: boolean;
   /** Bake per-vertex curvature/thickness for photoreal skin (default true). */
   bakeCurvatureThickness?: boolean;
+  /**
+   * Surface detail tier of the default HD provider ('hd' by default). Ignored
+   * when an explicit `canonicalProvider` or `canonical` mesh is supplied.
+   */
+  quality?: GeometryQuality;
+  /** Clothing worn by the avatar; defaults to the fitted polo + chinos. */
+  garment?: GarmentSpec;
 }
 
 export interface HumanModifyResult {
@@ -242,6 +253,7 @@ export class Human {
         ...(opts.bakeCurvatureThickness !== undefined
           ? { bakeCurvatureThickness: opts.bakeCurvatureThickness }
           : {}),
+        garment: opts.garment ?? DEFAULT_GARMENT,
       });
     }
   }
@@ -337,7 +349,12 @@ export class Human {
     // topology and renders as a crude placeholder, which is never what a
     // caller asking for a human wants. Pass `canonicalProvider:
     // new DebugBlockHumanProvider()` (or `canonical`) to opt out.
-    const provider = opts.canonicalProvider ?? new HDCanonicalHumanProvider();
+    const provider =
+      // 'standard' by default: the HD tier triples marching-cubes cost, which is
+      // right for a kiosk that builds the body once behind a splash, and wrong
+      // as a library default for tests/tools. Kiosk callers pass quality:'hd'.
+      opts.canonicalProvider ??
+      new HDCanonicalHumanProvider({ quality: opts.quality ?? 'standard' });
     if (!canonical) {
       const asset = await provider.load();
       canonical = CanonicalHuman.fromTopology(asset.topology, DEFAULT_BONE_NAMES);

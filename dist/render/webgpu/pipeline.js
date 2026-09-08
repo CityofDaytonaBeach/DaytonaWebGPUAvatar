@@ -1,4 +1,5 @@
 import { WebGPURenderer } from './renderer.js';
+import { splitBodyByGarment } from '../../apparel/garments.js';
 import { CharacterGpuState } from '../../gpu/buffers/character-gpu-state.js';
 import { GpuMorphDeform } from '../../gpu/kernels/gpu-morph-deform.js';
 import { SkinningKernel } from '../../gpu/kernels/skinning-kernel.js';
@@ -81,8 +82,11 @@ export class WebGpuHumanPipeline {
         const renderParts = shading === 'photoreal'
             ? buildPhotorealRenderParts(opts.device, canonical, preset, definition)
             : buildRenderParts(opts.device, canonical);
-        this.renderParts = renderParts;
-        this.renderer.setParts(renderParts, this.state.paramBuffer);
+        this.renderParts = opts.garment
+            ? dressRenderParts(opts.device, canonical, renderParts, opts.garment)
+            : renderParts;
+        const renderPartsFinal = this.renderParts;
+        this.renderer.setParts(renderPartsFinal, this.state.paramBuffer);
         this.renderer.setSharedNormalsAndUvs(this.state.normalBuffer, this.state.uvBuffer);
         // Per-vertex tangent perturbation (normal map proxy) from the skin material.
         // Zero for non-skin parts via the shared buffer; the body part reads it.
@@ -279,5 +283,48 @@ function partColor(name, kind) {
     if (kind === 'mouth_cavity')
         return { rgb: [0.22, 0.1, 0.11], opaque: true };
     return { rgb: [0.72, 0.56, 0.45], opaque: true };
+}
+/**
+ * Replace the single body draw with skin / shirt / trousers draws.
+ *
+ * Cloth is opaque, rougher than skin, has no subsurface scattering and no
+ * micro-detail pore normals — so the garments read as fabric next to skin that
+ * still gets the full photoreal treatment.
+ */
+function dressRenderParts(device, canonical, parts, garment) {
+    if (garment.style === 'none' || parts.length === 0)
+        return parts;
+    const bodyEnd = canonical.parts.length > 0 ? canonical.parts[0].indexStart : canonical.indices.length;
+    const split = splitBodyByGarment(canonical, bodyEnd, garment);
+    if (split.shirt.length === 0 && split.pants.length === 0)
+        return parts;
+    const upload = (indices) => {
+        const buf = device.createBuffer({
+            size: Math.max(4, indices.byteLength),
+            usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(buf, 0, indices);
+        return buf;
+    };
+    const body = parts[0];
+    const fabric = (name, color, indices) => ({
+        name,
+        color,
+        material: [garment.fabricRoughness, 0.12, 0.0],
+        sssColor: [0, 0, 0],
+        hasNormalMap: false,
+        opaque: true,
+        indexBuffer: upload(indices),
+        indexCount: indices.length,
+    });
+    const dressed = [
+        { ...body, indexBuffer: upload(split.skin), indexCount: split.skin.length },
+    ];
+    if (split.shirt.length > 0)
+        dressed.push(fabric('shirt', garment.shirtColor, split.shirt));
+    if (split.pants.length > 0)
+        dressed.push(fabric('pants', garment.pantsColor, split.pants));
+    dressed.push(...parts.slice(1));
+    return dressed;
 }
 //# sourceMappingURL=pipeline.js.map

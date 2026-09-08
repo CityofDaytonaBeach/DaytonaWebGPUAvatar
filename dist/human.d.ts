@@ -8,6 +8,8 @@ import { KernelWork } from './compiler/delta/delta-compiler.js';
 import { AffectedSystem } from './compiler/dependency/affected-systems.js';
 import { CanonicalHuman } from './geometry/canonical/canonical-human.js';
 import type { CanonicalHumanProvider } from './geometry/canonical/canonical-provider.js';
+import { type GeometryQuality } from './geometry/canonical/hd-head-provider.js';
+import { type GarmentSpec } from './apparel/garments.js';
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { HumanProfiler } from './gpu/profiler/profiler.js';
 import { SemanticExpression } from './animation/facial/facial-expression.js';
@@ -51,6 +53,13 @@ export interface HumanCreateOptions {
     screenSpaceSss?: boolean;
     /** Bake per-vertex curvature/thickness for photoreal skin (default true). */
     bakeCurvatureThickness?: boolean;
+    /**
+     * Surface detail tier of the default HD provider ('hd' by default). Ignored
+     * when an explicit `canonicalProvider` or `canonical` mesh is supplied.
+     */
+    quality?: GeometryQuality;
+    /** Clothing worn by the avatar; defaults to the fitted polo + chinos. */
+    garment?: GarmentSpec;
 }
 export interface HumanModifyResult {
     cancelled: boolean;

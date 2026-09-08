@@ -131,4 +131,6 @@ export { runKioskSoak, buildKioskSoakScript, DEFAULT_KIOSK_SOAK_OPTIONS, } from 
 export { kioskReadinessReport, KIOSK_REQUIRED_CAPABILITIES, KIOSK_DEFERRED, } from './kiosk/kiosk-ready.js';
 export { KioskRandom } from './kiosk/kiosk-random.js';
 export const VERSION = '1.0.0';
+export { DEFAULT_GARMENT, garmentLayerForVertex, splitBodyByGarment } from './apparel/garments.js';
+export { GEOMETRY_QUALITY_Y_STEPS } from './geometry/canonical/hd-head-provider.js';
 //# sourceMappingURL=index.js.map

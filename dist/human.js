@@ -10,7 +10,8 @@ import { affectedSystemsForChange, } from './compiler/dependency/affected-system
 import { DirtyRegionTracker } from './compiler/delta/dirty-regions.js';
 import { IdentitySolver } from './identity/solver/identity-solver.js';
 import { CanonicalHuman } from './geometry/canonical/canonical-human.js';
-import { HDCanonicalHumanProvider } from './geometry/canonical/hd-head-provider.js';
+import { HDCanonicalHumanProvider, } from './geometry/canonical/hd-head-provider.js';
+import { DEFAULT_GARMENT } from './apparel/garments.js';
 import { SparseMorphSet } from './geometry/morph/sparse-morph.js';
 import { MorphDriver } from './geometry/morph/morph-driver.js';
 import { MorphKernel } from './gpu/kernels/morph-kernel.js';
@@ -139,6 +140,7 @@ export class Human {
                 ...(opts.bakeCurvatureThickness !== undefined
                     ? { bakeCurvatureThickness: opts.bakeCurvatureThickness }
                     : {}),
+                garment: opts.garment ?? DEFAULT_GARMENT,
             });
         }
     }
@@ -227,7 +229,12 @@ export class Human {
         // topology and renders as a crude placeholder, which is never what a
         // caller asking for a human wants. Pass `canonicalProvider:
         // new DebugBlockHumanProvider()` (or `canonical`) to opt out.
-        const provider = opts.canonicalProvider ?? new HDCanonicalHumanProvider();
+        const provider = 
+        // 'standard' by default: the HD tier triples marching-cubes cost, which is
+        // right for a kiosk that builds the body once behind a splash, and wrong
+        // as a library default for tests/tools. Kiosk callers pass quality:'hd'.
+        opts.canonicalProvider ??
+            new HDCanonicalHumanProvider({ quality: opts.quality ?? 'standard' });
         if (!canonical) {
             const asset = await provider.load();
             canonical = CanonicalHuman.fromTopology(asset.topology, DEFAULT_BONE_NAMES);

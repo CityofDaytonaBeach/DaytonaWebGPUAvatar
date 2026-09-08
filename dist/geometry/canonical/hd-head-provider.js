@@ -2,6 +2,12 @@ import { REQUIRED_HD_HEAD_REGIONS, REQUIRED_HD_BODY_REGIONS } from './regions.js
 import { validateCanonicalTopology } from './canonical-validator.js';
 import { buildHdBodyManifold } from './hd-body-manifold.js';
 import { ensureHeadRegions, headRegionFor, headSkinWeights } from './hd-head-regions.js';
+export const GEOMETRY_QUALITY_Y_STEPS = {
+    draft: 96,
+    standard: 128,
+    hd: 176,
+    ultra: 256,
+};
 /**
  * Procedural DAYTONA HD HUMAN V0.1 provider.
  *
@@ -32,7 +38,8 @@ export class HDCanonicalHumanProvider {
         this.rings = opts.rings ?? 18;
         this.segments = opts.segments ?? 20;
         this.fuseHead = opts.fuseHead ?? true;
-        this.ySteps = opts.ySteps;
+        this.ySteps =
+            opts.ySteps ?? (opts.quality ? GEOMETRY_QUALITY_Y_STEPS[opts.quality] : undefined);
     }
     async load() {
         const geometry = this.buildGeometry();

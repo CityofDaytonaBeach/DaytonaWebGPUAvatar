@@ -30,7 +30,23 @@ export interface HdHeadOptions {
   fuseHead?: boolean;
   /** Grid resolution of the fused surface along y. */
   ySteps?: number;
+  /**
+   * Surface detail tier. Higher tiers march the implicit surface on a finer
+   * grid, which is what separates a blocky proxy from a smooth HD body. An
+   * explicit `ySteps` overrides this.
+   */
+  quality?: GeometryQuality;
 }
+
+/** Named surface-detail tiers and their marching resolution along y. */
+export type GeometryQuality = 'draft' | 'standard' | 'hd' | 'ultra';
+
+export const GEOMETRY_QUALITY_Y_STEPS: Record<GeometryQuality, number> = {
+  draft: 96,
+  standard: 128,
+  hd: 176,
+  ultra: 256,
+};
 
 interface GenGeometry {
   positions: Vec3[];
@@ -70,7 +86,8 @@ export class HDCanonicalHumanProvider implements CanonicalHumanProvider {
     this.rings = opts.rings ?? 18;
     this.segments = opts.segments ?? 20;
     this.fuseHead = opts.fuseHead ?? true;
-    this.ySteps = opts.ySteps;
+    this.ySteps =
+      opts.ySteps ?? (opts.quality ? GEOMETRY_QUALITY_Y_STEPS[opts.quality] : undefined);
   }
 
   async load(): Promise<CanonicalHumanAsset> {

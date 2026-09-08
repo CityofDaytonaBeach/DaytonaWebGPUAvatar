@@ -1,4 +1,5 @@
 import { WebGPURenderer } from './renderer.js';
+import { GarmentSpec } from '../../apparel/garments.js';
 import { CharacterGpuState } from '../../gpu/buffers/character-gpu-state.js';
 import { BoneDef } from '../../anatomy/skeleton/skeleton.js';
 import { CanonicalHuman } from '../../geometry/canonical/canonical-human.js';
@@ -46,6 +47,12 @@ export interface WebGpuHumanPipelineOptions {
      * the single-pass forward path (one render target, no extra full-screen work).
      */
     screenSpaceSss?: boolean;
+    /**
+     * Clothing worn by the avatar. Fitted garments are drawn as their own
+     * material ranges over the body's own surface (see `src/apparel/garments.ts`);
+     * omit or pass `style: 'none'` for the bare canonical skin.
+     */
+    garment?: GarmentSpec;
 }
 /**
  * Ties the GPU-resident character path together for one Human:

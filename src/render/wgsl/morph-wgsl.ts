@@ -6,6 +6,11 @@
  * vertex is affected, adding weight * delta. Produces deformed working
  * positions. This is a faithful GPU implementation of MorphKernel.accumulate
  * (CPU reference) — the goal is CPU/GPU parity.
+ *
+ * Positions are tightly packed xyz f32 triples (12-byte stride) because the
+ * renderer binds the deformed buffer as a vertex attribute. `array<vec3f>` would
+ * impose a 16-byte storage stride and shear the mesh, so positions are declared
+ * as flat `array<f32>` and indexed manually.
  */
 export const MORPH_COMPUTE_WGSL = /* wgsl */ `
 struct MorphMeta {
@@ -22,17 +27,18 @@ struct Params {
 }
 
 @group(0) @binding(0) var<storage, read> params    : Params;
-@group(0) @binding(1) var<storage, read> basePos   : array<vec3f>;
+@group(0) @binding(1) var<storage, read> basePos   : array<f32>;
 @group(0) @binding(2) var<storage, read> deltas    : array<vec4f>; // (index, dx, dy, dz)
 @group(0) @binding(3) var<storage, read> morphs    : array<vec4f>; // x:weight, z:start, y:count (see packer)
-@group(0) @binding(4) var<storage, read_write> outPos : array<vec3f>;
+@group(0) @binding(4) var<storage, read_write> outPos : array<f32>;
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) gid : vec3u) {
   let v = gid.x;
   if (v >= params.vertexCount) { return; }
 
-  var pos = basePos[v];
+  let o = v * 3u;
+  var pos = vec3f(basePos[o], basePos[o + 1u], basePos[o + 2u]);
 
   for (var m = 0u; m < params.morphCount; m = m + 1u) {
     let entry = morphs[m];
@@ -59,6 +65,8 @@ fn main(@builtin(global_invocation_id) gid : vec3u) {
     }
   }
 
-  outPos[v] = pos;
+  outPos[o] = pos.x;
+  outPos[o + 1u] = pos.y;
+  outPos[o + 2u] = pos.z;
 }
 `;

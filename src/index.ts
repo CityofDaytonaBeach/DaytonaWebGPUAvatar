@@ -892,3 +892,8 @@ export type { KioskReadinessReport, KioskReadinessEntry } from './kiosk/kiosk-re
 export { KioskRandom } from './kiosk/kiosk-random.js';
 
 export const VERSION = '1.0.0';
+
+export { DEFAULT_GARMENT, garmentLayerForVertex, splitBodyByGarment } from './apparel/garments.js';
+export type { GarmentSpec, GarmentStyle, GarmentLayer, GarmentSplit } from './apparel/garments.js';
+export { GEOMETRY_QUALITY_Y_STEPS } from './geometry/canonical/hd-head-provider.js';
+export type { GeometryQuality } from './geometry/canonical/hd-head-provider.js';

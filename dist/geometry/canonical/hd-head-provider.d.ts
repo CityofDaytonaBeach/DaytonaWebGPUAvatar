@@ -13,7 +13,16 @@ export interface HdHeadOptions {
     fuseHead?: boolean;
     /** Grid resolution of the fused surface along y. */
     ySteps?: number;
+    /**
+     * Surface detail tier. Higher tiers march the implicit surface on a finer
+     * grid, which is what separates a blocky proxy from a smooth HD body. An
+     * explicit `ySteps` overrides this.
+     */
+    quality?: GeometryQuality;
 }
+/** Named surface-detail tiers and their marching resolution along y. */
+export type GeometryQuality = 'draft' | 'standard' | 'hd' | 'ultra';
+export declare const GEOMETRY_QUALITY_Y_STEPS: Record<GeometryQuality, number>;
 /**
  * Procedural DAYTONA HD HUMAN V0.1 provider.
  *

@@ -1,4 +1,5 @@
 ﻿import { WebGPURenderer, RenderPart } from './renderer.js';
+import { GarmentSpec, splitBodyByGarment } from '../../apparel/garments.js';
 import { CharacterGpuState } from '../../gpu/buffers/character-gpu-state.js';
 import { GpuMorphDeform } from '../../gpu/kernels/gpu-morph-deform.js';
 import { SkinningKernel } from '../../gpu/kernels/skinning-kernel.js';
@@ -67,6 +68,12 @@ export interface WebGpuHumanPipelineOptions {
    * the single-pass forward path (one render target, no extra full-screen work).
    */
   screenSpaceSss?: boolean;
+  /**
+   * Clothing worn by the avatar. Fitted garments are drawn as their own
+   * material ranges over the body's own surface (see `src/apparel/garments.ts`);
+   * omit or pass `style: 'none'` for the bare canonical skin.
+   */
+  garment?: GarmentSpec;
 }
 
 /**
@@ -163,8 +170,11 @@ export class WebGpuHumanPipeline {
       shading === 'photoreal'
         ? buildPhotorealRenderParts(opts.device, canonical, preset, definition)
         : buildRenderParts(opts.device, canonical);
-    this.renderParts = renderParts;
-    this.renderer.setParts(renderParts, this.state.paramBuffer);
+    this.renderParts = opts.garment
+      ? dressRenderParts(opts.device, canonical, renderParts, opts.garment)
+      : renderParts;
+    const renderPartsFinal = this.renderParts;
+    this.renderer.setParts(renderPartsFinal, this.state.paramBuffer);
     this.renderer.setSharedNormalsAndUvs(this.state.normalBuffer, this.state.uvBuffer);
 
     // Per-vertex tangent perturbation (normal map proxy) from the skin material.
@@ -410,4 +420,57 @@ function partColor(name: string, kind: string): { rgb: [number, number, number];
   if (kind === 'tongue') return { rgb: [0.82, 0.5, 0.48], opaque: true };
   if (kind === 'mouth_cavity') return { rgb: [0.22, 0.1, 0.11], opaque: true };
   return { rgb: [0.72, 0.56, 0.45], opaque: true };
+}
+
+/**
+ * Replace the single body draw with skin / shirt / trousers draws.
+ *
+ * Cloth is opaque, rougher than skin, has no subsurface scattering and no
+ * micro-detail pore normals — so the garments read as fabric next to skin that
+ * still gets the full photoreal treatment.
+ */
+function dressRenderParts(
+  device: GPUDevice,
+  canonical: CanonicalHuman,
+  parts: RenderPart[],
+  garment: GarmentSpec,
+): RenderPart[] {
+  if (garment.style === 'none' || parts.length === 0) return parts;
+  const bodyEnd =
+    canonical.parts.length > 0 ? canonical.parts[0].indexStart : canonical.indices.length;
+  const split = splitBodyByGarment(canonical, bodyEnd, garment);
+  if (split.shirt.length === 0 && split.pants.length === 0) return parts;
+
+  const upload = (indices: Uint32Array): GPUBuffer => {
+    const buf = device.createBuffer({
+      size: Math.max(4, indices.byteLength),
+      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(buf, 0, indices as unknown as ArrayBuffer);
+    return buf;
+  };
+
+  const body = parts[0];
+  const fabric = (
+    name: string,
+    color: [number, number, number],
+    indices: Uint32Array,
+  ): RenderPart => ({
+    name,
+    color,
+    material: [garment.fabricRoughness, 0.12, 0.0],
+    sssColor: [0, 0, 0],
+    hasNormalMap: false,
+    opaque: true,
+    indexBuffer: upload(indices),
+    indexCount: indices.length,
+  });
+
+  const dressed: RenderPart[] = [
+    { ...body, indexBuffer: upload(split.skin), indexCount: split.skin.length },
+  ];
+  if (split.shirt.length > 0) dressed.push(fabric('shirt', garment.shirtColor, split.shirt));
+  if (split.pants.length > 0) dressed.push(fabric('pants', garment.pantsColor, split.pants));
+  dressed.push(...parts.slice(1));
+  return dressed;
 }

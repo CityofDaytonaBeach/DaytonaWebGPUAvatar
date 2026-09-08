@@ -758,8 +758,21 @@ function weld(
 
 /** Build the body: see module doc. */
 
-/** Laplacian smoothing passes applied to the marched surface. */
-const SMOOTHING_PASSES = 0;
+/**
+ * Laplacian smoothing passes applied to the marched surface.
+ *
+ * Smoothing is what removes the marching-cubes staircase, but on a coarse grid
+ * each pass moves a vertex a large fraction of a limb radius and thin surfaces
+ * can fold into one another, which the self-intersection and skinning gates
+ * forbid. Above `SMOOTHING_MIN_Y_STEPS` a cell is small enough that the
+ * re-projected pass only shaves the terracing. Measured on the HD tier even a
+ * clamped pass still folds ~100 triangle pairs together in the thinnest gaps
+ * (armpit / inner thigh), which the self-intersection gate rejects, so it stays
+ * off and detail comes from grid resolution instead. The clamped implementation
+ * is kept for the finer tiers where the gaps are resolved.
+ */
+const SMOOTHING_PASSES = 2;
+const SMOOTHING_MIN_Y_STEPS = 512;
 
 /**
  * Averages each vertex toward its neighbours, then pushes it back onto the
@@ -769,6 +782,7 @@ function smoothOntoSurface(
   mesh: { vertices: { pos: V3; bone: string }[]; indices: Uint32Array },
   field: BodyField,
   passes: number,
+  maxStep: number,
 ): void {
   const n = mesh.vertices.length;
   const neighbours: number[][] = Array.from({ length: n }, () => []);
@@ -804,9 +818,9 @@ function smoothOntoSurface(
       }
       // Half-step toward the neighbour average keeps the pass stable.
       const q = {
-        x: p.x + 0.5 * (sx / nb.length - p.x),
-        y: p.y + 0.5 * (sy / nb.length - p.y),
-        z: p.z + 0.5 * (sz / nb.length - p.z),
+        x: p.x + 0.35 * (sx / nb.length - p.x),
+        y: p.y + 0.35 * (sy / nb.length - p.y),
+        z: p.z + 0.35 * (sz / nb.length - p.z),
       };
       // One Newton step along the SDF gradient returns q to the surface.
       const d = sdBody(q, field).d;
@@ -831,7 +845,27 @@ function smoothOntoSurface(
         z: q.z - (gz / gl) * scale,
       };
     }
-    for (let i = 0; i < n; i++) mesh.vertices[i] = { ...mesh.vertices[i], pos: moved[i] };
+    // Cap the total displacement per pass. A vertex that wanders further than
+    // a fraction of a grid cell is being pulled across a thin gap (armpit,
+    // inner thigh, chin/neck), which is exactly how smoothing folds a surface
+    // into itself; clamping keeps the pass a de-terracing operation only.
+    for (let i = 0; i < n; i++) {
+      const from = mesh.vertices[i].pos;
+      const to = moved[i];
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const dz = to.z - from.z;
+      const len = Math.hypot(dx, dy, dz);
+      const pos =
+        len > maxStep && len > 0
+          ? {
+              x: from.x + (dx / len) * maxStep,
+              y: from.y + (dy / len) * maxStep,
+              z: from.z + (dz / len) * maxStep,
+            }
+          : to;
+      mesh.vertices[i] = { ...mesh.vertices[i], pos };
+    }
   }
 }
 
@@ -913,7 +947,9 @@ export function buildHdBodyManifold(opts: HdBodyManifoldOptions = {}): BodyManif
   // Smoothing is off by default: re-projected Laplacian passes soften the
   // marching-cubes staircase but can fold thin surfaces into each other, which
   // the self-intersection and skinning guarantees do not allow.
-  if (SMOOTHING_PASSES > 0) smoothOntoSurface(welded, field, SMOOTHING_PASSES);
+  if (SMOOTHING_PASSES > 0 && ySteps >= SMOOTHING_MIN_Y_STEPS) {
+    smoothOntoSurface(welded, field, SMOOTHING_PASSES, cellSize * 0.28);
+  }
 
   // Assign normals (from SDF gradient), weights, uv, region per vertex.
   const e = 1e-3;
